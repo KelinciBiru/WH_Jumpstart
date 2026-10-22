@@ -12,7 +12,7 @@
 <script>
   /* Palet mengikuti logo: hitam + kuning-oranye. "indigo" dipetakan ke ink/amber, "slate" ke abu netral. */
   tailwind.config = { theme: { extend: {
-    fontFamily: { sans: ['Century Gothic', CenturyGothic, 'Apple Gothic', AppleGothic, 'Questrial', 'URW Gothic', 'Avant Garde', ui-sans-serif, system-ui, sans-serif] },
+    fontFamily: { sans: ['Century Gothic', 'CenturyGothic', 'Apple Gothic', 'AppleGothic', 'Questrial', 'URW Gothic', 'Avant Garde', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
     colors: {
       indigo: { 50: '#FFF8E1', 100: '#FEEDB8', 200: '#FBD978', 300: '#F5C245', 400: '#FBB315', 500: '#C98200', 600: '#141414', 700: '#000000' },
       slate:  { 50: '#F8F8F6', 100: '#F0F0ED', 200: '#E2E1DB', 300: '#CDCCC4', 400: '#98978D', 500: '#686760', 600: '#52514B', 700: '#383732', 800: '#24231F', 900: '#141414' }
@@ -837,8 +837,14 @@ const DRINK_CATS = [
 ];
 const NON_DRINK_RE = /(^| )(sabun|shampoo|sampo|lotion|deterjen|pewangi|pelembut|pasta gigi|odol|pembalut|diapers?|popok|tisu|tissue|biskuit|biscuit|cookies?|wafer|coklat|chocolate|permen|candy|snack|keripik|mie|noodle|bumbu|kecap|saus|minyak goreng)( |$)/;
 const DRINK_CAT_RE = /minum|drink|beverage|air|teh|kopi|susu|jus|soda|juice|water|tea|coffee|milk/i;
+/* Pengecualian manual (nama produk -> kategori minuman); menang atas Source SKU & tebakan nama */
+const CAT_OVERRIDES = [
+  [/good day groovy cookies/, 'Kopi']
+];
 function catInfo(name, sku) {
   const n = ' ' + norm(name) + ' ', kat = sku && cleanName(sku.kategori);
+  const ov = CAT_OVERRIDES.find(([re]) => re.test(n));
+  if (ov) { const idx = DRINK_CATS.findIndex(([l]) => l === ov[1]); return { drink: true, label: ov[1], order: idx >= 0 ? idx : 50 }; }
   const hit = NON_DRINK_RE.test(n.trim()) ? null : DRINK_CATS.findIndex(([, kws]) => kws.some(k => n.includes(' ' + k + ' ')));
   if (kat) {
     const drink = DRINK_CAT_RE.test(kat);
