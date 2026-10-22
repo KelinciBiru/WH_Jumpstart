@@ -839,7 +839,15 @@ const NON_DRINK_RE = /(^| )(sabun|shampoo|sampo|lotion|deterjen|pewangi|pelembut
 const DRINK_CAT_RE = /minum|drink|beverage|air|teh|kopi|susu|jus|soda|juice|water|tea|coffee|milk/i;
 /* Pengecualian manual (nama produk -> kategori minuman); menang atas Source SKU & tebakan nama */
 const CAT_OVERRIDES = [
-  [/good day groovy cookies/, 'Kopi']
+  [/good day groovy cookies/, 'Kopi'],
+  [/panda can grass jelly/, 'Isotonik & Energi'],
+  [/tolak angin cair madu/, 'Isotonik & Energi'],
+  [/ultra sari kacang ijo/, 'Susu & Yogurt'],
+  [/cap kaki tiga can lychee/, 'Isotonik & Energi'],
+  [/pokka natsbee honey lemon/, 'Isotonik & Energi'],
+  [/panda can green grass jelly/, 'Isotonik & Energi'],
+  [/cap kaki tiga can cooltopia lemon lime/, 'Isotonik & Energi'],
+  [/chi forest sparkling water/, 'Soda']
 ];
 function catInfo(name, sku) {
   const n = ' ' + norm(name) + ' ', kat = sku && cleanName(sku.kategori);
