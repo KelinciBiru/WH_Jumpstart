@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warehouse Jumpstart Indonesia — Planner</title>
+<link rel="icon" id="fav" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" id="favApple">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet"><!-- cadangan mirip Century Gothic bila font tidak terpasang di perangkat -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  /* Palet mengikuti logo: hitam + kuning-oranye. "indigo" dipetakan ke ink/amber, "slate" ke abu netral. */
+  tailwind.config = { theme: { extend: {
+    fontFamily: { sans: ['Century Gothic', CenturyGothic, 'Apple Gothic', AppleGothic, 'Questrial', 'URW Gothic', 'Avant Garde', ui-sans-serif, system-ui, sans-serif] },
+    colors: {
+      indigo: { 50: '#FFF8E1', 100: '#FEEDB8', 200: '#FBD978', 300: '#F5C245', 400: '#FBB315', 500: '#C98200', 600: '#141414', 700: '#000000' },
+      slate:  { 50: '#F8F8F6', 100: '#F0F0ED', 200: '#E2E1DB', 300: '#CDCCC4', 400: '#98978D', 500: '#686760', 600: '#52514B', 700: '#383732', 800: '#24231F', 900: '#141414' }
+    } } } };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root { --amber: #FBB315; --amber-deep: #C98200; --ink: #141414; --line: #E2E1DB; --paper: #F1F1EE; }
+  body { font-family: 'Century Gothic', CenturyGothic, 'Apple Gothic', AppleGothic, 'Questrial', 'URW Gothic', 'Avant Garde', ui-sans-serif, system-ui, sans-serif; background: var(--paper); color: var(--ink); }
+  h1, .display { font-family: 'Century Gothic', CenturyGothic, 'Apple Gothic', AppleGothic, 'Questrial', 'URW Gothic', 'Avant Garde', ui-sans-serif, system-ui, sans-serif; letter-spacing: -.01em; font-weight: 700; }
+  button, input, select, textarea { font-family: inherit; }
+  .num { font-variant-numeric: tabular-nums; }
+  .sh-chip { display: inline-flex; align-items: center; gap: .25rem; border-radius: 9999px; padding: 1px 8px; font-size: 10px; font-weight: 700; line-height: 1.5; white-space: nowrap; }
+  .sh-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .sh-0 { background: #FEEDB8; color: #7a4d00; } .sh-1 { background: #dbeafe; color: #1e40af; } .sh-2 { background: #dcfce7; color: #166534; }
+  .sh-3 { background: #fce7f3; color: #9d174d; } .sh-4 { background: #ede9fe; color: #5b21b6; } .sh-5 { background: #e2e8f0; color: #334155; }
+  .pp-sh { font-size: 6.5pt; color: #444; margin-top: 1px; }
+  .hidden { display: none !important; }
+  /* side-nav & elemen responsif (tidak bentrok dengan .hidden !important) */
+  .side-nav { display: none; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .hide-xs { display: none; }
+  @media (min-width: 768px) { .side-nav { display: flex; } }
+  @media (min-width: 640px) { .hide-xs { display: block; } }
+  :focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+  .drop-active { border-color: var(--amber) !important; background: #FFF8E1 !important; }
+  .card-body.collapsed { display: none; }
+  #grandTotals summary::-webkit-details-marker { display: none; }
+  .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  dialog::backdrop { background: rgba(20,20,20,.55); }
+
+  /* tombol */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: .5rem; padding: .55rem 1rem; font-size: .875rem; font-weight: 600; line-height: 1.2; transition: background .15s, border-color .15s; }
+  .btn-accent { background: var(--amber); color: var(--ink); } .btn-accent:hover { background: #F2A400; }
+  .btn-dark { background: var(--ink); color: #fff; } .btn-dark:hover { background: #000; }
+  .btn-ghost { background: #fff; border: 1px solid var(--line); color: var(--ink); } .btn-ghost:hover { border-color: var(--ink); }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+  .panel { background: #fff; border-radius: 1rem; box-shadow: 0 0 0 1px var(--line); }
+  .field { display: flex; flex-direction: column; gap: 2px; font-size: .75rem; font-weight: 600; color: #52514B; }
+  .field input { border: 1px solid var(--line); border-radius: .5rem; padding: .4rem .7rem; font-size: .875rem; color: var(--ink); background: #fff; }
+
+  /* motif garis miring dari logo */
+  .nav-item { position: relative; display: flex; align-items: center; gap: .75rem; border-radius: .6rem; padding: .65rem .9rem .65rem 1.4rem; font-size: .875rem; font-weight: 600; color: #52514B; transition: background .15s, color .15s; }
+  .nav-item:hover { background: #F8F8F6; color: var(--ink); }
+  .nav-on, .nav-on:hover { background: #FFF8E1; color: var(--ink); }
+  .nav-on::before { content: ''; position: absolute; left: .55rem; top: 20%; bottom: 20%; width: 5px; border-radius: 1px; background: var(--amber); transform: skewX(-18deg); }
+  .nav-label { padding: 0 .9rem .5rem; font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #98978D; }
+  .stat { background: #fff; border-radius: .75rem; box-shadow: 0 0 0 1px var(--line); padding: .7rem .9rem; border-left: 5px solid var(--amber); }
+  .stat .v { font-family: 'Century Gothic', CenturyGothic, 'Apple Gothic', AppleGothic, 'Questrial', 'URW Gothic', 'Avant Garde', ui-sans-serif, system-ui, sans-serif; font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+  .empty { position: relative; overflow: hidden; border-radius: 1rem; background: #fff; box-shadow: 0 0 0 1px var(--line); padding: 3.5rem 1.5rem; text-align: center; }
+  .empty::before { content: ''; position: absolute; right: 8%; top: -30%; bottom: -30%; width: 46px; background: var(--amber); transform: rotate(40deg); opacity: .9; }
+  .empty > * { position: relative; }
+
+  @media print {
+    aside, header, .no-print { display: none !important; }
+    main { padding: 0 !important; }
+    .card-body.collapsed { display: block !important; }
+    .driver-card { break-inside: avoid-page; box-shadow: none !important; margin-bottom: 14px; }
+    body { background: #fff !important; }
+    #grandGrid { max-height: none !important; }
+  }
+
+  /* ===== LAPORAN CETAK / PDF (A4 portrait) ===== */
+  @page { size: A4 portrait; margin: 10mm; }
+  @media screen { #printArea { display: none; } }
+  @media print {
+    #printArea { display: none; }
+    body.printing #printArea { display: block; }
+    body.printing #app, body.printing #toast, body.printing dialog { display: none !important; }
+  }
+  #printArea { font-family: 'Century Gothic', CenturyGothic, 'Apple Gothic', AppleGothic, 'Questrial', 'URW Gothic', 'Avant Garde', ui-sans-serif, system-ui, sans-serif; color: #000; font-size: 9pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pp-page { break-after: page; page-break-after: always; }
+  .pp-page:last-child { break-after: auto; page-break-after: auto; }
+  .pp-head { display: flex; align-items: center; gap: 3mm; border-bottom: 0.7mm solid #FBB315; padding-bottom: 1.2mm; margin-bottom: 2mm; }
+  .pp-head img { height: 8mm; width: auto; }
+  .pp-org { font-size: 7.5pt; color: #444; line-height: 1.2; }
+  .pp-title { font-size: 11.5pt; font-weight: 700; line-height: 1.2; }
+  .pp-meta { border-collapse: collapse; margin-bottom: 2mm; font-size: 8.5pt; }
+  .pp-meta td { padding: 1px 0; vertical-align: top; }
+  .pp-meta td:first-child { width: 30mm; font-weight: 700; white-space: nowrap; }
+  .pp-meta td:nth-child(2) { width: 4mm; }
+  .pp-tbl { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+  .pp-tbl th, .pp-tbl td { border: 1px solid #000; padding: 3px 4px; }
+  .pp-tbl th { background: #FEEDB8; text-align: center; }
+  .pp-tbl thead { display: table-header-group; }
+  .pp-tbl tr { break-inside: avoid; page-break-inside: avoid; }
+  .pp-tbl tbody td { height: 7.5mm; }
+  .pp-tbl td.n { text-align: center; }
+  .pp-tbl td.id { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pp-tbl td.uom { font-size: 8pt; text-align: center; }
+  .pp-tbl tfoot { display: table-row-group; }
+  .pp-tbl tbody tr.pp-grp td { height: auto; background: #dcdcdc; font-weight: 700; font-size: 8.5pt; padding: 2px 5px; }
+  .pp-tbl tfoot td { font-weight: 700; background: #f3f3f3; }
+  .pp-note { margin-top: 3mm; font-size: 8.5pt; line-height: 1.35; break-inside: avoid; page-break-inside: avoid; }
+  .pp-note-t { font-weight: 700; margin-bottom: 1px; }
+  .pp-note ul { margin: 0; padding-left: 5mm; list-style: disc; }
+  .pp-note li { margin-bottom: 1px; }
+  .pp-sign { display: flex; justify-content: flex-end; gap: 14mm; margin-top: 5mm; break-inside: avoid; page-break-inside: avoid; }
+  .pp-sign > div { width: 58mm; text-align: center; font-size: 9.5pt; }
+  .pp-sign .ln { height: 16mm; border-bottom: 1px solid #000; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+
+<div id="app" class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="side-nav w-72 shrink-0 flex-col border-r border-slate-200 bg-white">
+    <div class="flex flex-col items-center border-b border-slate-200 px-4 pb-5 pt-7 text-center">
+      <img data-logo alt="Jumpstart" class="h-auto w-40">
+      <div class="display mt-4 whitespace-nowrap text-[.9rem] font-bold leading-snug">Warehouse Jumpstart Indonesia</div>
+      <div class="mt-1 whitespace-nowrap text-[11px] tracking-wide text-slate-500">Planner · Warehouse PG</div>
+    </div>
+    <nav class="flex-1 px-4 pt-5" aria-label="Menu utama">
+      <div class="nav-label">Menu</div>
+      <a href="#" class="nav-item nav-on" aria-current="page">
+        <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h4"/></svg>
+        Planner
+      </a>
+    </nav>
+    <div class="space-y-2.5 border-t border-slate-200 px-6 py-5 text-xs text-slate-500">
+      <div class="flex items-center gap-2"><span id="dot" class="h-2 w-2 rounded-full bg-slate-500"></span><span id="statusText">Menghubungkan…</span></div>
+      <button id="btnGas" class="font-semibold text-slate-700 underline underline-offset-2 hover:text-black">Atur URL GAS</button>
+    </div>
+  </aside>
+
+  <div class="flex-1 min-w-0 flex flex-col">
+
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur md:px-8">
+      <div class="flex items-center gap-3">
+        <img data-logo alt="Jumpstart" class="h-7 w-auto md:hidden">
+        <div>
+          <h1 class="text-2xl font-bold leading-none">Planner</h1>
+          <p class="hide-xs mt-1 text-xs text-slate-500">Rencana isi mobil per driver · untuk Packer &amp; Admin Warehouse</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="md:hidden flex items-center gap-1 text-xs text-slate-500"><span id="dotM" class="h-2 w-2 rounded-full bg-slate-400"></span></span>
+        <div class="inline-flex rounded-lg bg-slate-100 p-1 text-sm" role="tablist" aria-label="Peran">
+          <button data-role="admin"  class="role-btn rounded-md px-4 py-1.5 font-medium">Admin</button>
+          <button data-role="packer" class="role-btn rounded-md px-4 py-1.5 font-medium">Packer</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 space-y-5 p-4 md:p-8">
+
+      <!-- IMPORT (Admin) -->
+      <section id="importCard" class="no-print panel p-4 md:p-5">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-stretch">
+          <label id="drop" for="file" class="flex flex-1 cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-6 transition hover:border-slate-400">
+            <span class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#FBB315]">
+              <svg class="h-6 w-6" fill="none" stroke="#141414" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0-12l-4 4m4-4l4 4"/></svg>
+            </span>
+            <span>
+              <span class="display block text-xl font-bold">Import file Excel</span>
+              <span class="block text-sm text-slate-500">Tarik &amp; lepas file (.xlsx / .xls) ke sini, atau klik untuk memilih</span>
+              <span id="fileName" class="mt-1 block text-sm font-semibold"></span>
+            </span>
+            <input id="file" type="file" accept=".xlsx,.xls" class="hidden">
+          </label>
+          <div class="flex flex-col justify-center gap-2 lg:w-60">
+            <button id="btnReload" class="btn btn-ghost">Muat ulang data SKU</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Packer shortcut -->
+      <section id="packerBar" class="no-print hidden panel p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="text-sm text-slate-600">Mode Packer: tampilkan plan terakhir yang disimpan Admin.</div>
+          <button id="btnLoad" class="btn btn-dark">Muat plan terakhir</button>
+        </div>
+      </section>
+
+      <!-- AKSI: tanggal, simpan, cetak -->
+      <section id="printBar" class="no-print hidden flex-wrap items-end gap-3 panel p-4">
+        <label class="field">Tanggal plan
+          <input id="planDate" type="date">
+        </label>
+        <div class="ml-auto flex flex-wrap gap-2">
+          <button id="btnPrintTotal" class="btn btn-ghost">Cetak / PDF · Total per Produk</button>
+          <button id="btnPrintDriver" class="btn btn-ghost" title="Mengikuti pilihan driver di filter">Cetak / PDF · Per Driver &amp; Lokasi</button>
+          <button id="btnSave" disabled class="btn btn-accent admin-only">Simpan ke Spreadsheet</button>
+        </div>
+        <p class="w-full text-xs text-slate-500">Data yang sudah tercatat pada tanggal yang sama tidak dicatat ulang; tanggal berbeda ditambahkan sebagai baris baru. Di dialog cetak pilih “Simpan sebagai PDF”.</p>
+      </section>
+
+      <!-- STATS -->
+      <section id="stats" class="grid grid-cols-2 gap-3 md:grid-cols-5"></section>
+
+      <!-- INSIGHT -->
+      <section id="insight" class="hidden rounded-2xl border-l-[6px] border-[#FBB315] bg-white p-4 shadow-[0_0_0_1px_#E2E1DB]">
+        <div class="mb-1 text-sm font-semibold">Ringkasan otomatis</div>
+        <ul id="insightList" class="list-disc space-y-1 pl-5 text-sm text-slate-700"></ul>
+      </section>
+
+      <!-- TOTAL SEMUA DRIVER -->
+      <section id="grandTotals" class="hidden panel">
+        <details open class="group">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 md:px-5">
+            <div>
+              <div id="grandTitle" class="display text-xl font-bold">Total semua driver</div>
+              <div id="grandMeta" class="text-xs text-slate-500"></div>
+            </div>
+            <svg class="h-4 w-4 text-slate-400 transition group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+          </summary>
+          <div class="border-t border-slate-200 p-4 md:p-5">
+            <div id="grandHint" class="mb-3 hidden rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800"></div>
+            <div id="grandGrid" class="grid max-h-[420px] gap-2 overflow-y-auto sm:grid-cols-2 xl:grid-cols-4"></div>
+          </div>
+        </details>
+      </section>
+
+      <!-- TOOLBAR -->
+      <section id="toolbar" class="no-print hidden flex-wrap items-center gap-2">
+        <input id="search" type="search" placeholder="Cari lokasi, produk, ID, driver, plat…" class="min-w-[220px] flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
+        <select id="driverSel" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select>
+        <label class="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"><input id="onlyCheck" type="checkbox" class="accent-indigo-600"> Perlu dicek saja</label>
+        <button id="btnExpand" class="btn btn-ghost">Buka/Tutup semua</button>
+        <div class="relative" id="xlsxWrap">
+          <button id="btnXlsx" class="btn btn-ghost" aria-haspopup="true" aria-expanded="false">Export Excel
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="xlsxMenu" class="hidden absolute right-0 z-30 mt-1 w-72 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+            <button type="button" data-x="plan" class="block w-full rounded-lg px-3 py-2 text-left hover:bg-indigo-50">
+              <span class="block text-sm font-semibold">Planner (detail)</span>
+              <span class="block text-xs text-slate-500">Semua driver, lokasi &amp; produk</span>
+            </button>
+            <button type="button" data-x="bulkyAll" class="block w-full rounded-lg px-3 py-2 text-left hover:bg-indigo-50">
+              <span class="block text-sm font-semibold">Bulky · All Driver</span>
+              <span class="block text-xs text-slate-500">Total per produk dari semua driver</span>
+            </button>
+            <button type="button" data-x="bulkyDriver" class="block w-full rounded-lg px-3 py-2 text-left hover:bg-indigo-50">
+              <span class="block text-sm font-semibold">Bulky · Per-Driver</span>
+              <span class="block text-xs text-slate-500">Total per produk dari driver yang dipilih di dropdown</span>
+            </button>
+          </div>
+        </div>
+        <button id="btnPrint" class="btn btn-ghost">Print</button>
+      </section>
+
+      <!-- TOTAL DRIVER TERPILIH (mengikuti dropdown) -->
+      <section id="driverTotals" class="hidden panel">
+        <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-5">
+          <div>
+            <div id="dtTitle" class="display text-xl font-bold">Total per driver</div>
+            <div id="dtMeta" class="text-xs text-slate-500"></div>
+          </div>
+          <button id="btnPrintDriverTotal" class="btn btn-dark no-print hidden">Cetak / PDF · Total driver ini</button>
+        </div>
+        <div class="border-t border-slate-200 p-4 md:p-5">
+          <div id="dtHint" class="rounded-lg border-2 border-dashed border-slate-300 px-4 py-5 text-center text-sm text-slate-500">Pilih driver di dropdown filter untuk melihat total produk per driver.</div>
+          <div id="dtGrid" class="hidden max-h-[420px] gap-2 overflow-y-auto sm:grid-cols-2 xl:grid-cols-4"></div>
+        </div>
+      </section>
+
+      <!-- RESULT -->
+      <section id="result" class="space-y-4"></section>
+
+      <div id="empty" class="empty">
+        <div class="display text-3xl font-bold">Belum ada plan</div>
+        <p class="mx-auto mt-2 max-w-md text-sm text-slate-600">Admin: import file Excel di kotak atas. Packer: pilih peran Packer lalu muat plan terakhir.</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- FIX DIALOG -->
+<dialog id="fixDlg" class="w-[min(92vw,460px)] rounded-2xl p-0 shadow-xl">
+  <form method="dialog" class="p-5">
+    <h3 class="display text-xl font-bold">Pilih ID Product</h3>
+    <p id="fixName" class="mt-1 text-sm text-slate-500"></p>
+    <input id="fixInput" list="skuList" placeholder="Ketik ID atau nama produk…" class="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500">
+    <datalist id="skuList"></datalist>
+    <p id="fixHint" class="mt-2 text-xs text-slate-500"></p>
+    <div class="mt-4 flex justify-between gap-2">
+      <button type="button" id="fixClear" class="text-sm text-red-600 hover:underline">Hapus pilihan manual</button>
+      <div class="flex gap-2">
+        <button value="cancel" class="btn btn-ghost">Batal</button>
+        <button type="button" id="fixApply" class="btn btn-accent">Terapkan</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<div id="printArea"></div>
+
+<div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 z-50 hidden max-w-[92vw] -translate-x-1/2 rounded-lg border-l-4 border-[#FBB315] bg-slate-900 px-4 py-2.5 text-sm text-white shadow-lg"></div>
+
+<script>
+/* =====================================================================
+   KONFIGURASI
+   Isi dengan URL Web App hasil deploy Code.gs (…/exec).
+   Bisa juga diatur lewat tombol "Atur URL GAS" (tersimpan di browser).
+   ===================================================================== */
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbxNBAsZ7_cUiv7jKdBWS_gPIDNlLMMRgeEJ4sFOxzp51RD5Xrma3YuZ9PLbJCF8MBK8/exec';
+
+const LOGO_SRC = 'data:image/png;base64,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';
+document.querySelectorAll('img[data-logo]').forEach(i => i.src = LOGO_SRC);
+const FAVICON_SRC = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAAPXklEQVR42u1da2xV1bYec6796u6DamlpN6WFvigtiNcEIQiEl6lFRNQf5OoPJZxAiXA4Vjg8RSyaXKSoBxAbjYmYiP6wgNTKo4VE4gVKxZiecGhri9aK0BZ5tLt77+611hz3x2gnq3u3Bc7lXto4vx/NYq655lprfOM1x1gtDBFB4f6BKxEoAhQBCooARYCCIkARoKAIUAQoKAIUAQqKAEWAgiJAEaCgCFAEKCgCFAEKigBFgIIiQBGgoAhQBCgoAhQBCooARYCCIkARoKAIUAQoKAIUAQqKAEWAgiJAEaCgCFAEKCgCFAEKigBFgMKflQAEGEp//8XW90v0/hs2jLHwcRoMH+lvcIBT/d3u7kUPAHStGCq6xf6v/14QIloFfSfCRUTTNDVNuxsmEBCBcfzpNXDnsJH/CWgC04akBRiGEQgEpCw45263mzFmGIbf72eMIaLdbne5XADg9/sNwyBJRUREaJomhPD5fPLayMhIkjv99Hq9Us1pWV3X/X4/590Kq2laRESEzWYDAKLhLqRf/7qoLwYtmnMnS3p2aNgBWmCaJiJWVFR4PJ7k5OTk5OSkpKTx48e3tbUh4sGDBxMTE1NTUxMSEl588UVEDAaDeXl5iYmJo0aNSk5OPn36NCLW1dWNHj2aVhg1atTBgwcRsaurCxFLSko8Hk9KSkpSUtK4ceMuX76MiHv27ImPj09JSRk5cqTH40lPT8/Ly9u+fXtra6t8pAEhUJiIKGo3G2URelmSXjbc/Ga4uFSKKBBve/l9hi3cQQcCgd9//10O+v1+IQQA+Hy+K1eu0GBraysdXLlyRQ6S3ei63tTUJD3b0qVLc3NzMzIyqqqqCgsLyTgAoKOjwzRNOmhra7M+RmNj49GjR0tKSvbu3fvYY48JIaR99K/7b4iftiMMAzCA2YRh8H/+BSLHsGH/McjtoI8n03UdADjnnHPGmMPh6J7a80/GGLkIALDb7YwxTdOky5ZzOOc2m621tbWgoODXX3996aWXfD6fpmnWdcjnMMZoHbrKbrfb7fbGxsYFCxY0NDQwxkgD+vf7W8z6bYgxACYAA4GM+Vl6IYvOAcBB7oV4ePqRkZHx/PPPa5omzaRPf9XfiHWQwsPx48enTZtWW1vLGLO6lD5XEELouq7rut1uv3bt2rvvvkvxYyC/X/c2QAwwAcAAGYMOnr2eZWwC7uxJioYIAZxzRJwwYcL777/vdDrvSYJEsbe5ubkfOYKMvQCwcOHCioqKJ554Ql743Xff6boeFoql9DebddsRYgAEAANgjLXzcRtZxkZAc0hsCGx9iuzGjRv3Kj2V+c/AC5Lxpaamzp07Nyoq6siRI2QTXq/XMAy73W5JYaX0XzPrdwAbRp4HgXT/NZaxHtAExge/+vcdA8gR3xPddzgcIbm/zWbrkwka/O2336qqqoqLi+kxGGPx8fFki6HSr9tk1u0A6JY+IGPYoWVvGlrS75sAyjpuuwkyTZPSmAGQmZm5Zs0aRCQfsnnz5ri4uP5WA4DS0tJp06aVlpZK05k+fTrnvCcId0tf1G00f7ql+4AMoF3LXj/kpN8HAbR7CgQCwWBQZjWy6iBZoczH5XJZ85Nw1e7s7Ny6dWt+fr5hGMuXL1+1atXNmzfvZA9st9t1XR8+fPjLL7+MiIxxi+5vEPXvAsTe0n3WoY3bwDI3DTnp9xEDGGOnT58uKioKBoM2m800zYSEhOjoaABwuVyISBI/c+bMwYMHW1tbKbchbmhaiF7b7fbdu3evXLmyuLj4TkILcUD33bdv3+jRo4UQnDMABMaxdp34aadV9xl08OwN3VF3qEm/FwEkxKampjlz5lDJgSQ7b948Ev0jjzwSFRXl8/kYY21tbc8884xMYBAxNTU1KysrpJRGxpSWllZeXg4AbW1tA0eXiIiIyMjIBx54YM6cOYWFhZmZmbekDyT9fyDr0X3KebI3sYwNQ1T6vQgwTdNms505c6arq8vpdFI+PmbMmMLCQgoMKSkpy5Yt27Fjh91uF0JIj0TZ/SuvvEIWQDGcBE2xhOyGjq2nrDHf4XAIIV544YXi4mJN06KionqiEev2PBf+Lhp3S+mH5DwCQVgCEq1Jj0c7j/5SL2uCK4SwetTwamDIhJAbWS24X4/f8/p9EECrlJeXCyG6uroAICcn54svvhgxYgQFBiFEUVHRzz//vH///pB1V6xYsWLFCnLfiChreVR4YD1ARJ/PR+KQB7quy/qdpmnDhg2jd2CMSemL2vXYsOuW9JFx1sHHvcbS16EwgIW/V+gO447i4QCrDDjBWjS0lgnuwgIoUdF13ev1Pvzwwx6PZ+7cuYsXL46NjbWWYtxud2lp6QcffPDZZ5/V19czxiZOnLhkyZJFixZJg3C5XJMnTyaxJiUlWZ/Y4XBMmTKF6ImKirLb7QCQmJg4YcKEyMhIr9ebmppK5qJp2q2oW7sBG/5hkT5w6ODjNrP0tSBMxm0AcOrUqerq6paWFk3T4uPjs7Ozp0yZEhMTAwCHDx9ubm4mq7Vqm2maHo9n3rx5VOrgnJ85c+bHH390uVy083juuefIEGVmWFNTc+rUKXIPdFVsbOyMGTMSEhJohDF29erVQ4cOhWclnPNgMDht2rTc3Nxe1a1edUUhgsFgMBgMqY9aJ8jxq1evXrt2LWScjqmWEAwGDcMIKf7pFsj5XV1duq53dXVZbtdT47ywzjgUoZcl6mXxellC8FCCURaJDdsQUZi6EObly5effPLJ8KR569atdLupU6f2p32TJk0yTZMci2majz76qPXsV199RdUUWgcRi4qKwhcZOXJkSUmJnFNdXT2Avr/99ttyZh/VUCqKWdPBEIuTXlXTNMroLQoLd2KD4aes9b5ebcWenAflXheBs06e8zqkrQE0ERgDVlBQUF5ezjmnZ0BEp9MZDAalvsfExDgcDs45FRllDVEIMWzYMHKMnPPa2tqamhry++QMjhw5smDBgpAcQdM0m81GNS5N00zTvHTpUkFBQWdnJwVLTdPcbjdpkgwG9I6mabrd7tukoWQ1AwtRvmp4HAsxvXDF7PNU70HsznkurBUNO3t5HtbJc7awtNWApkDGOa+vr//mm28o8BiGQStQOKF+EQDcuHEjGAz2ue+7fv26dC/Hjh0LBAIkXLKJyspKv98fEREhH48MhdwXda5kNrF+/fq8vLzc3Fxd12XJPaTNJYPibfYBd17kuVenLINS+r1zHgTGOrWcNyDt1e6ME5HyWvIhZLuffvrp1KlTq6urDxw4kJKSQisvXLhw7NixhmF8+eWXlFzYbLZnn33W7XZnZmZKCR47dkyqAsWzhoaGqqqqmTNnhmQ+ND8/Pz8/P3/37t319fUOhyMYDO7fvz83N/fBBx9cvHixzWY7f/78qVOnyEoyMjJmzZoVCAQeeughawYYGgPuN7obWOL8auOQy+L3R+hlbmwsRkQUhjXqXLlyJTY2lvdg9uzZu3bt+uWXX8Ijk8/nk1UQt9tN7TY5p7m5mSJ2iKtct26djFuIuG3bNmlbb775JiJSQki9DeoSypt+8sknAOB0OgFgyZIl/b3z4GlWSN1/NUT3OXRo4zb36L5mTWNGjBixbNkyCkKIeOLEiZUrV6alpc2fP//ixYvk38lEbt68KRUZEdvb28mfkDM5fvx4e3s7xb/8/PyEhATyGMeOHZO5dcjj3rhx4+bNm4cPH5Yj5N9N06Rswu/3y1PBYNA0Tcpubl+Mu0/SBwCO/yoUDXvC/P7rLH1tz163lysQQmzcuDEvL4801GazUeG6vLx83rx51DelvVJIoJKNOfIGR48elaeWLl0qHUVNTU1NTU1ILZ24+fDDD8eOHfvRRx/JvZ5Mt6g/aPUzIU3DwUZA9/c8eP4Vs/GD3rpP0v97n5UGyrujo6OPHDmydevW5ORkwzAo1XE4HHV1dTt37pQBs7+6E+f8+vXrJ06coC2h0+n0eDwej4cyJcMwKDaE90Tb29tbWlqIQtM0c3Nzn376aVn3/V+Vo++D9JHB+VXiYgmE6H7uFpa2pr86D8Xes2fPlpeXb9q0qbm5ubKyMjk5WSY233///cA7YRLryZMnW1paSGGDweDMmTM///xzqelHjx4l2+qv10Qsvvfee9HR0fRIQ4gA7C7yn/+rcfHD3pWGTp7zBktbDSiAaX1W2Uh8H3/88fz58ydOnPjWW291dHRYO6lyTzNwSkb+hzwSY4y+dJJNiKqqqosXL1oJoKvi4uLkVwRCiK+//vqetST/vz1P7avi54+QPcDA6JG+V8spgrTCgb9uI6FcuHCBMUbO2hoeDMOYPHky8dSfEWia5vP5KioqaJr8MEAe0ITKysr09HTrVbquL1myZMyYMcuXLycOdu7cuXDhwpkzZ962STVILAABAISB/3zZbNgTIn2e++ZtpU8CampqOnv2LPU+XS6X0+m02+1UdcnKylq2bBn5B0mY1gNZx/3hhx+amproqoSEhOnTp0+dOnX69OkTJ06kz2o0TausrLRu8mkz7Pf7CwoKFi1aZBiG0+nknK9evVrXdfqwgZRATh6gxnd/XRAHZzxjdkQTGEcEkj4b87c7/LKzs7MzOzubJB4IBKimBACzZ88uKyuLj4+Xux4hxB9//EF5p9frlXq6b98+SvMNw1ixYsXJkydPnDjx7bffVlRUuFwuSigPHDjQ2NhItzMMg356vV5E3LVrV1pamt/vN03z3Llza9eulcpBrszn89HkweaCGAAA4yxrC7dFw4UtQrg58/Hct9iYVXcifVLhnJyc6urq6urqc+fOtbS0CCHi4uImTZo0Y8YMuaElccTExJSUlAQCAdLi4cOH0zqPP/54VlaWw+EwDOOpp56Cnk/N4uPj9+7de+nSJSpOEIvz58+PiYlxu92dnZ2TJk2iafv37z9+/Dh1Z2UlFQBmzZr1zjvvuFyuQCAwfvz40A2wfJH7/L+poglMw4vviH9t4jn/xdL+eldfNff3ubVMTv6NLznCG+D/xgPchSYOgv/OFgEY/vHfLO4xOr5bkclO9cBtE0orQ7pd1n5ZyEYp/JS1IybvYh20lib7Gx+EBPRiAv5kGDS1IBR/QukPJgLYn/TXBdVvSSoCFAEKigBFgIIiQBGgoAhQBCgoAhQBCooARYCCIkARoKAIUAQoKAIUAQqKAEWAgiJAEaCgCFAEKCgCFAEKigBFgIIiQBGgoAhQBCgoAhQBCooARYCCIkARoKAIUAQoKAIUAQqKAEWAwh3ifwBow0pcSduWpwAAAABJRU5ErkJggg=='; // logo Jumpstart di atas latar putih
+document.getElementById('fav').href = FAVICON_SRC;
+document.getElementById('favApple').href = FAVICON_SRC;
+const LS = { url: 'planner_gas_url', sku: 'planner_sku_cache', ovr: 'planner_overrides', role: 'planner_role' };
+const GAS_URL = () => localStorage.getItem(LS.url) || DEFAULT_GAS_URL;
+const gasReady = () => /^https:\/\/script\.google\.com\/.+\/exec/.test(GAS_URL());
+
+const state = {
+  sku: [], skuById: new Map(), skuByKey: new Map(), skuIdx: new Map(), skuEntries: [],
+  excelIds: new Map(),            // normName -> ID dari baris "Need Refill 2" di Excel (cadangan)
+  overrides: JSON.parse(localStorage.getItem(LS.ovr) || '{}'),
+  drivers: [], sheets: [], fileName: '', cache: new Map(), role: localStorage.getItem(LS.role) || 'admin'
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cleanName = s => String(s ?? '').replace(/[\u00a0\u200b]/g, ' ').replace(/\s+/g, ' ').trim();
+const norm = s => String(s ?? '').normalize('NFKD').toLowerCase()
+  .replace(/[\u00a0\u200b]/g, ' ').replace(/[^a-z0-9\s]/g, ' ')
+  .replace(/(\d)\s+(gr|g|ml|mg|l|s|pcs|ply|sheets)\b/g, '$1$2').replace(/\s+/g, ' ').trim();
+const idKey = v => String(v ?? '').trim().toUpperCase().replace(/^P(?=\d)/, '').replace(/^0+(?=\d)/, ''); // "P2634" == "2634"
+const fmt = n => new Intl.NumberFormat('id-ID').format(n);
+
+function toast(msg, ms = 2600) {
+  const t = $('toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add('hidden'), ms);
+}
+function setStatus(ok, text) {
+  const c = ok === null ? 'bg-slate-500' : ok ? 'bg-emerald-400' : 'bg-red-400';
+  ['dot', 'dotM'].forEach(id => $(id).className = 'h-2 w-2 rounded-full ' + c);
+  $('statusText').textContent = text;
+}
+
+/* =====================================================================
+   SKU (Source SKU) + AI SMART MATCH
+   ===================================================================== */
+function bigrams(s) {
+  const t = s.replace(/\s/g, ''), out = new Set();
+  for (let i = 0; i < t.length - 1; i++) out.add(t.slice(i, i + 2));
+  return out;
+}
+function setSku(items) {
+  state.sku = items;
+  state.skuById = new Map(items.map(i => [String(i.id), i]));
+  state.skuByKey = new Map(items.map(i => [idKey(i.id), i]));
+  state.skuIdx = new Map();
+  state.skuEntries = items.map(i => {
+    const n = norm(i.name), tok = new Set(n.split(' ')), e = {
+      id: String(i.id), name: i.name, n, tok, bg: bigrams(n),
+      nums: new Set([...tok].filter(x => /\d/.test(x)))
+    };
+    if (!state.skuIdx.has(n)) state.skuIdx.set(n, e);
+    return e;
+  });
+  const dl = $('skuList');
+  dl.innerHTML = items.map(i => `<option value="${esc(i.id + ' — ' + i.name)}"></option>`).join('');
+  state.cache.clear();
+}
+function similarity(a, b) {
+  let inter = 0; a.bg.forEach(x => { if (b.bg.has(x)) inter++; });
+  const dice = (2 * inter) / ((a.bg.size + b.bg.size) || 1);
+  let ti = 0; a.tok.forEach(x => { if (b.tok.has(x)) ti++; });
+  const jac = ti / ((a.tok.size + b.tok.size - ti) || 1);
+  let s = 0.6 * dice + 0.4 * jac;
+  const sameNums = a.nums.size === b.nums.size && [...a.nums].every(x => b.nums.has(x));
+  if (!sameNums) s -= 0.2;                       // ukuran/gramasi berbeda -> bukan produk yang sama
+  return s;
+}
+function matchName(raw, key) {
+  if (state.cache.has(key)) return state.cache.get(key);
+  let res;
+  const ex = state.skuIdx.get(key), xl = state.excelIds.get(key);
+  if (ex) res = { id: ex.id, type: 'exact', score: 1, skuName: ex.name };
+  else {
+    const probe = { n: key, tok: new Set(key.split(' ')), bg: bigrams(key) };
+    probe.nums = new Set([...probe.tok].filter(x => /\d/.test(x)));
+    let best = null, bs = 0;
+    for (const e of state.skuEntries) { const s = similarity(probe, e); if (s > bs) { bs = s; best = e; } }
+    if (best && bs >= 0.9) res = { id: best.id, type: 'ai', score: bs, skuName: best.name };
+    else if (best && xl && xl === best.id && bs >= 0.6) res = { id: best.id, type: 'ai', score: Math.max(bs, .9), skuName: best.name };
+    else if (xl) res = { id: xl, type: 'excel', score: 0, skuName: state.skuById.get(xl)?.name || '' };
+    else if (best && bs >= 0.72) res = { id: best.id, type: 'review', score: bs, skuName: best.name };
+    else res = { id: '', type: 'none', score: bs, skuName: best ? best.name : '' };
+  }
+  state.cache.set(key, res); return res;
+}
+function resolve(it) {
+  const key = norm(it.name), ov = state.overrides[key];
+  if (ov) return { id: ov, type: 'manual', score: 1, skuName: state.skuById.get(ov)?.name || '' };
+  if (it.savedId !== undefined) return it.savedId ? { id: it.savedId, type: 'saved', score: 1, skuName: '' } : { id: '', type: 'none', score: 0, skuName: '' };
+  return matchName(it.name, key);
+}
+
+async function loadSku(force = false) {
+  const cached = localStorage.getItem(LS.sku);
+  if (!gasReady()) {
+    if (cached) { setSku(JSON.parse(cached)); setStatus(false, `GAS belum diatur · SKU cache ${state.sku.length}`); }
+    else setStatus(false, 'URL GAS belum diatur');
+    return;
+  }
+  try {
+    setStatus(null, 'Memuat SKU…');
+    const r = await (await fetch(`${GAS_URL()}?action=getSKU${force ? '&refresh=1' : ''}`)).json();
+    if (!r.ok) throw new Error(r.error);
+    setSku(r.items); localStorage.setItem(LS.sku, JSON.stringify(r.items));
+    setStatus(true, `Terhubung · ${r.items.length} produk SKU`);
+    if (force) toast('Data SKU dimuat ulang'); render();
+  } catch (e) {
+    if (cached) { setSku(JSON.parse(cached)); setStatus(false, `Offline · SKU cache ${state.sku.length}`); render(); }
+    else setStatus(false, 'Gagal memuat SKU');
+    toast('Gagal terhubung ke GAS: ' + e.message, 4000);
+  }
+}
+
+/* =====================================================================
+   IMPORT & PARSE EXCEL
+   Struktur file: baris driver (kol. VMC No = nama driver, kol. Location Name = plat)
+   diikuti baris lokasi; kolom produk dimulai setelah "Last Visit".
+   ===================================================================== */
+/* ---- Sheet Excel: setiap lokasi & item membawa nama sheet asalnya; driver yang sama di beberapa sheet digabung ---- */
+function collectSheets() {
+  const s = [];
+  state.drivers.forEach(d => d.locations.forEach(l => { if (l.sheet && !s.includes(l.sheet)) s.push(l.sheet); }));
+  state.sheets = s;
+}
+const multiSheet = () => state.sheets.length > 1;
+const sheetIdx = s => Math.max(0, state.sheets.indexOf(s));
+const shChip = (s, extra = '') => multiSheet() && s ? `<span class="sh-chip sh-${sheetIdx(s) % 6}" title="Asal sheet Excel: ${esc(s)}">${esc(s)}${extra}</span>` : '';
+const shBreak = map => multiSheet() && map && map.size ? `<div class="mt-1 flex flex-wrap gap-1">${[...map].map(([s, q]) => shChip(s, ` · ${fmt(q)}`)).join('')}</div>` : '';
+const sheetList = ds => [...new Set(ds.flatMap(d => d.locations.map(l => l.sheet)).filter(Boolean))];
+const sheetNote = r => multiSheet() && r.bySheet && r.bySheet.size ? `<div class="pp-sh">${[...r.bySheet].map(([s, q]) => esc(s) + ': ' + fmt(q)).join(' · ')}</div>` : '';
+
+function parseWorkbook(wb) {
+  const map = new Map(); state.excelIds = new Map();
+  wb.SheetNames.forEach(sn => {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: null, raw: true });
+    const hi = rows.findIndex(r => r.some(c => typeof c === 'string' && c.trim() === 'Location Name'));
+    if (hi < 0) return;
+    const H = rows[hi].map(c => typeof c === 'string' ? c.trim() : c);
+    const cLoc = H.indexOf('Location Name'), cVmc = H.indexOf('VMC No'), cId = H.indexOf('Loc ID');
+    const cLast = H.indexOf('Last Visit'), cStat = H.indexOf('Status');
+    if (cLast < 0) return;
+
+    const prod = [];
+    for (let c = cLast + 1; c < H.length; c++) if (typeof H[c] === 'string' && H[c].trim()) prod.push({ c, name: cleanName(H[c]) });
+
+    // ID dari Excel (baris "Need Refill 2") -> hanya cadangan bila SKU tidak ketemu
+    const idRow = rows.slice(0, hi).find(r => typeof r[cStat] === 'string' && r[cStat].trim() === 'Need Refill 2');
+    if (idRow) prod.forEach(p => { const v = idRow[p.c]; if (v !== null && v !== '') state.excelIds.set(norm(p.name), String(v).trim()); });
+
+    let cur = null;
+    for (const r of rows.slice(hi + 1)) {
+      const vmc = r[cVmc], loc = r[cLoc], lid = r[cId];
+      const isDriver = !lid && typeof vmc === 'string' && vmc.trim() && loc;
+      if (isDriver) {
+        const driver = vmc.trim(), plate = cleanName(loc).toUpperCase(), key = driver.toUpperCase() + '|' + plate;
+        if (!map.has(key)) map.set(key, { key, driver, plate, locations: [] });
+        cur = map.get(key); continue;
+      }
+      if (!cur || !loc || !(lid || typeof vmc === 'number')) continue;
+      const items = prod.map(p => ({ name: p.name, qty: Number(r[p.c]) || 0, sheet: sn })).filter(i => i.qty > 0);
+      if (items.length) cur.locations.push({ id: lid ? String(lid).trim() : '', name: cleanName(loc), vmc: vmc == null ? '' : String(vmc).trim(), sheet: sn, items });
+    }
+  });
+  return [...map.values()].filter(d => d.locations.length);
+}
+
+async function handleFile(f) {
+  if (!f) return;
+  try {
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const drivers = parseWorkbook(wb);
+    if (!drivers.length) return toast('Format tidak dikenali: kolom "Location Name" / "Last Visit" tidak ditemukan', 4500);
+    state.drivers = drivers; state.fileName = f.name; state.cache.clear();
+    state.sheets = wb.SheetNames.filter(sn => drivers.some(d => d.locations.some(l => l.sheet === sn)));
+    $('fileName').textContent = f.name;
+    $('btnSave').disabled = false;
+    buildDriverSelect(); render();
+    toast(`Import berhasil: ${drivers.length} driver dari ${state.sheets.length} sheet (${state.sheets.join(', ')})`, 4000);
+  } catch (e) { toast('Gagal membaca file: ' + e.message, 4500); }
+}
+
+/* =====================================================================
+   TOTAL PER PRODUK (Satuan / UOM / UOP dari sheet "Source SKU")
+   Satuan = unit dasar (qty di Excel dihitung dalam satuan ini).
+   UOM / UOP = isi per kemasan (angka pertama di sel, mis. "12" atau "Box 12").
+   Qty dipecah dari kemasan terbesar ke terkecil, sisanya dalam Satuan.
+   ===================================================================== */
+const numOf = v => { const m = String(v ?? '').match(/\d+(?:[.,]\d+)?/); return m ? parseFloat(m[0].replace(',', '.')) : 0; };
+const labelOf = v => String(v ?? '').replace(/[\d.,()@×=:\/+-]+/g, ' ').replace(/\bx\b/gi, ' ').replace(/\s+/g, ' ').trim();
+
+/* Cari baris Source SKU untuk satu item: lewat ID (tanpa peduli awalan "P"), lalu lewat nama. */
+function skuFor(it, m) {
+  if (m.id) { const s = state.skuById.get(String(m.id)) || state.skuByKey.get(idKey(m.id)); if (s) return s; }
+  const mm = matchName(it.name, norm(it.name));
+  if (mm.id && (mm.type === 'exact' || mm.type === 'ai')) return state.skuById.get(String(mm.id)) || null;
+  return null;
+}
+/* UOM = jumlah isi per kemasan (angka), UOP = jenis kemasan (teks, boleh juga ada angkanya).
+   Contoh: UOM "24" + UOP "Karton"  ->  1 Karton = 24 Pcs. */
+function unitInfo(s) {
+  const info = { known: !!s, satuan: s ? (cleanName(s.satuan) || 'Pcs') : 'qty', tiers: [], single: false };
+  if (!s) return info;
+  const sat = info.satuan.toLowerCase();
+  const lab = v => { const t = labelOf(v); return t && t.toLowerCase() !== sat ? t : ''; };
+  const uom = { n: numOf(s.uom), t: lab(s.uom) }, uop = { n: numOf(s.uop), t: lab(s.uop) };
+  if (uom.n > 1 && uop.n > 1 && uom.n !== uop.n) {
+    info.tiers.push({ f: uop.n, label: uop.t || 'UOP' }, { f: uom.n, label: uom.t || 'UOM' });
+  } else {
+    const f = Math.max(uom.n, uop.n);
+    if (f > 1) info.tiers.push({ f, label: uop.t || uom.t || 'Carton' });
+  }
+  info.tiers.sort((a, b) => b.f - a.f);
+  // UOM/UOP terisi tetapi isi per kemasan = 1 (produk satuan, mis. UOM 1 + UOP Pcs) -> bukan "kosong", hanya tanpa konversi
+  info.single = !!s && !info.tiers.length && Math.max(uom.n, uop.n) === 1;
+  return info;
+}
+function breakdown(qty, info) {
+  let r = qty; const parts = [];
+  info.tiers.forEach(t => { const n = Math.floor(r / t.f); if (n > 0) parts.push({ n, label: t.label }); r = Math.round((r - n * t.f) * 1000) / 1000; });
+  if (r > 0 || !parts.length) parts.push({ n: r, label: info.satuan });
+  return parts;
+}
+function totalsFor(drivers) {
+  const map = new Map();
+  drivers.forEach(d => d.locations.forEach(l => l.items.forEach(it => {
+    const m = resolve(it), sku = skuFor(it, m), id = sku ? String(sku.id) : m.id;
+    const key = id ? 'id:' + idKey(id) : 'nm:' + norm(it.name);
+    let e = map.get(key);
+    if (!e) { e = { id, sku, name: sku ? sku.name : it.name, qty: 0, locs: new Set(), bySheet: new Map() }; map.set(key, e); }
+    e.qty += it.qty; e.locs.add(d.key + '|' + (l.sheet || '') + '|' + l.name);
+    const sh = it.sheet || l.sheet || ''; if (sh) e.bySheet.set(sh, (e.bySheet.get(sh) || 0) + it.qty);
+  })));
+  return [...map.values()].sort((a, b) => b.qty - a.qty);
+}
+function totalBadge(e) {
+  const info = unitInfo(e.sku), parts = breakdown(e.qty, info), has = info.tiers.length > 0;
+  const conv = has ? parts.map(p => `<b class="num">${fmt(p.n)}</b> ${esc(p.label)}`).join(' + ') : '';
+  const packs = has ? info.tiers.map(t => `1 ${t.label} = ${fmt(t.f)} ${info.satuan}`).join(' · ') : '';
+  const tip = `${e.name} — ${fmt(e.qty)} ${info.satuan} dari ${e.locs.size} lokasi` + (e.sku ? ` · UOM: ${cleanName(e.sku.uom) || '-'} · UOP: ${cleanName(e.sku.uop) || '-'}` : '');
+  const note = has ? `<div class="mt-1 text-[11px] text-indigo-700">${conv}</div><div class="text-[10px] text-slate-400">${esc(packs)}</div>`
+    : info.single ? `<div class="mt-1 text-[10px] text-slate-400">Produk satuan · 1 ${esc(info.satuan)} (tanpa konversi kemasan)</div>`
+    : `<div class="mt-1 text-[10px] text-amber-600">${e.sku ? 'UOM / UOP kosong di Source SKU' : 'Tidak ada di Source SKU · UOM / UOP tidak terbaca'}</div>`;
+  const warn = !e.id ? 'ring-red-200 bg-red-50/40' : 'ring-slate-200 bg-white';
+  return `<div class="rounded-xl px-3 py-2 ring-1 ${warn}" title="${esc(tip)}">
+    <div class="flex items-baseline justify-between gap-2">
+      <span class="font-mono text-[11px] font-semibold text-slate-500">${e.id ? esc(e.id) : 'ID —'}</span>
+      <span class="num text-base font-bold">${fmt(e.qty)} <span class="text-xs font-medium text-slate-500">${esc(info.satuan)}</span></span>
+    </div>
+    <div class="clamp2 mt-0.5 text-xs leading-snug text-slate-700">${esc(e.name)}</div>
+    ${note}${shBreak(e.bySheet)}
+    <div class="mt-0.5 text-[10px] text-slate-400">${e.locs.size} lokasi</div>
+  </div>`;
+}
+const driverQty = d => d.locations.reduce((a, l) => a + l.items.reduce((x, i) => x + i.qty, 0), 0);
+function renderGrand() {
+  const scope = state.drivers;
+  const list = totalsFor(scope), qty = list.reduce((a, e) => a + e.qty, 0);
+  const locs = scope.reduce((a, d) => a + d.locations.length, 0);
+
+  $('grandTitle').textContent = multiSheet() ? 'Total semua driver · semua sheet' : 'Total semua driver';
+  $('grandMeta').textContent = `${state.drivers.length} driver · ${fmt(locs)} lokasi · ${fmt(list.length)} produk · ${fmt(qty)} total qty${multiSheet() ? ` · gabungan ${state.sheets.length} sheet` : ''}`;
+
+  $('grandGrid').innerHTML = list.map(totalBadge).join('');
+
+  const hint = $('grandHint'), miss = list.filter(e => { const u = unitInfo(e.sku); return !u.tiers.length && !u.single; });
+  if (state.sku.length && miss.length) {
+    const names = miss.slice(0, 4).map(e => esc((e.id ? e.id + ' ' : '') + e.name)).join('; ');
+    hint.innerHTML = `<b>${miss.length}</b> dari ${list.length} produk belum punya konversi UOM / UOP (tampil dalam Satuan saja): ${names}${miss.length > 4 ? '…' : ''}. Cek ID-nya di sheet <i>Source SKU</i> dan isi kolom UOM (angka isi per kemasan) &amp; UOP (jenis kemasan), lalu klik “Muat ulang data SKU”.`;
+    hint.classList.remove('hidden');
+  } else hint.classList.add('hidden');
+}
+
+function selectedDriver() { const k = $('driverSel').value; return state.drivers.find(d => d.key === k) || null; }
+function renderDriverTotals() {
+  const d = selectedDriver(), grid = $('dtGrid');
+  $('driverTotals').classList.toggle('hidden', !state.drivers.length);
+  $('btnPrintDriverTotal').classList.toggle('hidden', !d);
+  $('dtHint').classList.toggle('hidden', !!d);
+  grid.classList.toggle('hidden', !d); grid.classList.toggle('grid', !!d);
+  if (!d) { $('dtTitle').textContent = 'Total per driver'; $('dtMeta').textContent = ''; grid.innerHTML = ''; return; }
+  const list = totalsFor([d]), qty = list.reduce((a, e) => a + e.qty, 0);
+  $('dtTitle').textContent = `Total ${d.driver} · ${d.plate}`;
+  $('dtMeta').textContent = `${fmt(d.locations.length)} lokasi · ${fmt(list.length)} produk · ${fmt(qty)} total qty${multiSheet() ? ' · sheet: ' + sheetList([d]).join(' + ') : ''}`;
+  grid.innerHTML = list.map(totalBadge).join('');
+}
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+const CHECK_TYPES = ['review', 'none', 'excel'];
+
+function buildDriverSelect() {
+  $('driverSel').innerHTML = '<option value="">Semua driver</option>' +
+    state.drivers.map(d => `<option value="${esc(d.key)}">${esc(d.driver)} · ${esc(d.plate)}</option>`).join('');
+}
+function badge(it, m) {
+  const id = m.id ? `<span class="font-mono font-semibold num">${esc(m.id)}</span>` : '<span class="text-slate-300">—</span>';
+  const btn = (cls, txt, tip) => ` <button data-fix="${esc(it.name)}" title="${esc(tip)}" class="no-print rounded-full px-2 py-0.5 text-[10px] font-semibold ${cls}">${txt}</button>`;
+  switch (m.type) {
+    case 'ai':     return id + btn('bg-indigo-100 text-indigo-700', `AI ${Math.round(m.score * 100)}%`, `Dicocokkan ke: ${m.skuName}`);
+    case 'review': return id + btn('bg-amber-100 text-amber-800', `Cek ${Math.round(m.score * 100)}%`, `Kemungkinan: ${m.skuName}`);
+    case 'excel':  return id + btn('bg-slate-200 text-slate-700', 'ID Excel', 'Tidak ada di Source SKU — memakai ID dari file Excel');
+    case 'manual': return id + btn('bg-teal-100 text-teal-700', 'Manual', 'Dipilih manual');
+    case 'none':   return id + btn('bg-red-100 text-red-700', 'Tidak ditemukan', 'Klik untuk memilih ID manual');
+    default:       return id;
+  }
+}
+function filtered() {
+  const q = norm($('search').value), dv = $('driverSel').value, only = $('onlyCheck').checked;
+  return state.drivers.map(d => {
+    if (dv && d.key !== dv) return null;
+    const locs = d.locations.map(l => {
+      const items = l.items.map(it => ({ it, m: resolve(it) })).filter(({ it, m }) => {
+        if (only && !CHECK_TYPES.includes(m.type)) return false;
+        if (q && !norm(`${l.name} ${it.name} ${m.id} ${d.driver} ${d.plate}`).includes(q)) return false;
+        return true;
+      });
+      return items.length ? { ...l, items } : null;
+    }).filter(Boolean);
+    return locs.length ? { ...d, locs } : null;
+  }).filter(Boolean);
+}
+function stats() {
+  let loc = 0, item = 0, qty = 0, chk = 0, ai = 0;
+  state.drivers.forEach(d => d.locations.forEach(l => { loc++; l.items.forEach(it => {
+    item++; qty += it.qty; const t = resolve(it).type;
+    if (CHECK_TYPES.includes(t)) chk++; if (t === 'ai') ai++;
+  }); }));
+  return { drivers: state.drivers.length, loc, item, qty, chk, ai };
+}
+function render() {
+  const has = state.drivers.length > 0;
+  $('empty').classList.toggle('hidden', has);
+  $('toolbar').classList.toggle('hidden', !has); $('toolbar').classList.toggle('flex', has);
+  $('insight').classList.toggle('hidden', !has); $('grandTotals').classList.toggle('hidden', !has);
+  $('printBar').classList.toggle('hidden', !has); $('printBar').classList.toggle('flex', has);
+  if (!has) { $('stats').innerHTML = ''; $('result').innerHTML = ''; return; }
+
+  const s = stats();
+  const chip = (label, val, tone = '') => `<div class="stat"><div class="text-xs text-slate-500">${label}</div><div class="num v ${tone}">${fmt(val)}</div></div>`;
+  $('stats').innerHTML = chip('Driver', s.drivers) + chip('Lokasi', s.loc) + chip('Item Produk', s.item) + chip('Total Qty', s.qty) +
+    chip('Perlu Dicek', s.chk, s.chk ? 'text-amber-600' : 'text-emerald-600');
+  renderInsight(s); renderGrand(); renderDriverTotals();
+
+  const open = new Set([...document.querySelectorAll('.driver-card[data-open="1"]')].map(e => e.dataset.key));
+  const firstRender = !document.querySelector('.driver-card');
+  const data = filtered();
+  $('result').innerHTML = data.length ? data.map(d => {
+    let dq = 0, di = 0; d.locs.forEach(l => l.items.forEach(({ it }) => { dq += it.qty; di++; }));
+    const shc = new Map(); d.locs.forEach(l => shc.set(l.sheet || '', (shc.get(l.sheet || '') || 0) + 1));
+    const isOpen = firstRender || open.has(d.key);
+    const body = d.locs.map(l => l.items.map(({ it, m }, i) => `
+      <tr class="border-t border-slate-100 align-top">
+        ${i === 0 ? `<td rowspan="${l.items.length}" class="w-1/3 bg-slate-50/70 px-4 py-3 text-sm font-medium">${esc(l.name)}${l.sheet && multiSheet() ? `<div class="mt-1">${shChip(l.sheet)}</div>` : ''}<div class="mt-1 text-[11px] font-normal text-slate-400">${l.items.length} item · ${fmt(l.items.reduce((a, x) => a + x.it.qty, 0))} qty</div></td>` : ''}
+        <td class="px-3 py-2 text-sm whitespace-nowrap">${badge(it, m)}</td>
+        <td class="px-3 py-2 text-sm">${esc(it.name)}</td>
+        <td class="num px-4 py-2 text-right text-sm font-semibold">${fmt(it.qty)}</td>
+      </tr>`).join('')).join('');
+    return `
+    <article class="driver-card overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200" data-key="${esc(d.key)}" data-open="${isOpen ? 1 : 0}">
+      <button class="toggle flex w-full items-center justify-between gap-3 px-4 py-3 text-left md:px-5">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">${esc(d.driver.slice(0, 2).toUpperCase())}</div>
+          <div class="min-w-0">
+            <div class="truncate font-semibold">${esc(d.driver)}</div>
+            <div class="mt-0.5 flex flex-wrap items-center gap-1"><span class="inline-block rounded-md border border-slate-300 bg-slate-50 px-2 py-0.5 font-mono text-xs font-semibold tracking-wide">${esc(d.plate)}</span>${[...shc].map(([s, n]) => shChip(s, ` · ${n} lokasi`)).join('')}</div>
+          </div>
+        </div>
+        <div class="text-right text-xs text-slate-500"><div><b class="num text-slate-800">${d.locs.length}</b> lokasi · <b class="num text-slate-800">${di}</b> item</div><div>Total <b class="num text-slate-800">${fmt(dq)}</b> qty</div></div>
+      </button>
+      <div class="card-body border-t border-slate-200 ${isOpen ? '' : 'collapsed'}">
+        <div class="overflow-x-auto"><table class="min-w-[640px] w-full">
+          <thead class="bg-slate-100 text-left text-xs font-semibold text-slate-600">
+            <tr><th class="px-4 py-2">Location Name</th><th class="px-3 py-2">ID Product</th><th class="px-3 py-2">Product</th><th class="px-4 py-2 text-right">Qty</th></tr>
+          </thead>
+          <tbody>${body}</tbody>
+        </table></div>
+      </div>
+    </article>`;
+  }).join('') : '<div class="rounded-2xl bg-white p-8 text-center text-slate-500 ring-1 ring-slate-200">Tidak ada data yang cocok dengan filter.</div>';
+}
+function renderInsight(s) {
+  const lines = [];
+  const perDriver = state.drivers.map(d => ({ d, q: d.locations.reduce((a, l) => a + l.items.reduce((x, i) => x + i.qty, 0), 0) })).sort((a, b) => b.q - a.q);
+  if (perDriver.length > 1) lines.push(`Muatan terbesar: <b>${esc(perDriver[0].d.driver)}</b> (${fmt(perDriver[0].q)} qty), terkecil: <b>${esc(perDriver.at(-1).d.driver)}</b> (${fmt(perDriver.at(-1).q)} qty).`);
+  const prod = new Map(); state.drivers.forEach(d => d.locations.forEach(l => l.items.forEach(i => prod.set(i.name, (prod.get(i.name) || 0) + i.qty))));
+  const top = [...prod.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (top) lines.push(`Produk paling banyak disiapkan: <b>${esc(top[0])}</b> (${fmt(top[1])} qty).`);
+  if (multiSheet()) lines.push(`Data berasal dari <b>${state.sheets.length} sheet</b> Excel: ${state.sheets.map(sn => shChip(sn, ` · ${state.drivers.reduce((a, d) => a + d.locations.filter(l => l.sheet === sn).length, 0)} lokasi`)).join(' ')} — total per produk &amp; per driver adalah gabungan semua sheet.`);
+  lines.push(s.chk ? `<b>${s.chk}</b> baris ID perlu dicek (ditandai kuning/merah/abu). Klik labelnya untuk memilih ID yang benar.`
+                   : 'Semua ID produk cocok dengan Source SKU.');
+  if (s.ai) lines.push(`${s.ai} baris dicocokkan otomatis oleh AI Smart Match (nama berbeda penulisan, tetap terdeteksi).`);
+  if (!state.sku.length) lines.push('Data Source SKU belum termuat — cek URL GAS agar ID produk terisi.');
+  $('insightList').innerHTML = lines.map(l => `<li>${l}</li>`).join('');
+}
+
+/* =====================================================================
+   AKSI: simpan / muat / export / manual fix
+   ===================================================================== */
+function flatRows() {
+  const map = new Map();
+  state.drivers.forEach(d => d.locations.forEach(l => l.items.forEach(it => {
+    const m = resolve(it), key = [d.driver, d.plate, l.vmc || '', l.name, m.id, it.name, l.sheet || ''].join('|').toLowerCase();
+    if (map.has(key)) map.get(key).qty += it.qty;
+    else map.set(key, { driver: d.driver, plate: d.plate, vmc: l.vmc || '', location: l.name, productId: m.id, productName: it.name, qty: it.qty, sheet: l.sheet || '' });
+  })));
+  return [...map.values()];
+}
+const qtyText = (qty, sku) => breakdown(qty, unitInfo(sku)).map(p => `${fmt(p.n)} ${p.label === 'qty' ? 'Pcs' : p.label}`).join(' + ');
+const totalsPayload = () => totalsFor(state.drivers).map(e => ({ id: e.id, name: e.name, qty: e.qty, sku: e.sku })).sort(byId)
+  .map(e => ({ productId: e.id, productName: e.name, jumlah: qtyText(e.qty, e.sku) }));
+async function savePlan() {
+  if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
+  const date = $('planDate').value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toast('Isi Tanggal plan terlebih dahulu', 3500);
+  const unresolved = flatRows().filter(r => !r.productId).length;
+  if (unresolved && !confirm(`${unresolved} baris belum punya ID Product. Tetap simpan?`)) return;
+  const btn = $('btnSave'), label = btn.innerHTML; btn.disabled = true; btn.textContent = 'Menyimpan…';
+  try {
+    const r = await (await fetch(GAS_URL(), {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'savePlan', fileName: state.fileName, savedBy: 'Admin', planDate: date, rows: flatRows(), totals: totalsPayload(), bulkyAll: bulkyAllPayload(), bulkyDriver: bulkyDriverPayload() })
+    })).json();
+    if (!r.ok) throw new Error(r.error);
+    if (r.bulkyAllSaved === undefined) { // GAS yang ter-deploy masih versi lama (tidak mengenal data Bulky)
+      toast('Plan tersimpan, TAPI sheet Bulky belum tercatat: GAS yang ter-deploy masih versi lama. Tempel kode terbaru → Deploy > Manage deployments > Edit > New version → Deploy.', 9000);
+      btn.disabled = false; btn.innerHTML = label; return;
+    }
+    const skip = (r.skipped || 0) + (r.totalSkipped || 0) + (r.bulkyAllSkipped || 0) + (r.bulkyDriverSkipped || 0);
+    if (!r.saved && !r.totalSaved && !r.bulkyAllSaved && !r.bulkyDriverSaved) toast(`Data tanggal ${dateLong(date)} sudah ada di spreadsheet, tidak dicatat ulang`, 5000);
+    else toast(`Tercatat ${r.saved} baris plan + ${r.totalSaved || 0} total produk + ${r.bulkyAllSaved || 0} bulky all + ${r.bulkyDriverSaved || 0} bulky per-driver` + (skip ? ` · ${skip} baris sudah ada, dilewati` : ''), 5000);
+  } catch (e) { toast('Gagal menyimpan: ' + e.message, 4500); }
+  btn.disabled = false; btn.innerHTML = label;
+}
+async function loadLatest() {
+  if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
+  try {
+    const r = await (await fetch(`${GAS_URL()}?action=getLatestPlan`)).json();
+    if (!r.ok) throw new Error(r.error);
+    if (!r.rows.length) return toast('Belum ada plan yang disimpan');
+    const map = new Map();
+    r.rows.forEach(x => {
+      const key = x.driver.toUpperCase() + '|' + x.plate;
+      if (!map.has(key)) map.set(key, { key, driver: x.driver, plate: x.plate, locations: [], _l: new Map() });
+      const d = map.get(key);
+      const lk = x.location + '|' + (x.vmc || '') + '|' + (x.sheet || '');
+      if (!d._l.has(lk)) { const l = { id: '', name: x.location, vmc: x.vmc || '', sheet: x.sheet || '', items: [] }; d._l.set(lk, l); d.locations.push(l); }
+      d._l.get(lk).items.push({ name: x.productName, qty: x.qty, sheet: x.sheet || '', savedId: x.productId || '' });
+    });
+    state.drivers = [...map.values()]; collectSheets(); state.fileName = r.meta?.fileName || '';
+    const pd = r.meta?.planDate || (r.meta?.savedAt || '').slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(pd)) $('planDate').value = pd;
+    $('btnSave').disabled = true;
+    state.cache.clear(); buildDriverSelect(); render();
+    toast(`Plan ${r.planId} dimuat · disimpan ${r.meta?.savedAt || ''}`, 3500);
+  } catch (e) { toast('Gagal memuat plan: ' + e.message, 4500); }
+}
+function exportPlan() {
+  const ws = XLSX.utils.json_to_sheet(flatRows().map(r => ({ Driver: r.driver, 'Plat Nomor': r.plate, 'VMC No': r.vmc, 'Location Name': r.location, 'ID Product': r.productId, Product: r.productName, Qty: r.qty, 'Asal Sheet Excel': r.sheet })));
+  ws['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 55 }, { wch: 12 }, { wch: 48 }, { wch: 6 }, { wch: 18 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Planner');
+  XLSX.writeFile(wb, `Planner_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+/* ---- Bulky: total per produk (All Driver / Per-Driver) ----
+   All Driver : ID Product | Product | Jumlah UOM/UOP | Qty (Pcs) | Tanggal
+   Per-Driver : ID Product | Product | Jumlah UOM/UOP | Qty (Pcs) | Tanggal | Driver */
+const planDateVal = () => $('planDate').value || todayStr();
+const driverLabel = d => state.drivers.filter(x => x.driver === d.driver).length > 1 ? `${d.driver} (${d.plate})` : d.driver;
+const bulkyList = drivers => totalsFor(drivers).sort(byId)
+  .map(e => ({ productId: e.id || '', productName: e.name, jumlah: qtyText(e.qty, e.sku), qty: e.qty }));
+const bulkyAllPayload = () => bulkyList(state.drivers);
+const bulkyDriverPayload = () => state.drivers.flatMap(d => bulkyList([d]).map(x => ({ driver: driverLabel(d), ...x })));
+
+function exportBulky(mode) {
+  if (!state.drivers.length) return toast('Belum ada data plan', 3000);
+  const date = planDateVal(), perDriver = mode === 'bulkyDriver';
+  let rows, name;
+  if (perDriver) {
+    const d = selectedDriver();
+    if (!d) return toast('Pilih driver di dropdown filter terlebih dahulu', 3500);
+    rows = bulkyList([d]).map(x => ({ 'ID Product': x.productId, Product: x.productName, 'Jumlah UOM/UOP': x.jumlah, 'Qty (Pcs)': x.qty, Tanggal: date, Driver: driverLabel(d) }));
+    name = `Bulky_PerDriver_${driverLabel(d).replace(/[^\w-]+/g, '_')}_${date}.xlsx`;
+  } else {
+    rows = bulkyList(state.drivers).map(x => ({ 'ID Product': x.productId, Product: x.productName, 'Jumlah UOM/UOP': x.jumlah, 'Qty (Pcs)': x.qty, Tanggal: date }));
+    name = `Bulky_AllDriver_${date}.xlsx`;
+  }
+  if (!rows.length) return toast('Tidak ada produk untuk diexport', 3000);
+  const head = Object.keys(rows[0]);
+  const ws = XLSX.utils.json_to_sheet(rows, { header: head });
+  ws['!cols'] = [{ wch: 12 }, { wch: 52 }, { wch: 26 }, { wch: 11 }, { wch: 12 }, { wch: 22 }].slice(0, head.length);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, perDriver ? 'Bulky Per-Driver' : 'Bulky All Driver');
+  XLSX.writeFile(wb, name);
+  toast(`Export ${perDriver ? 'Bulky Per-Driver' : 'Bulky All Driver'}: ${rows.length} produk`, 3000);
+}
+function exportXlsx(mode) { return mode === 'bulkyAll' || mode === 'bulkyDriver' ? exportBulky(mode) : exportPlan(); }
+
+/* =====================================================================
+   LAPORAN CETAK / PDF
+   1) Total per produk (semua driver) · 2) Per driver, satu halaman per lokasi
+   Qty = jumlah total dalam Pcs (satuan dasar), BUKAN karton.
+   Kolom Return (Reject / Expired) dikosongkan untuk diisi tangan.
+   ===================================================================== */
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const dateLong = v => new Date((v || todayStr()) + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const byId = (a, b) => (!a.id) - (!b.id) || String(a.id).localeCompare(String(b.id), undefined, { numeric: true }) || a.name.localeCompare(b.name);
+/* ---- Kategori produk: MINUMAN selalu di atas, per lokasi ----
+   Prioritas: kolom Kategori di Source SKU (bila ada) -> tebakan dari nama produk. */
+const DRINK_CATS = [
+  ['Air Mineral', ['aqua', 'le minerale', 'minerale', 'air mineral', 'mineral', 'mineral water', 'air minum', 'cleo', 'club', 'vit', 'equil', 'pristine', 'ron 88', 'nestle pure life', 'prima']],
+  ['Teh', ['teh', 'tea', 'sosro', 'frestea', 'pucuk', 'tebs']],
+  ['Kopi', ['kopi', 'coffee', 'kapal api', 'good day', 'nescafe', 'torabika', 'luwak', 'latte', 'cappuccino']],
+  ['Susu & Yogurt', ['susu', 'milk', 'ultramilk', 'yogurt', 'yoghurt', 'yakult', 'cimory', 'frisian flag', 'indomilk', 'dancow', 'bear brand', 'milo', 'ovaltine']],
+  ['Soda', ['soda', 'cola', 'coca', 'sprite', 'fanta', 'pepsi', '7up', 'schweppes']],
+  ['Jus & Sari Buah', ['jus', 'juice', 'sari buah', 'buavita', 'nutrisari', 'pulpy', 'minute maid', 'floridina', 'frutang']],
+  ['Isotonik & Energi', ['pocari', 'mizone', 'isotonik', 'isotonic', 'energy', 'extra joss', 'kratingdaeng', 'hemaviton', 'c1000', 'red bull', 'hydro coco']],
+  ['Minuman Lainnya', ['minuman', 'drink', 'sirup', 'syrup', 'cincau', 'jelly drink', 'marjan']]
+];
+const NON_DRINK_RE = /(^| )(sabun|shampoo|sampo|lotion|deterjen|pewangi|pelembut|pasta gigi|odol|pembalut|diapers?|popok|tisu|tissue|biskuit|biscuit|cookies?|wafer|coklat|chocolate|permen|candy|snack|keripik|mie|noodle|bumbu|kecap|saus|minyak goreng)( |$)/;
+const DRINK_CAT_RE = /minum|drink|beverage|air|teh|kopi|susu|jus|soda|juice|water|tea|coffee|milk/i;
+function catInfo(name, sku) {
+  const n = ' ' + norm(name) + ' ', kat = sku && cleanName(sku.kategori);
+  const hit = NON_DRINK_RE.test(n.trim()) ? null : DRINK_CATS.findIndex(([, kws]) => kws.some(k => n.includes(' ' + k + ' ')));
+  if (kat) {
+    const drink = DRINK_CAT_RE.test(kat);
+    const idx = DRINK_CATS.findIndex(([l]) => l.toLowerCase() === kat.toLowerCase());
+    return { drink, label: kat, order: drink ? (idx >= 0 ? idx : 50) : 99 };
+  }
+  if (hit != null && hit >= 0) return { drink: true, label: DRINK_CATS[hit][0], order: hit };
+  return { drink: false, label: 'Non-Minuman', order: 99 };
+}
+/* Urutkan: minuman (per kategori) di atas, sisanya di bawah. Urutan asli dipertahankan dalam satu kategori. */
+function groupRows(rows) {
+  const r = rows.map(x => ({ ...x, cat: catInfo(x.name, x.sku) }));
+  return r.sort((a, b) => (!a.cat.drink) - (!b.cat.drink) || a.cat.order - b.cat.order || a.cat.label.localeCompare(b.cat.label));
+}
+const metaRows = pairs => `<table class="pp-meta">${pairs.map(([k, v]) => `<tr><td>${k}</td><td>:</td><td>${esc(v || '-')}</td></tr>`).join('')}</table>`;
+const printHead = t => `<div class="pp-head"><img src="${LOGO_SRC}" alt=""><div><div class="pp-org">Warehouse Jumpstart Indonesia</div><div class="pp-title">${t}</div></div></div>`;
+const signBlock = driver => `<div class="pp-sign"><div><div class="ln"></div><b>Packer</b><br>( ........................ )</div><div><div class="ln"></div><b>Driver</b><br>( ${esc(driver)} )</div></div>`;
+const noteBlock = () => `<div class="pp-note"><div class="pp-note-t">Keterangan:</div><ul>
+  <li>Kolom <b>"Checker"</b> diisi oleh petugas <b>Picker</b>. Jika <b>"Sesuai"</b> berikan tanda <b>"centang"</b> (&#10003;), jika <b>"Produk Kosong"</b> berikan tanda <b>"silang"</b> (&#10007;), dan jika <b>"Tidak Sesuai"</b> masukkan jumlah angka actual-nya pada kolom Checker.</li>
+  <li>Kolom <b>"Validate by Car"</b> diisi oleh <b>Team Car</b>. Jika jumlahnya <b>"Sesuai"</b> berikan tanda <b>"centang"</b> (&#10003;), jika <b>"Tidak Sesuai"</b> masukkan jumlah angka actual-nya pada kolom "Validate by Car".</li>
+  <li>Bagian <b>"Return"</b> diisi oleh <b>Team Car</b>, sesuaikan dengan kategori yang ada: <b>"Overpack"</b> = Qty berlebih, <b>"Reject"</b> = Produk Damage (Rusak), <b>"Expired"</b> = Produk sudah melewati batas Expired Date.</li>
+</ul></div>`;
+const reportTable = (rows, nameHead) => `
+  <table class="pp-tbl">
+    <thead>
+      <tr><th rowspan="2" style="width:18mm">ID Product</th><th rowspan="2">${nameHead}</th><th rowspan="2" style="width:28mm">Jumlah UOM/UOP</th><th rowspan="2" style="width:17mm">Checker</th><th rowspan="2" style="width:14mm">Qty (Pcs)</th><th rowspan="2" style="width:17mm">Validate by Car</th><th colspan="3">Return</th></tr>
+      <tr><th style="width:15mm">Overpack</th><th style="width:14mm">Reject</th><th style="width:15mm">Expired</th></tr>
+    </thead>
+    <tbody>${groupRows(rows).map((r, i, a) => {
+      const head = !i || r.cat.label !== a[i - 1].cat.label ? `<tr class="pp-grp"><td colspan="9">${r.cat.drink ? 'MINUMAN · ' : ''}${esc(r.cat.label.toUpperCase())}</td></tr>` : '';
+      return head + `<tr><td class="id">${esc(r.id)}</td><td>${esc(r.name)}${sheetNote(r)}</td><td class="uom">${esc(qtyText(r.qty, r.sku))}</td><td></td><td class="n">${fmt(r.qty)}</td><td></td><td></td><td></td><td></td></tr>`;
+    }).join('')}</tbody>
+    <tfoot><tr><td colspan="4" style="text-align:right">TOTAL</td><td class="n">${fmt(rows.reduce((a, r) => a + r.qty, 0))}</td><td colspan="4"></td></tr></tfoot>
+  </table>${noteBlock()}`;
+function printHtml(html, title) {
+  $('printArea').innerHTML = html;
+  const old = document.title; document.title = title;
+  document.body.classList.add('printing');
+  const done = () => { document.body.classList.remove('printing'); document.title = old; $('printArea').innerHTML = ''; window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  window.print();
+}
+function printTotal() {
+  if (!state.drivers.length) return toast('Belum ada data');
+  const date = $('planDate').value || todayStr();
+  const rows = totalsFor(state.drivers).map(e => ({ id: e.id, name: e.name, qty: e.qty, sku: e.sku, bySheet: e.bySheet })).sort(byId);
+  printHtml(`<div class="pp-page">${printHead('Total Plan per Produk')}
+    ${metaRows([['Tanggal', dateLong(date)], ['File Sumber', state.fileName], ...(multiSheet() ? [['Sheet Excel', sheetList(state.drivers).join(' + ') + ' (gabungan)']] : [])])}
+    ${reportTable(rows, 'Product Name')}</div>`, `Total_Produk_${date}`);
+}
+function printDriverTotal() {
+  const d = selectedDriver();
+  if (!d) return toast('Pilih driver di dropdown terlebih dahulu');
+  const date = $('planDate').value || todayStr();
+  const rows = totalsFor([d]).map(e => ({ id: e.id, name: e.name, qty: e.qty, sku: e.sku, bySheet: e.bySheet })).sort(byId);
+  printHtml(`<div class="pp-page">${printHead('Total Plan per Produk · Driver')}
+    ${metaRows([['Tanggal', dateLong(date)], ['Driver', d.driver], ['Plat Nomor', d.plate], ['Jumlah Lokasi', String(d.locations.length)], ['File Sumber', state.fileName], ...(multiSheet() ? [['Sheet Excel', sheetList([d]).join(' + ')]] : [])])}
+    ${reportTable(rows, 'Product Name')}</div>`, `Total_Produk_${d.driver}_${date}`);
+}
+function printDrivers() {
+  if (!state.drivers.length) return toast('Belum ada data');
+  const date = $('planDate').value || todayStr(), sel = $('driverSel').value;
+  const ds = sel ? state.drivers.filter(d => d.key === sel) : state.drivers;
+  const pages = [];
+  ds.forEach(d => d.locations.forEach(l => {
+    const rows = l.items.map(it => { const m = resolve(it), sku = skuFor(it, m); return { id: m.id, name: sku ? sku.name : it.name, qty: it.qty, sku }; });
+    pages.push(`<div class="pp-page">${printHead('Plan Muatan Driver')}
+      ${metaRows([['Tanggal', dateLong(date)], ['Driver', d.driver], ['Plat Nomor', d.plate], ['VMC No', l.vmc], ['Location Name', l.name], ...(multiSheet() && l.sheet ? [['Asal Sheet', l.sheet]] : [])])}
+      ${reportTable(rows, 'Product Name')}${signBlock(d.driver)}</div>`);
+  }));
+  if (!pages.length) return toast('Tidak ada lokasi untuk dicetak');
+  printHtml(pages.join(''), sel ? `Plan_${ds[0].driver}_${date}` : `Plan_Semua_Driver_${date}`);
+}
+
+let fixKey = '';
+function openFix(rawName) {
+  fixKey = norm(rawName);
+  $('fixName').textContent = rawName;
+  const m = matchName(rawName, fixKey);
+  $('fixInput').value = state.overrides[fixKey] ? `${state.overrides[fixKey]} — ${state.skuById.get(state.overrides[fixKey])?.name || ''}` : '';
+  $('fixHint').textContent = m.skuName ? `Saran AI: ${m.skuName}` : 'Tidak ada saran yang mirip.';
+  $('fixDlg').showModal();
+}
+function applyFix() {
+  const v = $('fixInput').value.trim(), id = v.split(' — ')[0].trim();
+  const hit = state.skuById.get(id) || state.skuEntries.find(e => norm(e.name) === norm(v));
+  if (!hit) return toast('ID tidak ada di Source SKU', 3000);
+  state.overrides[fixKey] = String(hit.id);
+  localStorage.setItem(LS.ovr, JSON.stringify(state.overrides));
+  state.cache.clear(); $('fixDlg').close(); render(); toast('ID diperbarui');
+}
+
+/* =====================================================================
+   EVENT
+   ===================================================================== */
+function applyRole() {
+  const admin = state.role === 'admin';
+  $('importCard').classList.toggle('hidden', !admin);
+  document.querySelectorAll('.admin-only').forEach(e => e.classList.toggle('hidden', !admin));
+  $('packerBar').classList.toggle('hidden', admin);
+  document.querySelectorAll('.role-btn').forEach(b => {
+    const on = b.dataset.role === state.role;
+    b.className = 'role-btn rounded-md px-4 py-1.5 font-medium ' + (on ? 'bg-white shadow text-indigo-700' : 'text-slate-500');
+  });
+}
+document.querySelectorAll('.role-btn').forEach(b => b.onclick = () => {
+  state.role = b.dataset.role; localStorage.setItem(LS.role, state.role); applyRole();
+});
+$('file').onchange = e => handleFile(e.target.files[0]);
+const drop = $('drop');
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drop-active'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drop-active'); }));
+drop.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+
+$('btnSave').onclick = savePlan;
+$('btnLoad').onclick = loadLatest;
+$('btnReload').onclick = () => loadSku(true);
+const xMenu = $('xlsxMenu'), closeX = () => { xMenu.classList.add('hidden'); $('btnXlsx').setAttribute('aria-expanded', 'false'); };
+$('btnXlsx').onclick = e => { e.stopPropagation(); const open = xMenu.classList.toggle('hidden') === false; $('btnXlsx').setAttribute('aria-expanded', open); };
+xMenu.addEventListener('click', e => { const b = e.target.closest('[data-x]'); if (b) { closeX(); exportXlsx(b.dataset.x); } });
+document.addEventListener('click', e => { if (!e.target.closest('#xlsxWrap')) closeX(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeX(); });
+$('btnPrintTotal').onclick = printTotal;
+$('btnPrintDriver').onclick = printDrivers;
+$('btnPrintDriverTotal').onclick = printDriverTotal;
+$('btnPrint').onclick = () => { document.querySelectorAll('.card-body').forEach(b => b.classList.remove('collapsed')); window.print(); };
+$('btnGas').onclick = () => {
+  const v = prompt('Tempel URL Web App GAS (berakhiran /exec):', GAS_URL().startsWith('http') ? GAS_URL() : '');
+  if (v !== null) { localStorage.setItem(LS.url, v.trim()); loadSku(true); }
+};
+$('btnExpand').onclick = () => {
+  const cards = [...document.querySelectorAll('.driver-card')], anyOpen = cards.some(c => c.dataset.open === '1');
+  cards.forEach(c => { c.dataset.open = anyOpen ? 0 : 1; c.querySelector('.card-body').classList.toggle('collapsed', anyOpen); });
+};
+let tm; $('search').oninput = () => { clearTimeout(tm); tm = setTimeout(render, 180); };
+$('driverSel').onchange = render; $('onlyCheck').onchange = render;
+$('result').addEventListener('click', e => {
+  const fix = e.target.closest('[data-fix]');
+  if (fix) return openFix(fix.dataset.fix);
+  const t = e.target.closest('.toggle');
+  if (t) { const c = t.parentElement, o = c.dataset.open === '1'; c.dataset.open = o ? 0 : 1; c.querySelector('.card-body').classList.toggle('collapsed', o); }
+});
+$('fixApply').onclick = applyFix;
+$('fixClear').onclick = () => { delete state.overrides[fixKey]; localStorage.setItem(LS.ovr, JSON.stringify(state.overrides)); state.cache.clear(); $('fixDlg').close(); render(); };
+$('fixInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyFix(); } });
+
+$('planDate').value = todayStr();
+applyRole(); loadSku(); render();
+</script>
+</body>
+</html>
