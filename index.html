@@ -462,18 +462,21 @@ function parseWorkbook(wb) {
     const idRow = rows.slice(0, hi).find(r => typeof r[cStat] === 'string' && r[cStat].trim() === 'Need Refill 2');
     if (idRow) prod.forEach(p => { const v = idRow[p.c]; if (v !== null && v !== '') state.excelIds.set(norm(p.name), String(v).trim()); });
 
-    let cur = null;
+    let cur = null, curPlate = '';
     for (const r of rows.slice(hi + 1)) {
       const vmc = r[cVmc], loc = r[cLoc], lid = r[cId];
       const isDriver = !lid && typeof vmc === 'string' && vmc.trim() && loc;
       if (isDriver) {
-        const driver = vmc.trim(), plate = cleanName(loc).toUpperCase(), key = driver.toUpperCase() + '|' + plate;
-        if (!map.has(key)) map.set(key, { key, driver, plate, locations: [] });
-        cur = map.get(key); continue;
+        // Driver digabung berdasarkan NAMA saja (plat bisa berbeda antar sheet); semua plat dikumpulkan
+        const driver = vmc.trim().replace(/\s+/g, ' '), plate = cleanName(loc).toUpperCase(), key = driver.toUpperCase();
+        if (!map.has(key)) map.set(key, { key, driver, plate: '', plates: [], locations: [] });
+        cur = map.get(key); curPlate = plate;
+        if (!cur.plates.includes(plate)) { cur.plates.push(plate); cur.plate = cur.plates.join(' / '); }
+        continue;
       }
       if (!cur || !loc || !(lid || typeof vmc === 'number')) continue;
       const items = prod.map(p => ({ name: p.name, qty: Number(r[p.c]) || 0, sheet: sn })).filter(i => i.qty > 0);
-      if (items.length) cur.locations.push({ id: lid ? String(lid).trim() : '', name: cleanName(loc), vmc: vmc == null ? '' : String(vmc).trim(), sheet: sn, items });
+      if (items.length) cur.locations.push({ id: lid ? String(lid).trim() : '', name: cleanName(loc), vmc: vmc == null ? '' : String(vmc).trim(), sheet: sn, plate: curPlate, items });
     }
   });
   return [...map.values()].filter(d => d.locations.length);
@@ -715,9 +718,9 @@ function renderInsight(s) {
 function flatRows() {
   const map = new Map();
   state.drivers.forEach(d => d.locations.forEach(l => l.items.forEach(it => {
-    const m = resolve(it), key = [d.driver, d.plate, l.vmc || '', l.name, m.id, it.name, l.sheet || ''].join('|').toLowerCase();
+    const plate = l.plate || d.plate, m = resolve(it), key = [d.driver, plate, l.vmc || '', l.name, m.id, it.name, l.sheet || ''].join('|').toLowerCase();
     if (map.has(key)) map.get(key).qty += it.qty;
-    else map.set(key, { driver: d.driver, plate: d.plate, vmc: l.vmc || '', location: l.name, productId: m.id, productName: it.name, qty: it.qty, sheet: l.sheet || '' });
+    else map.set(key, { driver: d.driver, plate, vmc: l.vmc || '', location: l.name, productId: m.id, productName: it.name, qty: it.qty, sheet: l.sheet || '' });
   })));
   return [...map.values()];
 }
@@ -755,11 +758,12 @@ async function loadLatest() {
     if (!r.rows.length) return toast('Belum ada plan yang disimpan');
     const map = new Map();
     r.rows.forEach(x => {
-      const key = x.driver.toUpperCase() + '|' + x.plate;
-      if (!map.has(key)) map.set(key, { key, driver: x.driver, plate: x.plate, locations: [], _l: new Map() });
+      const key = x.driver.trim().replace(/\s+/g, ' ').toUpperCase();
+      if (!map.has(key)) map.set(key, { key, driver: x.driver, plate: '', plates: [], locations: [], _l: new Map() });
       const d = map.get(key);
-      const lk = x.location + '|' + (x.vmc || '') + '|' + (x.sheet || '');
-      if (!d._l.has(lk)) { const l = { id: '', name: x.location, vmc: x.vmc || '', sheet: x.sheet || '', items: [] }; d._l.set(lk, l); d.locations.push(l); }
+      if (x.plate && !d.plates.includes(x.plate)) { d.plates.push(x.plate); d.plate = d.plates.join(' / '); }
+      const lk = x.location + '|' + (x.vmc || '') + '|' + (x.sheet || '') + '|' + (x.plate || '');
+      if (!d._l.has(lk)) { const l = { id: '', name: x.location, vmc: x.vmc || '', sheet: x.sheet || '', plate: x.plate || '', items: [] }; d._l.set(lk, l); d.locations.push(l); }
       d._l.get(lk).items.push({ name: x.productName, qty: x.qty, sheet: x.sheet || '', savedId: x.productId || '' });
     });
     state.drivers = [...map.values()]; collectSheets(); state.fileName = r.meta?.fileName || '';
@@ -781,7 +785,7 @@ function exportPlan() {
    All Driver : ID Product | Product | Jumlah UOM/UOP | Qty (Pcs) | Tanggal
    Per-Driver : ID Product | Product | Jumlah UOM/UOP | Qty (Pcs) | Tanggal | Driver */
 const planDateVal = () => $('planDate').value || todayStr();
-const driverLabel = d => state.drivers.filter(x => x.driver === d.driver).length > 1 ? `${d.driver} (${d.plate})` : d.driver;
+const driverLabel = d => d.driver; // driver digabung per NAMA (semua sheet), tanpa plat
 const bulkyList = drivers => totalsFor(drivers).sort(byId)
   .map(e => ({ productId: e.id || '', productName: e.name, jumlah: qtyText(e.qty, e.sku), qty: e.qty }));
 const bulkyAllPayload = () => bulkyList(state.drivers);
@@ -902,7 +906,7 @@ function printDrivers() {
   ds.forEach(d => d.locations.forEach(l => {
     const rows = l.items.map(it => { const m = resolve(it), sku = skuFor(it, m); return { id: m.id, name: sku ? sku.name : it.name, qty: it.qty, sku }; });
     pages.push(`<div class="pp-page">${printHead('Plan Muatan Driver')}
-      ${metaRows([['Tanggal', dateLong(date)], ['Driver', d.driver], ['Plat Nomor', d.plate], ['VMC No', l.vmc], ['Location Name', l.name], ...(multiSheet() && l.sheet ? [['Asal Sheet', l.sheet]] : [])])}
+      ${metaRows([['Tanggal', dateLong(date)], ['Driver', d.driver], ['Plat Nomor', l.plate || d.plate], ['VMC No', l.vmc], ['Location Name', l.name], ...(multiSheet() && l.sheet ? [['Asal Sheet', l.sheet]] : [])])}
       ${reportTable(rows, 'Product Name')}${signBlock(d.driver)}</div>`);
   }));
   if (!pages.length) return toast('Tidak ada lokasi untuk dicetak');
