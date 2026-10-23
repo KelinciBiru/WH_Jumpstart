@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
 <title>Warehouse Jumpstart Indonesia — Planner</title>
 <link rel="icon" id="fav" type="image/png" sizes="64x64">
 <link rel="apple-touch-icon" id="favApple">
@@ -113,6 +114,117 @@
   .pp-sign > div { width: 58mm; text-align: center; font-size: 9.5pt; }
   .pp-sign .ln { height: 16mm; border-bottom: 1px solid #000; margin-bottom: 2px; }
 </style>
+<style id="m-ux">
+/* ===== MOBILE UX LAYER (<768px) — additif, desktop tidak berubah ===== */
+#mDock,#mSheet,#mSheetBg,.m-pill{display:none}
+@media (max-width:767.98px){
+:root{--bar:56px;--dock:64px;--sai:env(safe-area-inset-bottom,0px);--sat:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:calc(var(--bar) + var(--sat) + 12px)}
+body{padding-bottom:calc(var(--dock) + var(--sai) + 20px);-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+body.kb #mDock{display:none}
+/* app bar */
+header.sticky{padding:calc(.5rem + var(--sat)) 1rem .5rem!important;min-height:calc(var(--bar) + var(--sat))}
+header h1{font-size:1.2rem!important;letter-spacing:-.02em}
+header [role=tablist][aria-label=Peran],#pageSub{display:none!important}
+header img[data-logo]{height:30px!important}
+.m-pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:5px 11px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#141414;color:#fff;min-height:30px}
+.m-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber)}
+.m-pill.pk{background:var(--amber);color:#141414}.m-pill.pk::before{background:#141414}
+main{padding:.9rem 1rem 1rem!important;gap:.9rem;display:flex;flex-direction:column}
+main>*{margin-top:0!important}
+main>nav.md\:hidden{display:none!important}
+/* tab Other Request */
+#otherTabs:not(.hidden){display:flex!important;width:100%;position:sticky;top:calc(var(--bar) + var(--sat));z-index:15;box-shadow:0 6px 12px -8px rgba(0,0,0,.25)}
+#otherTabs button{flex:1;padding:.6rem .25rem!important;font-size:.8rem;min-height:44px}
+#otherTabs button[class*="bg-white"],#otherTabs .on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+/* kontrol: 44px + 16px (tanpa auto-zoom iOS) */
+main input:not([type=checkbox]):not([type=file]),main select,main textarea{font-size:16px!important;min-height:44px}
+.btn{min-height:44px;transition:transform .12s,background .15s}.btn:active{transform:scale(.97)}
+.panel{border-radius:1rem}
+/* import */
+#importCard{padding:.75rem!important}
+#importCard label#drop{padding:1rem!important;gap:.8rem!important}
+#importCard .lg\:w-60{display:none}
+#evDrop{padding:1rem!important;gap:.8rem!important}
+/* aksi dipindah ke dock → bar tinggal tanggal */
+#printBar{padding:.75rem!important;gap:.5rem!important}
+#printBar>.ml-auto,#printBar>p{display:none!important}
+#printBar .field{width:100%}
+#eventPanel .flex.flex-wrap.items-end .ml-auto,#formPanel .flex.flex-wrap.items-end .ml-auto,#eventPanel .border-t{display:none!important}
+#formPanel .flex.flex-wrap.items-end>.field{min-width:0!important;flex:1 1 100%}
+#fmAddBtn{flex:1 1 100%}
+/* toolbar: cari penuh, filter di bawahnya */
+#toolbar:not(.hidden){display:flex!important;flex-wrap:wrap;gap:.5rem;position:sticky;top:calc(var(--bar) + var(--sat));z-index:14;background:var(--paper);padding:.5rem 0;margin:-.5rem 0 0}
+#toolbar #search{flex:1 1 100%;min-width:0!important}
+#toolbar #driverSel{flex:1 1 0;min-width:0}
+#toolbar #xlsxWrap,#toolbar #btnPrint{display:none!important}
+#toolbar label{min-height:44px;white-space:nowrap}
+#toolbar #btnExpand{flex:0 0 auto;padding:.5rem .8rem;font-size:.8rem}
+/* statistik: satu baris geser */
+#stats{display:flex!important;overflow-x:auto;scroll-snap-type:x mandatory;gap:.6rem;margin:0 -1rem!important;padding:.1rem 1rem .35rem;scrollbar-width:none}
+#stats::-webkit-scrollbar{display:none}
+#stats .stat{flex:0 0 auto;min-width:112px;scroll-snap-align:start;padding:.55rem .8rem}
+#stats .stat .v{font-size:1.45rem}
+#insight{padding:.8rem!important}
+#grandGrid,#dtGrid{max-height:340px!important;grid-template-columns:1fr!important}
+/* kartu driver: tabel → kartu */
+.driver-card .toggle{flex-wrap:wrap;gap:.5rem!important;min-height:56px}
+.driver-card .toggle>div:last-child{width:100%;text-align:left!important;padding-left:3.25rem}
+.driver-card .overflow-x-auto{overflow:visible}
+.driver-card table{min-width:0!important;display:block}
+.driver-card thead{display:none}
+.driver-card tbody{display:block}
+.driver-card tr{display:grid!important;grid-template-columns:1fr auto;column-gap:.75rem;padding:.55rem 1rem;align-items:center}
+.driver-card td{display:block;width:auto!important;border:0!important;padding:0!important;background:none!important}
+.driver-card td:first-child:nth-last-child(4){grid-column:1/-1;margin:.35rem -1rem .5rem;padding:.55rem 1rem!important;background:#F8F8F6!important;border-top:1px solid var(--line)!important;border-bottom:1px solid var(--line)!important;font-size:.82rem}
+.driver-card td:nth-last-child(3){grid-column:1;grid-row:auto}
+.driver-card td:nth-last-child(2){grid-column:1;font-size:.85rem;line-height:1.35;padding-top:.15rem!important}
+.driver-card td:nth-last-child(1){grid-column:2;grid-row:span 2;align-self:center;text-align:right!important;font-size:1.15rem!important;min-width:3rem}
+.driver-card tbody tr+tr{border-top:1px solid #F0F0ED!important}
+/* tabel lain: header lengket + geser halus */
+main .overflow-x-auto{-webkit-overflow-scrolling:touch}
+/* dialog → bottom sheet */
+#fixDlg[open]{margin:auto 0 0!important;width:100vw!important;max-width:100vw!important;border-radius:1.25rem 1.25rem 0 0!important;padding-bottom:var(--sai)}
+#toast{bottom:calc(var(--dock) + var(--sai) + 14px)!important}
+/* ===== DOCK ===== */
+#mDock{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:40;grid-template-columns:1fr 1fr 84px 1fr 1fr;height:calc(var(--dock) + var(--sai));padding-bottom:var(--sai);background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line);box-shadow:0 -8px 24px -16px rgba(0,0,0,.35)}
+.dk{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:var(--dock);min-width:0;border:0;background:none;color:#686760;font-size:10.5px;font-weight:700;letter-spacing:.01em}
+.dk svg{width:22px;height:22px}
+.dk span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk:active{background:#F8F8F6}
+.dk.on{color:#141414}
+.dk.on::before{content:'';position:absolute;top:0;left:28%;right:28%;height:3px;background:var(--amber);transform:skewX(-30deg)}
+.dk-fab .c{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;background:var(--amber);color:#141414;transform:translateY(-14px);box-shadow:0 0 0 5px #fff,0 8px 18px -4px rgba(201,130,0,.6);transition:transform .15s}
+.dk-fab:active .c{transform:translateY(-14px) scale(.94)}
+.dk-fab span{transform:translateY(-12px);color:#141414}
+.dk-fab.save .c{background:#141414;color:var(--amber);box-shadow:0 0 0 5px #fff,0 8px 18px -4px rgba(0,0,0,.5)}
+/* ===== SHEET ===== */
+#mSheetBg{display:block;position:fixed;inset:0;z-index:50;background:rgba(20,20,20,.5);opacity:0;pointer-events:none;transition:opacity .2s}
+#mSheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:51;max-height:84vh;overflow-y:auto;background:#fff;border-radius:22px 22px 0 0;padding:.9rem 1rem calc(1rem + var(--sai));transform:translateY(105%);transition:transform .26s cubic-bezier(.2,.8,.2,1);overscroll-behavior:contain}
+#mSheet::before{content:'';display:block;width:40px;height:4px;border-radius:4px;background:#CDCCC4;margin:-.3rem auto .8rem}
+body.sheet #mSheetBg{opacity:1;pointer-events:auto}
+body.sheet #mSheet{transform:none}
+body.sheet{overflow:hidden}
+.ms-h{font-weight:700;font-size:1.1rem;margin-bottom:.15rem}
+.ms-s{font-size:.78rem;color:#686760;margin-bottom:.4rem}
+.ms-g{margin:.9rem 0 .35rem;font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#98978D}
+.ms-i{display:flex;align-items:center;gap:.8rem;width:100%;min-height:56px;padding:.5rem .6rem;border-radius:.8rem;text-align:left;background:none;border:0}
+.ms-i:active{background:#FFF8E1}
+.ms-i .ic{flex:0 0 40px;height:40px;border-radius:12px;display:grid;place-items:center;background:#F0F0ED;color:#141414}
+.ms-i .ic svg{width:20px;height:20px}
+.ms-i b{display:block;font-size:.9rem}
+.ms-i small{display:block;font-size:.72rem;color:#686760;margin-top:1px}
+.ms-i.pri .ic{background:var(--amber)}
+.ms-i[disabled]{opacity:.38;pointer-events:none}
+.ms-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#F0F0ED;border-radius:.8rem;padding:4px}
+.ms-seg button{min-height:46px;border-radius:.6rem;font-weight:700;font-size:.9rem;color:#686760;background:none;border:0}
+.ms-seg button.on{background:#fff;color:#141414;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.ms-st{display:flex;align-items:center;gap:.6rem;font-size:.85rem;padding:.7rem .8rem;border-radius:.8rem;background:#F8F8F6}
+.ms-st i{width:9px;height:9px;border-radius:50%;background:#98978D}
+}
+@media (max-width:767.98px) and (prefers-reduced-motion:reduce){#mSheet,.dk-fab .c,.btn{transition:none}}
+</style>
+
 </head>
 <body>
 
@@ -1733,5 +1845,127 @@ $('fixInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.prev
 $('planDate').value = todayStr();
 applyMenu(); applyRole(); loadSku(); render();
 </script>
+<script id="m-ux-js">
+/* Lapisan UX mobile: dock + sheet. Hanya memanggil handler yang sudah ada (tidak mengubah logika). */
+(() => {
+  const mq = window.matchMedia('(max-width:767.98px)');
+  const I = {
+    plan:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h4',
+    req:'M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    act:'M4 6h16M4 12h10M4 18h16',
+    set:'M12 15a3 3 0 100-6 3 3 0 000 6zm7.4-3a7.4 7.4 0 00-.1-1.2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 00-2-1.2L14.700 3h-4l-.3 2.6a7.600 7.600 0 00-2 1.200l-2.300-.9-2 3.400 2 1.500a7.400 7.400 0 000 2.400l-2 1.500 2 3.400 2.300-.9c.6.500 1.300.900 2 1.200l.3 2.600h4l.3-2.600c.7-.3 1.400-.7 2-1.200l2.300.9 2-3.400-2-1.500c.1-.4.100-.8.100-1.200z',
+    up:'M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0-12l-4 4m4-4l4 4',
+    down:'M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 16V4m0 12l-4-4m4 4l4-4',
+    save:'M5 13l4 4L19 7',
+    print:'M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z',
+    xls:'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
+    ref:'M4 4v6h6M20 20v-6h-6M20 9a8 8 0 00-14-3L4 10m16 4l-2 4a8 8 0 01-14-3',
+    plus:'M12 5v14M5 12h14', link:'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.700-5.700l-1 1M14 10a4 4 0 00-5.700 0l-3 3a4 4 0 005.700 5.700l1-1', trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'
+  };
+  const ic = k => `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="${I[k]}"/></svg>`;
+  const $$ = id => document.getElementById(id);
+  const mode = () => fmMode() ? 'form' : evMode() ? 'event' : (state.menu === 'other' ? 'req' : 'planner');
+  const hasData = () => (state.drivers && state.drivers.length) || (state.req && state.req.length);
+
+  /* ---- elemen ---- */
+  const dock = document.createElement('nav');
+  dock.id = 'mDock'; dock.setAttribute('aria-label', 'Navigasi utama');
+  dock.innerHTML = `
+    <button class="dk" data-d="planner">${ic('plan')}<span>Planner</span></button>
+    <button class="dk" data-d="other">${ic('req')}<span>Request</span></button>
+    <button class="dk dk-fab" data-d="fab"><i class="c"></i><span></span></button>
+    <button class="dk" data-d="act">${ic('act')}<span>Aksi</span></button>
+    <button class="dk" data-d="set">${ic('set')}<span>Setelan</span></button>`;
+  const bg = document.createElement('div'); bg.id = 'mSheetBg';
+  const sh = document.createElement('div'); sh.id = 'mSheet'; sh.setAttribute('role', 'dialog'); sh.setAttribute('aria-modal', 'true');
+  document.body.append(bg, sh, dock);
+  const pill = document.createElement('button');
+  pill.className = 'm-pill'; pill.type = 'button'; pill.setAttribute('aria-label', 'Peran aktif, ketuk untuk mengganti');
+  const hdr = document.querySelector('header .flex.items-center.gap-3:last-child'); if (hdr) hdr.append(pill);
+
+  /* ---- tombol tengah: aksi berikutnya yang paling masuk akal ---- */
+  function fab() {
+    const m = mode(), admin = state.role === 'admin';
+    if (m === 'form') return { l: 'Tambah', k: 'plus', go: () => { const a = $$('fmAdd'); a.scrollIntoView({ block: 'center' }); a.focus(); } };
+    if (m === 'event') return !$$('evSave').disabled ? { l: 'Simpan', k: 'save', s: 1, go: () => $$('evSave').click() } : { l: 'Import', k: 'up', go: () => $$('evFile').click() };
+    if (!admin) return { l: 'Muat Plan', k: 'down', go: () => $$('btnLoad').click() };
+    return hasData() && !$$('btnSave').disabled ? { l: 'Simpan', k: 'save', s: 1, go: () => $$('btnSave').click() } : { l: 'Import', k: 'up', go: () => $$('file').click() };
+  }
+  let cur;
+  function sync() {
+    if (!mq.matches) return;
+    dock.querySelectorAll('[data-d=planner],[data-d=other]').forEach(b => b.classList.toggle('on', b.dataset.d === state.menu));
+    cur = fab(); const f = dock.querySelector('.dk-fab');
+    f.classList.toggle('save', !!cur.s);
+    f.querySelector('.c').innerHTML = ic(cur.k).replace('<svg', '<svg width="26" height="26"'); f.querySelector('span').textContent = cur.l;
+    const adm = state.role === 'admin'; pill.textContent = adm ? 'Admin' : 'Packer'; pill.classList.toggle('pk', !adm);
+  }
+
+  /* ---- sheet ---- */
+  const open = html => { sh.innerHTML = html; sh.scrollTop = 0; document.body.classList.add('sheet'); };
+  const close = () => document.body.classList.remove('sheet');
+  const item = (id, label, desc, k, pri, sel) => {
+    const el = sel ? document.querySelector(sel) : $$(id);
+    if (!el || el.classList.contains('hidden')) return '';
+    const off = el.disabled || (el.parentElement && el.parentElement.closest('.hidden'));
+    return `<button class="ms-i${pri ? ' pri' : ''}" data-go="${sel || '#' + id}"${off ? ' disabled' : ''}><span class="ic">${ic(k)}</span><span><b>${label}</b><small>${off ? 'Import / muat data dulu' : desc}</small></span></button>`;
+  };
+  const grp = (t, ...xs) => { const h = xs.join(''); return h ? `<div class="ms-g">${t}</div>${h}` : ''; };
+  function sheetAksi() {
+    const m = mode(), x = k => `#xlsxMenu [data-x="${k}"]`;
+    let h = '<div class="ms-h">Aksi</div><div class="ms-s">Simpan, cetak, dan ekspor data</div>';
+    if (m === 'planner') h += grp('Simpan', item('btnSave', 'Simpan ke Spreadsheet', 'Catat plan ke Google Sheets', 'save', 1)) +
+      grp('Cetak / PDF', item('btnPrintTotal', 'Total per Produk', 'Semua driver digabung', 'print'), item('btnPrintDriver', 'Per Driver & Lokasi', 'Mengikuti driver di filter', 'print'), item('btnPrintDriverTotal', 'Total driver terpilih', 'Hanya driver yang dipilih', 'print')) +
+      grp('Export Excel', item('', 'Planner (detail)', 'Semua driver, lokasi & produk', 'xls', 0, x('plan')), item('', 'Bulky · All Driver', 'Total per produk', 'xls', 0, x('bulkyAll')), item('', 'Bulky · Per-Driver', 'Driver yang dipilih', 'xls', 0, x('bulkyDriver')));
+    if (m === 'req') h += grp('Simpan', item('btnSave', 'Simpan ke Spreadsheet', 'Catat Other Request', 'save', 1)) +
+      grp('Cetak / PDF', item('btnOBulkyAll', 'Bulky Semua Produk', 'Total dari semua sheet', 'print'), item('btnOBulkySheet', 'Bulky Per-Sheet', 'Satu halaman per sheet', 'print'), item('btnOListSheet', 'List Produk Per-Sheet', 'Daftar apa adanya', 'print')) +
+      grp('Export Excel', item('', 'Other Request (detail)', 'Semua sheet Excel', 'xls', 0, x('plan')));
+    if (m === 'event') h += grp('Simpan', item('evSave', 'Simpan ke Spreadsheet', 'Catat data Event', 'save', 1)) +
+      grp('Cetak / PDF', item('evPrintAll', 'Bulky Semua Produk', 'Hanya produk yang diisi Qty', 'print'), item('evPrintSheet', 'Bulky Per-Sheet', 'Satu halaman per sheet', 'print'), item('evPrintList', 'List Produk Per-Sheet', 'Satu halaman per sheet', 'print')) +
+      grp('Lainnya', item('evClear', 'Kosongkan Qty', 'Hapus semua isian Qty', 'trash'));
+    if (m === 'form') h += grp('Simpan', item('fmSave', 'Simpan ke Spreadsheet', 'Catat ke sheet Form Others', 'save', 1)) +
+      grp('Cetak / PDF', item('fmPrint', 'Cetak / PDF', 'Form yang sedang diisi', 'print')) + grp('Lainnya', item('fmClear', 'Form Baru', 'Kosongkan form', 'trash'));
+    open(h);
+  }
+  function sheetSet() {
+    const adm = state.role === 'admin', dot = $$('dot'), c = dot ? getComputedStyle(dot).backgroundColor : '#98978D';
+    open(`<div class="ms-h">Setelan</div><div class="ms-s">Peran dan koneksi data</div>
+      <div class="ms-g">Peran</div><div class="ms-seg"><button data-role="admin" class="${adm ? 'on' : ''}">Admin</button><button data-role="packer" class="${adm ? '' : 'on'}">Packer</button></div>
+      <div class="ms-s" style="margin-top:.5rem">${adm ? 'Admin: import Excel, simpan, dan cetak plan.' : 'Packer: lihat & cetak plan terakhir dari Admin.'}</div>
+      <div class="ms-g">Koneksi</div><div class="ms-st"><i style="background:${c}"></i><span>${$$('statusText').textContent}</span></div>` +
+      grp('Data', item('btnReload', 'Muat ulang data SKU', 'Ambil Source SKU terbaru', 'ref'), item('btnGas', 'Atur URL GAS', 'Alamat Web App Apps Script', 'link')));
+  }
+
+  /* ---- event ---- */
+  dock.addEventListener('click', e => {
+    const b = e.target.closest('[data-d]'); if (!b) return; const d = b.dataset.d;
+    if (d === 'planner' || d === 'other') { if (state.menu === d) window.scrollTo({ top: 0, behavior: 'smooth' }); else switchMenu(d); sync(); }
+    else if (d === 'fab') cur.go();
+    else if (d === 'act') sheetAksi(); else sheetSet();
+  });
+  bg.onclick = close; pill.onclick = sheetSet;
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  sh.addEventListener('click', e => {
+    const r = e.target.closest('[data-role]');
+    if (r) { document.querySelector(`.role-btn[data-role="${r.dataset.role}"]`).click(); sync(); return sheetSet(); }
+    const g = e.target.closest('[data-go]'); if (!g) return;
+    const el = document.querySelector(g.dataset.go); close(); if (el) setTimeout(() => el.click(), 220);
+  });
+  let sy = 0; sh.addEventListener('touchstart', e => sy = e.touches[0].clientY, { passive: true });
+  sh.addEventListener('touchend', e => { if (sh.scrollTop <= 0 && e.changedTouches[0].clientY - sy > 90) close(); }, { passive: true });
+  document.addEventListener('focusin', e => { if (mq.matches && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) document.body.classList.add('kb'); });
+  document.addEventListener('focusout', () => setTimeout(() => { if (!/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) document.body.classList.remove('kb'); }, 120));
+
+  /* ---- sinkron saat state berubah ---- */
+  ['applyMenu', 'applyRole', 'applyOtherTab'].forEach(n => { const o = window[n]; if (typeof o === 'function') window[n] = function () { const r = o.apply(this, arguments); sync(); return r; }; });
+  let raf; const q = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(sync); };
+  const mo = new MutationObserver(q);
+  ['btnSave', 'evSave'].forEach(i => mo.observe($$(i), { attributes: true, attributeFilter: ['disabled'] }));
+  ['stats', 'result', 'evTable'].forEach(i => mo.observe($$(i), { childList: true }));
+  mq.addEventListener('change', () => { close(); sync(); });
+  sync();
+})();
+</script>
+
 </body>
 </html>
