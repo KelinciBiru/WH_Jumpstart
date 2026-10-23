@@ -192,6 +192,12 @@
           <button id="evApply" type="button" class="btn btn-ghost">Terapkan ke semua</button>
           <div class="ml-auto flex gap-2"><button id="evClear" type="button" class="btn btn-ghost">Kosongkan Qty</button><button id="evSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button></div>
         </div>
+        <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
+          <span class="text-xs font-semibold text-slate-500">Cetak / PDF:</span>
+          <button id="evPrintAll" type="button" class="btn btn-ghost" title="Total per produk (hanya produk yang diisi Qty)">Bulky Semua Produk</button>
+          <button id="evPrintSheet" type="button" class="btn btn-ghost" title="Total per produk, satu halaman per sheet">Bulky Per-Sheet</button>
+          <button id="evPrintList" type="button" class="btn btn-ghost" title="Daftar produk, satu halaman per sheet">List Produk Per-Sheet</button>
+        </div>
         <div id="evTable"></div>
       </section>
 
@@ -231,6 +237,9 @@
         <div class="ml-auto flex flex-wrap gap-2">
           <button id="btnPrintTotal" class="btn btn-ghost">Cetak / PDF · Total per Produk</button>
           <button id="btnPrintDriver" class="btn btn-ghost" title="Mengikuti pilihan driver di filter">Cetak / PDF · Per Driver &amp; Lokasi</button>
+          <button id="btnOBulkyAll" type="button" class="btn btn-ghost other-only hidden" title="Total per produk dari semua sheet Excel">Cetak / PDF · Bulky Semua Produk</button>
+          <button id="btnOBulkySheet" type="button" class="btn btn-ghost other-only hidden" title="Total per produk, satu halaman per sheet">Cetak / PDF · Bulky Per-Sheet</button>
+          <button id="btnOListSheet" type="button" class="btn btn-ghost other-only hidden" title="Daftar produk apa adanya, satu halaman per sheet">Cetak / PDF · List Produk Per-Sheet</button>
           <button id="btnSave" disabled class="btn btn-accent admin-only">Simpan ke Spreadsheet</button>
         </div>
         <p class="w-full text-xs text-slate-500">Data yang sudah tercatat pada tanggal yang sama tidak dicatat ulang; tanggal berbeda ditambahkan sebagai baris baru. Di dialog cetak pilih “Simpan sebagai PDF”.</p>
@@ -478,7 +487,7 @@ const sheetIdx = s => Math.max(0, state.sheets.indexOf(s));
 const shChip = (s, extra = '') => multiSheet() && s ? `<span class="sh-chip sh-${sheetIdx(s) % 6}" title="Asal sheet Excel: ${esc(s)}">${esc(s)}${extra}</span>` : '';
 const shBreak = map => multiSheet() && map && map.size ? `<div class="mt-1 flex flex-wrap gap-1">${[...map].map(([s, q]) => shChip(s, ` · ${fmt(q)}`)).join('')}</div>` : '';
 const sheetList = ds => [...new Set(ds.flatMap(d => d.locations.map(l => l.sheet)).filter(Boolean))];
-const sheetNote = r => multiSheet() && r.bySheet && r.bySheet.size ? `<div class="pp-sh">${[...r.bySheet].map(([s, q]) => esc(s) + ': ' + fmt(q)).join(' · ')}</div>` : '';
+const sheetNote = r => (multiSheet() || r.showSheets) && r.bySheet && r.bySheet.size ? `<div class="pp-sh">${[...r.bySheet].map(([s, q]) => esc(s) + ': ' + fmt(q)).join(' · ')}</div>` : '';
 
 function parseWorkbook(wb) {
   const map = new Map(); state.excelIds = new Map();
@@ -1172,8 +1181,9 @@ function parseEventWorkbook(wb) {
     rows.slice(hi + 1).forEach(r => {
       const id = cellStr(r[cId]), name = cellStr(r[cName]);
       if (!id || !name) return;
-      const k = idKey(id);
-      if (!map.has(k)) map.set(k, { id, name, qty: '' });
+      const k = idKey(id), sh = cleanName(sn);
+      if (!map.has(k)) map.set(k, { id, name, qty: '', sheets: [] });
+      const e = map.get(k); if (!e.sheets.includes(sh)) e.sheets.push(sh);   // produk yang sama di beberapa sheet tetap satu baris
     });
   });
   return [...map.values()];
@@ -1204,7 +1214,7 @@ async function saveEvent() {
   if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
   const name = $('evName').value.trim();
   if (!name) return toast('Isi nama Event terlebih dahulu', 3500);
-  const rows = EV.rows.filter(r => Number(r.qty) > 0).map(r => ({ productId: r.id, productName: r.name, qty: Number(r.qty) }));
+  const rows = EV.rows.filter(r => Number(r.qty) > 0).map(r => ({ productId: r.id, productName: r.name, qty: Number(r.qty), sheet: (r.sheets || []).join(', ') }));
   if (!rows.length) return toast('Isi Qty (Pcs) minimal pada satu produk', 3500);
   const btn = $('evSave'), label = btn.innerHTML; btn.disabled = true; btn.textContent = 'Menyimpan…';
   try {
@@ -1344,6 +1354,94 @@ function printDrivers() {
   printHtml(pages.join(''), sel ? `${L().fp || 'Plan_'}${ds[0].driver}_${date}` : `${L().fp || 'Plan_'}Semua_Driver_${date}`);
 }
 
+/* =====================================================================
+   CETAK / PDF · OTHER REQUEST (Import Request) & EVENT
+   1) Bulky · Semua Produk     : total per produk dari seluruh sheet Excel (satu laporan)
+   2) Bulky · Per-Sheet        : total per produk, satu halaman per sheet Excel
+   3) List Produk · Per-Sheet  : daftar baris produk apa adanya, satu halaman per sheet
+   Format Bulky sama dengan laporan Planner (Jumlah UOM/UOP, Qty Pcs, Checker, Return).
+   Event: Qty diisi manual per produk (sama untuk semua sheet); produk tanpa Qty tidak ikut Bulky.
+   ===================================================================== */
+const skuOf = id => id ? (state.skuById.get(String(id)) || state.skuByKey.get(idKey(id)) || null) : null;
+function otherCtx() {
+  if (evMode()) {
+    if (!EV.rows.length) { toast('Import file Event terlebih dahulu', 3000); return null; }
+    const per = new Map(), uniq = [];
+    EV.rows.forEach(r => {
+      const row = { floor: '', id: r.id, name: r.name, pcs: Number(r.qty) || 0, carton: null, sku: skuOf(r.id), blank: r.qty === '' };
+      uniq.push(row);
+      (r.sheets && r.sheets.length ? r.sheets : ['Event']).forEach(s => { if (!per.has(s)) per.set(s, []); per.get(s).push(row); });
+    });
+    return { ev: true, noun: 'Event', fp: 'Event_', date: todayStr(), file: EV.fileName, name: $('evName').value.trim(),
+      blocks: [...per].map(([sheet, rows]) => ({ sheet, kind: 'event', whOrigin: '', destination: '', rows })),
+      allBlocks: [{ sheet: '', kind: 'event', whOrigin: '', destination: '', rows: uniq }] };
+  }
+  if (!state.req.length) { toast('Belum ada data Other Request', 3000); return null; }
+  const blocks = state.req.map(b => ({
+    sheet: b.sheet, kind: b.kind, whOrigin: b.whOrigin || '', destination: b.destination || '',
+    rows: b.rows.map(r => { const v = reqView(r); return { floor: r.floor || '', id: v.id, name: r.name, pcs: v.pcs, carton: v.carton, sku: v.sku || skuOf(v.id) }; })
+  }));
+  return { ev: false, noun: 'Other Request', fp: 'OtherRequest_', date: $('planDate').value || todayStr(), file: state.fileName, name: '', blocks, allBlocks: blocks };
+}
+/* Gabungkan baris menjadi total per produk. by: 'sheet' = rincian per sheet, 'floor' = rincian per lantai (Surat Jalan TikTok). */
+function bulkyRows(blocks, by) {
+  const map = new Map(), labels = new Set();
+  blocks.forEach(b => b.rows.forEach(r => {
+    const key = r.id ? 'id:' + idKey(r.id) : 'nm:' + norm(r.name);
+    let e = map.get(key);
+    if (!e) { e = { id: r.id, name: (r.sku && r.sku.name) || r.name, qty: 0, sku: r.sku, bySheet: new Map() }; map.set(key, e); }
+    e.qty += r.pcs;
+    const lab = by === 'floor' ? r.floor : b.sheet;
+    if (lab && r.pcs > 0) { labels.add(lab); e.bySheet.set(lab, (e.bySheet.get(lab) || 0) + r.pcs); }
+  }));
+  const show = labels.size > 1;   // rincian hanya bila ada lebih dari satu sheet / lantai
+  return [...map.values()].filter(e => e.qty > 0).map(e => ({ ...e, showSheets: show })).sort(byId);
+}
+const ctxMeta = (c, extra = []) => [['Tanggal', dateLong(c.date)], ...(c.ev ? [['Event', c.name]] : []), ...extra, ['File Sumber', c.file]];
+const sheetMeta = b => [['Sheet Excel', b.sheet], ...(b.kind === 'tiktok' ? [['WH Origin', b.whOrigin], ['Destination', b.destination]] : [])];
+const ctxTitle = c => `${c.fp}${c.name ? c.name.replace(/[\\/:*?"<>|]+/g, ' ').trim() + '_' : ''}`;
+
+function listTable(b) {
+  const tk = b.kind === 'tiktok', ev = b.kind === 'event', nc = ev ? 4 : 5;
+  let last;
+  const body = b.rows.map((r, i) => {
+    const grp = tk && r.floor !== last ? (last = r.floor, `<tr class="pp-grp"><td colspan="${nc}">${esc(r.floor || '-')}</td></tr>`) : '';
+    return grp + `<tr><td class="n">${i + 1}</td><td class="id">${esc(r.id || '-')}</td><td>${esc(r.name)}</td><td class="n">${r.blank ? '' : fmt(r.pcs)}</td>${ev ? '' : `<td class="n">${r.carton == null ? '—' : fmtDec(r.carton)}</td>`}</tr>`;
+  }).join('');
+  return `<table class="pp-tbl">
+    <thead><tr><th style="width:9mm">No</th><th style="width:20mm">ID Product</th><th>Product Name</th><th style="width:22mm">${ev ? 'Qty (Pcs)' : 'Qty Pcs'}</th>${ev ? '' : '<th style="width:22mm">Qty Carton</th>'}</tr></thead>
+    <tbody>${body}</tbody>
+    <tfoot><tr><td colspan="3" style="text-align:right">TOTAL (${fmt(b.rows.length)} produk)</td><td class="n">${fmt(b.rows.reduce((a, r) => a + r.pcs, 0))}</td>${ev ? '' : '<td></td>'}</tr></tfoot>
+  </table>`;
+}
+
+function printOtherBulkyAll() {
+  const c = otherCtx(); if (!c) return;
+  const rows = bulkyRows(c.allBlocks, 'sheet');
+  if (!rows.length) return toast(c.ev ? 'Isi Qty (Pcs) minimal pada satu produk' : 'Tidak ada produk ber-Qty untuk dicetak', 3500);
+  const names = c.blocks.map(b => b.sheet);
+  printHtml(`<div class="pp-page">${printHead(`Bulky ${c.noun} · Semua Produk`)}
+    ${metaRows(ctxMeta(c, [['Sheet Excel', names.join(' + ') + (names.length > 1 ? ' (gabungan)' : '')]]))}
+    ${reportTable(rows, 'Product Name')}</div>`, `${ctxTitle(c)}Bulky_Semua_Produk_${c.date}`);
+}
+function printOtherBulkySheet() {
+  const c = otherCtx(); if (!c) return;
+  const pages = c.blocks.map(b => {
+    const rows = bulkyRows([b], 'floor'); if (!rows.length) return '';
+    return `<div class="pp-page">${printHead(`Bulky ${c.noun} · Per-Sheet`)}
+      ${metaRows(ctxMeta(c, sheetMeta(b)))}${reportTable(rows, 'Product Name')}</div>`;
+  }).filter(Boolean);
+  if (!pages.length) return toast(c.ev ? 'Isi Qty (Pcs) minimal pada satu produk' : 'Tidak ada produk ber-Qty untuk dicetak', 3500);
+  printHtml(pages.join(''), `${ctxTitle(c)}Bulky_Per_Sheet_${c.date}`);
+}
+function printOtherListSheet() {
+  const c = otherCtx(); if (!c) return;
+  const pages = c.blocks.filter(b => b.rows.length).map(b => `<div class="pp-page">${printHead(`List Produk ${c.noun} · Per-Sheet`)}
+    ${metaRows(ctxMeta(c, sheetMeta(b)))}${listTable(b)}</div>`);
+  if (!pages.length) return toast('Tidak ada produk untuk dicetak', 3000);
+  printHtml(pages.join(''), `${ctxTitle(c)}List_Produk_Per_Sheet_${c.date}`);
+}
+
 let fixKey = '';
 function openFix(rawName) {
   fixKey = norm(rawName);
@@ -1411,6 +1509,7 @@ function applyMenu() {
   $('onlyCheck').closest('label').classList.toggle('hidden', other);
   $('btnPrintTotal').classList.toggle('hidden', other); $('btnPrintDriver').classList.toggle('hidden', other);
   document.querySelectorAll('#xlsxMenu [data-x="bulkyAll"], #xlsxMenu [data-x="bulkyDriver"]').forEach(b => b.classList.toggle('hidden', other));
+  document.querySelectorAll('.other-only').forEach(b => b.classList.toggle('hidden', !other));
   $('planDateLbl').textContent = other ? 'Tanggal request' : 'Tanggal plan';
   $('xPlanDesc').textContent = other ? 'Semua sheet Excel · produk & qty' : 'Semua driver, lokasi & produk';
   $('dropSub').textContent = other ? 'Tarik & lepas file (.xlsx / .xls): Bahan Baku atau Surat Jalan TikTok · sheet SOP, Sheet1, Sheet2 dilewati' : 'Tarik & lepas file (.xlsx / .xls) ke sini, atau klik untuk memilih';
@@ -1464,6 +1563,9 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeX(); })
 $('btnPrintTotal').onclick = printTotal;
 $('btnPrintDriver').onclick = printDrivers;
 $('btnPrintDriverTotal').onclick = printDriverTotal;
+$('btnOBulkyAll').onclick = $('evPrintAll').onclick = printOtherBulkyAll;
+$('btnOBulkySheet').onclick = $('evPrintSheet').onclick = printOtherBulkySheet;
+$('btnOListSheet').onclick = $('evPrintList').onclick = printOtherListSheet;
 $('btnPrint').onclick = () => { document.querySelectorAll('.card-body').forEach(b => b.classList.remove('collapsed')); window.print(); };
 $('btnGas').onclick = () => {
   const v = prompt('Tempel URL Web App GAS (berakhiran /exec):', GAS_URL().startsWith('http') ? GAS_URL() : '');
