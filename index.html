@@ -179,7 +179,7 @@
             </span>
             <span>
               <span class="display block text-xl font-bold">Import file Excel</span>
-              <span class="block text-sm text-slate-500">Tarik &amp; lepas file (.xlsx / .xls) ke sini, atau klik untuk memilih</span>
+              <span id="dropSub" class="block text-sm text-slate-500">Tarik &amp; lepas file (.xlsx / .xls) ke sini, atau klik untuk memilih</span>
               <span id="fileName" class="mt-1 block text-sm font-semibold"></span>
             </span>
             <input id="file" type="file" accept=".xlsx,.xls" class="hidden">
@@ -200,7 +200,7 @@
 
       <!-- AKSI: tanggal, simpan, cetak -->
       <section id="printBar" class="no-print hidden flex-wrap items-end gap-3 panel p-4">
-        <label class="field">Tanggal plan
+        <label class="field"><span id="planDateLbl">Tanggal plan</span>
           <input id="planDate" type="date">
         </label>
         <div class="ml-auto flex flex-wrap gap-2">
@@ -250,7 +250,7 @@
           <div id="xlsxMenu" class="hidden absolute right-0 z-30 mt-1 w-72 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
             <button type="button" data-x="plan" class="block w-full rounded-lg px-3 py-2 text-left hover:bg-indigo-50">
               <span id="xPlanLabel" class="block text-sm font-semibold">Planner (detail)</span>
-              <span class="block text-xs text-slate-500">Semua driver, lokasi &amp; produk</span>
+              <span id="xPlanDesc" class="block text-xs text-slate-500">Semua driver, lokasi &amp; produk</span>
             </button>
             <button type="button" data-x="bulkyAll" class="block w-full rounded-lg px-3 py-2 text-left hover:bg-indigo-50">
               <span class="block text-sm font-semibold">Bulky · All Driver</span>
@@ -334,7 +334,7 @@ const state = {
   sku: [], skuById: new Map(), skuByKey: new Map(), skuIdx: new Map(), skuEntries: [],
   excelIds: new Map(),            // normName -> ID dari baris "Need Refill 2" di Excel (cadangan)
   overrides: JSON.parse(localStorage.getItem(LS.ovr) || '{}'),
-  drivers: [], sheets: [], fileName: '', cache: new Map(), role: localStorage.getItem(LS.role) || 'admin',
+  drivers: [], sheets: [], req: [], fileName: '', cache: new Map(), role: localStorage.getItem(LS.role) || 'admin',
   menu: localStorage.getItem(LS.menu) === 'other' ? 'other' : 'planner'
 };
 const $ = id => document.getElementById(id);
@@ -496,6 +496,7 @@ function parseWorkbook(wb) {
 
 async function handleFile(f) {
   if (!f) return;
+  if (state.menu === 'other') return handleOtherFile(f);
   try {
     const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
     const drivers = parseWorkbook(wb);
@@ -660,6 +661,7 @@ function stats() {
   return { drivers: state.drivers.length, loc, item, qty, chk, ai };
 }
 function render() {
+  if (state.menu === 'other') return renderOther();
   const has = state.drivers.length > 0;
   $('empty').classList.toggle('hidden', has);
   $('toolbar').classList.toggle('hidden', !has); $('toolbar').classList.toggle('flex', has);
@@ -741,6 +743,7 @@ const qtyText = (qty, sku) => breakdown(qty, unitInfo(sku)).map(p => `${fmt(p.n)
 const totalsPayload = () => totalsFor(state.drivers).map(e => ({ id: e.id, name: e.name, qty: e.qty, sku: e.sku })).sort(byId)
   .map(e => ({ productId: e.id, productName: e.name, jumlah: qtyText(e.qty, e.sku) }));
 async function savePlan() {
+  if (state.menu === 'other') return saveOther();
   if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
   const date = $('planDate').value;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toast('Isi Tanggal plan terlebih dahulu', 3500);
@@ -764,6 +767,7 @@ async function savePlan() {
   btn.disabled = false; btn.innerHTML = label;
 }
 async function loadLatest() {
+  if (state.menu === 'other') return loadLatestOther();
   if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
   try {
     const r = await (await fetch(`${GAS_URL()}?action=${L().loadAction}`)).json();
@@ -788,6 +792,7 @@ async function loadLatest() {
   } catch (e) { toast('Gagal memuat plan: ' + e.message, 4500); }
 }
 function exportPlan() {
+  if (state.menu === 'other') return exportOther();
   const ws = XLSX.utils.json_to_sheet(flatRows().map(r => ({ Driver: r.driver, 'Plat Nomor': r.plate, 'VMC No': r.vmc, 'Location Name': r.location, 'ID Product': r.productId, Product: r.productName, Qty: r.qty, 'Asal Sheet Excel': r.sheet })));
   ws['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 55 }, { wch: 12 }, { wch: 48 }, { wch: 6 }, { wch: 18 }];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, L().xlsSheet);
@@ -826,6 +831,283 @@ function exportBulky(mode) {
   toast(`Export ${perDriver ? 'Bulky Per-Driver' : 'Bulky All Driver'}: ${rows.length} produk`, 3000);
 }
 function exportXlsx(mode) { return mode === 'bulkyAll' || mode === 'bulkyDriver' ? exportBulky(mode) : exportPlan(); }
+
+/* =====================================================================
+   OTHER REQUEST — import Excel multi-sheet
+   Dua format dikenali otomatis (per sheet):
+   1) "Bahan Baku"        : kolom Product ID / Product Name / QTY (mis. "36 Pcs", "17 Karton").
+                            Sheet tanpa baris header (mis. "BX") dibaca dari kolom paling kanan.
+   2) "Surat Jalan TikTok": WH Origin, Destination, baris header "SKU ID" + "SKU", kolom Floor (Dus / Pcs).
+   Sheet "SOP", "Sheet1", "Sheet2" dilewati.
+   Qty Pcs & Qty Carton dihitung dari UOM / UOP di sheet "Source SKU" (kemasan terbesar = Carton).
+   ===================================================================== */
+const REQ_SKIP = ['sop', 'sheet1', 'sheet2'];
+const cellStr = v => v == null ? '' : cleanName(String(v));
+const fmtDec = n => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(n);
+const round2 = n => Math.round(n * 100) / 100;
+
+/* "36 Pcs" -> {n:36, ctn:false} · "17 Karton" -> {n:17, ctn:true} · 0 / kosong -> {n:0} */
+function parseReqQty(v) {
+  if (v == null || v === '') return { n: 0, ctn: false };
+  if (typeof v === 'number') return { n: v, ctn: false };
+  const m = String(v).replace(/\u00a0/g, ' ').trim().match(/(\d+(?:[.,]\d+)?)\s*([a-zA-Z]*)/);
+  if (!m) return { n: 0, ctn: false };
+  const n = /^\d{1,3}(\.\d{3})+$/.test(m[1]) ? parseFloat(m[1].replace(/\./g, '')) : parseFloat(m[1].replace(',', '.'));
+  return { n: n || 0, ctn: /^(karton|carton|ctn|dus|box)$/i.test(m[2]) };
+}
+
+function parseReqBahan(rows, sn) {
+  const isId = c => /^product[\s_]*id$/i.test(cellStr(c));
+  const hi = rows.findIndex(r => r.some(isId));
+  let cId, cName, cQty;
+  if (hi >= 0) {
+    const H = rows[hi].map(cellStr);
+    cId = H.findIndex(h => /^product[\s_]*id$/i.test(h));
+    cName = H.findIndex(h => /^product[\s_]*name$/i.test(h));
+    cQty = H.findIndex(h => /^(qty|quantity|jumlah)$/i.test(h));
+  } else {
+    // tanpa header: slot | no | ID | harga | nama | slot_setting_name | QTY  -> hitung dari kolom paling kanan yang terisi
+    let last = -1;
+    rows.slice(1).forEach(r => r.forEach((c, j) => { if (c != null && c !== '' && j > last) last = j; }));
+    if (last < 4) return null;
+    cQty = last; cName = last - 2; cId = last - 4;
+  }
+  if (cId < 0 || cName < 0 || cQty < 0) return null;
+
+  const map = new Map(); let zero = 0;
+  rows.slice(hi >= 0 ? hi + 1 : 0).forEach(r => {
+    const id = cellStr(r[cId]), name = cellStr(r[cName]);
+    if (!/^[A-Za-z]?\d{1,6}$/.test(id) || !name) return;           // baris judul / kosong
+    const q = parseReqQty(r[cQty]);
+    if (q.n <= 0) { zero++; return; }
+    const key = idKey(id);
+    let e = map.get(key);
+    if (!e) { e = { id, name, ctn: 0, pcs: 0 }; map.set(key, e); }
+    if (q.ctn) e.ctn += q.n; else e.pcs += q.n;                      // QTY merge sel: hanya baris pertama yang berisi
+  });
+  return { sheet: sn, kind: 'bahan', whOrigin: '', destination: '', rows: [...map.values()], zero };
+}
+
+function parseReqTiktok(rows, sn) {
+  const hi = rows.findIndex(r => r.some(c => /^sku\s*id$/i.test(cellStr(c))));
+  if (hi < 0) return null;
+  const H = rows[hi].map(cellStr);
+  const cId = H.findIndex(h => /^sku\s*id$/i.test(h)), cName = H.findIndex(h => /^sku$/i.test(h));
+  if (cName < 0) return null;
+
+  let whOrigin = '', destination = '', fr = -1;
+  for (let i = 0; i < hi; i++) {
+    const r = rows[i];
+    r.forEach((c, j) => {
+      const m = cellStr(c).match(/^(wh\s*origin|destination)\s*:?\s*(.*)$/i);
+      if (!m) return;
+      let val = m[2];
+      if (!val) for (let k = j + 1; k < r.length; k++) { const t = cellStr(r[k]); if (t) { val = t; break; } }
+      val = val.replace(/^:\s*/, '').trim();
+      if (/^wh/i.test(m[1])) whOrigin = whOrigin || val; else destination = destination || val;
+    });
+    if (r.some(c => /^floor\b/i.test(cellStr(c)))) fr = i;           // baris "Floor xx" terdekat di atas header
+  }
+  if (fr < 0) return null;
+
+  // peta kolom -> lantai: label Floor berlaku sampai label lain (Total / Keterangan); sub-header "Dus" / "Pcs"
+  const F = rows[fr], cols = [], floors = [];
+  let cur = '';
+  for (let c = 0; c < Math.max(F.length, H.length); c++) {
+    const lab = cellStr(F[c]);
+    if (lab) cur = /^floor\b/i.test(lab) ? lab.replace(/^floor\s*/i, 'Floor ') : '';
+    const u = (H[c] || '').toLowerCase();
+    if (cur && /^(dus|pcs)/.test(u)) { cols.push({ c, floor: cur, ctn: u.startsWith('dus') }); if (!floors.includes(cur)) floors.push(cur); }
+  }
+  if (!cols.length) return null;
+
+  const byFloor = new Map(floors.map(f => [f, []]));
+  for (let i = hi + 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (/^total$/i.test(cellStr(r[0]))) break;
+    const id = cellStr(r[cId]), name = cellStr(r[cName]);
+    if (!id && !name) continue;
+    const per = new Map();
+    cols.forEach(({ c, floor, ctn }) => {
+      const n = Number(r[c]) || 0; if (n <= 0) return;
+      const e = per.get(floor) || { ctn: 0, pcs: 0 }; per.set(floor, e);
+      if (ctn) e.ctn += n; else e.pcs += n;
+    });
+    per.forEach((e, floor) => byFloor.get(floor).push({ floor, id, name, ctn: e.ctn, pcs: e.pcs }));
+  }
+  return { sheet: sn, kind: 'tiktok', whOrigin, destination, rows: floors.flatMap(f => byFloor.get(f)), zero: 0 };
+}
+
+function parseOtherWorkbook(wb) {
+  const blocks = [], skipped = [], unknown = [];
+  wb.SheetNames.forEach(sn => {
+    const name = cleanName(sn);
+    if (REQ_SKIP.includes(name.toLowerCase())) { skipped.push(name); return; }
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: null, raw: true });
+    const b = parseReqTiktok(rows, name) || parseReqBahan(rows, name);
+    if (b && b.rows.length) blocks.push(b); else unknown.push(name);
+  });
+  return { blocks, skipped, unknown };
+}
+
+async function handleOtherFile(f) {
+  try {
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const { blocks, skipped, unknown } = parseOtherWorkbook(wb);
+    if (!blocks.length) return toast('Format tidak dikenali: butuh kolom "Product ID" + "QTY" (Bahan Baku) atau "SKU ID" + "Floor" (Surat Jalan TikTok)', 5500);
+    state.req = blocks; state.fileName = f.name;
+    $('fileName').textContent = f.name; $('btnSave').disabled = false;
+    render();
+    const rowsN = blocks.reduce((a, b) => a + b.rows.length, 0);
+    toast(`Import berhasil: ${blocks.length} sheet (${blocks.map(b => b.sheet).join(', ')}) · ${fmt(rowsN)} baris`
+      + (skipped.length ? ` · dilewati: ${skipped.join(', ')}` : '') + (unknown.length ? ` · tanpa data/format tak dikenal: ${unknown.join(', ')}` : ''), 7000);
+  } catch (e) { toast('Gagal membaca file: ' + e.message, 4500); }
+}
+
+/* Qty Pcs & Qty Carton satu baris. Carton = kemasan terbesar di UOM/UOP Source SKU (isi per carton). */
+function nameSim(a, b) {
+  const mk = s => { const n = norm(s), tok = new Set(n.split(' ')); return { n, tok, bg: bigrams(n), nums: new Set([...tok].filter(x => /\d/.test(x))) }; };
+  return similarity(mk(a), mk(b));
+}
+function reqView(r) {
+  if (r.saved) return { id: r.id, pcs: r.saved.pcs, carton: r.saved.carton, notes: [], sku: null, flag: false };   // data dimuat dari spreadsheet
+  const sku = state.skuById.get(String(r.id)) || state.skuByKey.get(idKey(r.id)) || null;
+  const info = unitInfo(sku), f = info.tiers.length ? info.tiers[0].f : (info.single ? 1 : 0);
+  const notes = [];
+  let pcs = r.pcs || 0, carton = null;
+  if (r.ctn) { if (f) pcs += r.ctn * f; else notes.push('UOM / UOP kosong — Qty Pcs dari Carton tidak bisa dihitung'); }
+  if (f > 1) carton = round2(pcs / f); else if (r.ctn) carton = r.ctn;
+  if (state.sku.length) {
+    if (!sku) notes.push('ID tidak ada di Source SKU');
+    else {
+      if (!f && !r.ctn) notes.push('UOM / UOP kosong di Source SKU');
+      if (nameSim(r.name, sku.name) < 0.6) notes.push('Nama di Source SKU: ' + sku.name);
+    }
+  }
+  return { id: sku ? String(sku.id) : r.id, pcs, carton, notes, sku, flag: notes.length > 0 };
+}
+const reqRows = () => state.req.flatMap(b => b.rows.map(r => {
+  const v = reqView(r);
+  return { sheet: b.sheet, whOrigin: b.whOrigin || '', destination: b.destination || '', flooring: r.floor || '',
+    productId: v.id, productName: r.name, qtyPcs: v.pcs, qtyCarton: v.carton == null ? '' : v.carton };
+}));
+
+function renderOther() {
+  const has = state.req.length > 0;
+  $('empty').classList.toggle('hidden', has);
+  $('toolbar').classList.toggle('hidden', !has); $('toolbar').classList.toggle('flex', has);
+  $('printBar').classList.toggle('hidden', !has); $('printBar').classList.toggle('flex', has);
+  ['insight', 'grandTotals', 'driverTotals'].forEach(id => $(id).classList.add('hidden'));
+  if (!has) { $('stats').innerHTML = ''; $('result').innerHTML = ''; return; }
+
+  const q = norm($('search').value);
+  let nRows = 0, totalPcs = 0, check = 0;
+  state.req.forEach(b => b.rows.forEach(r => { const v = reqView(r); nRows++; totalPcs += v.pcs; if (v.flag) check++; }));
+  const chip = (label, val, tone = '') => `<div class="stat"><div class="text-xs text-slate-500">${label}</div><div class="num v ${tone}">${fmt(val)}</div></div>`;
+  $('stats').innerHTML = chip('Sheet Excel', state.req.length) + chip('Baris Produk', nRows) + chip('Total Qty Pcs', totalPcs) +
+    chip('Perlu Dicek', check, check ? 'text-amber-600' : 'text-emerald-600');
+
+  const open = new Set([...document.querySelectorAll('.driver-card[data-open="1"]')].map(e => e.dataset.key));
+  const firstRender = !document.querySelector('.driver-card');
+  const th = (t, cls = '') => `<th class="px-3 py-2 ${cls}">${t}</th>`;
+  const html = state.req.map(b => {
+    const tk = b.kind === 'tiktok';
+    const list = b.rows.map(r => ({ r, v: reqView(r) })).filter(({ r, v }) => !q || norm(`${b.sheet} ${b.whOrigin} ${b.destination} ${r.floor || ''} ${v.id} ${r.name}`).includes(q));
+    if (!list.length) return '';
+    const sum = list.reduce((a, x) => a + x.v.pcs, 0), isOpen = firstRender || open.has(b.sheet);
+    const body = list.map(({ r, v }) => `
+      <tr class="border-t border-slate-100 align-top">
+        ${tk ? `<td class="px-3 py-2 text-sm whitespace-nowrap">${esc(b.whOrigin)}</td><td class="px-3 py-2 text-sm whitespace-nowrap">${esc(b.destination)}</td><td class="px-3 py-2 text-sm whitespace-nowrap">${esc(r.floor)}</td>` : ''}
+        <td class="px-3 py-2 text-sm whitespace-nowrap font-mono font-semibold num">${v.id ? esc(v.id) : '<span class="text-slate-300">—</span>'}</td>
+        <td class="px-3 py-2 text-sm">${esc(r.name)}${v.notes.length ? `<div class="mt-0.5 text-[10px] text-amber-600">${v.notes.map(esc).join(' · ')}</div>` : ''}</td>
+        <td class="num px-4 py-2 text-right text-sm font-semibold" title="${esc(v.sku ? qtyText(v.pcs, v.sku) : '')}">${fmt(v.pcs)}</td>
+        <td class="num px-4 py-2 text-right text-sm font-semibold">${v.carton == null ? '<span class="text-slate-300">—</span>' : fmtDec(v.carton)}</td>
+      </tr>`).join('');
+    return `
+    <article class="driver-card overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200" data-key="${esc(b.sheet)}" data-open="${isOpen ? 1 : 0}">
+      <button class="toggle flex w-full items-center justify-between gap-3 px-4 py-3 text-left md:px-5">
+        <div class="min-w-0">
+          <div class="truncate font-semibold">${esc(b.sheet)}</div>
+          <div class="mt-0.5 text-xs text-slate-500">${tk ? `Surat Jalan TikTok · ${esc(b.whOrigin || '-')} → ${esc(b.destination || '-')}` : 'Bahan Baku'}</div>
+        </div>
+        <div class="text-right text-xs text-slate-500"><div><b class="num text-slate-800">${list.length}</b> baris</div><div>Total <b class="num text-slate-800">${fmt(sum)}</b> pcs</div></div>
+      </button>
+      <div class="card-body border-t border-slate-200 ${isOpen ? '' : 'collapsed'}">
+        <div class="overflow-x-auto"><table class="${tk ? 'min-w-[820px]' : 'min-w-[560px]'} w-full">
+          <thead class="bg-slate-100 text-left text-xs font-semibold text-slate-600"><tr>
+            ${tk ? th('WH Origin') + th('Destination') + th('Flooring') : ''}${th('Product ID')}${th('Product Name')}${th('Qty Pcs', 'text-right')}${th('Qty Carton', 'text-right')}
+          </tr></thead>
+          <tbody>${body}</tbody>
+        </table></div>
+      </div>
+    </article>`;
+  }).join('');
+  $('result').innerHTML = html || '<div class="rounded-2xl bg-white p-8 text-center text-slate-500 ring-1 ring-slate-200">Tidak ada data yang cocok dengan filter.</div>';
+}
+
+function exportOther() {
+  if (!state.req.length) return toast('Belum ada data Other Request', 3000);
+  const wb = XLSX.utils.book_new(), used = new Set();
+  state.req.forEach(b => {
+    const rows = b.rows.map(r => {
+      const v = reqView(r);
+      return { ...(b.kind === 'tiktok' ? { 'WH Origin': b.whOrigin, Destination: b.destination, Flooring: r.floor } : {}),
+        'Product ID': v.id, 'Product Name': r.name, 'Qty Pcs': v.pcs, 'Qty Carton': v.carton == null ? '' : v.carton };
+    });
+    let nm = (b.sheet.replace(/[\\/?*\[\]:]/g, ' ').trim() || 'Sheet').slice(0, 31), i = 2;
+    while (used.has(nm.toLowerCase())) nm = nm.slice(0, 28) + ' ' + i++;
+    used.add(nm.toLowerCase());
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = (b.kind === 'tiktok' ? [{ wch: 14 }, { wch: 16 }, { wch: 12 }] : []).concat([{ wch: 12 }, { wch: 52 }, { wch: 10 }, { wch: 11 }]);
+    XLSX.utils.book_append_sheet(wb, ws, nm);
+  });
+  XLSX.writeFile(wb, `OtherRequest_${planDateVal()}.xlsx`);
+  toast('Export Other Request: ' + state.req.length + ' sheet', 3000);
+}
+
+async function saveOther() {
+  if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
+  const date = $('planDate').value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toast('Isi Tanggal request terlebih dahulu', 3500);
+  const rows = reqRows();
+  if (!rows.length) return toast('Tidak ada data untuk disimpan', 3000);
+  const noId = rows.filter(r => !r.productId).length;
+  if (noId && !confirm(`${noId} baris belum punya ID Product. Tetap simpan?`)) return;
+  const btn = $('btnSave'), label = btn.innerHTML; btn.disabled = true; btn.textContent = 'Menyimpan…';
+  try {
+    const r = await (await fetch(GAS_URL(), {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'saveOtherRequest', fileName: state.fileName, savedBy: 'Admin', planDate: date, rows })
+    })).json();
+    if (!r.ok) throw new Error(r.error);
+    if (!r.saved) toast(`Other Request tanggal ${dateLong(date)} sudah ada di spreadsheet, tidak dicatat ulang`, 5000);
+    else toast(`Tercatat ${r.saved} baris ke sheet "${r.sheet}"` + (r.skipped ? ` · ${r.skipped} baris sudah ada, dilewati` : ''), 5000);
+  } catch (e) {
+    const old = /Action tidak dikenal/.test(e.message);
+    toast('Gagal menyimpan: ' + e.message + (old ? ' — GAS yang ter-deploy masih versi lama. Tempel kode terbaru → Deploy > Manage deployments > Edit > New version → Deploy.' : ''), old ? 9000 : 4500);
+  }
+  btn.disabled = false; btn.innerHTML = label;
+}
+
+async function loadLatestOther() {
+  if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
+  try {
+    const r = await (await fetch(`${GAS_URL()}?action=${L().loadAction}`)).json();
+    if (!r.ok) throw new Error(r.error);
+    if (!r.rows.length) return toast('Belum ada Other Request yang disimpan');
+    const map = new Map();
+    r.rows.forEach(x => {
+      if (!map.has(x.sheet)) map.set(x.sheet, { sheet: x.sheet, kind: (x.flooring || x.whOrigin) ? 'tiktok' : 'bahan', whOrigin: x.whOrigin, destination: x.destination, rows: [], zero: 0 });
+      map.get(x.sheet).rows.push({ floor: x.flooring, id: x.productId, name: x.productName, saved: { pcs: Number(x.qtyPcs) || 0, carton: x.qtyCarton === '' || x.qtyCarton == null ? null : Number(x.qtyCarton) } });
+    });
+    state.req = [...map.values()]; state.fileName = r.meta?.fileName || '';
+    const pd = r.meta?.planDate || (r.meta?.savedAt || '').slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(pd)) $('planDate').value = pd;
+    $('btnSave').disabled = true;
+    render();
+    toast(`Other Request ${r.planId} dimuat · disimpan ${r.meta?.savedAt || ''}`, 3500);
+  } catch (e) { toast('Gagal memuat Other Request: ' + e.message, 4500); }
+}
 
 /* =====================================================================
    LAPORAN CETAK / PDF
@@ -983,7 +1265,7 @@ const WS = {}; // data per menu: dipertahankan saat berpindah menu (tanpa import
 
 function snapshotMenu() {
   WS[state.menu] = {
-    drivers: state.drivers, sheets: state.sheets, fileName: state.fileName, excelIds: state.excelIds,
+    drivers: state.drivers, sheets: state.sheets, req: state.req, fileName: state.fileName, excelIds: state.excelIds,
     planDate: $('planDate').value, fileLabel: $('fileName').textContent, saveDisabled: $('btnSave').disabled
   };
 }
@@ -1002,13 +1284,22 @@ function applyMenu() {
   $('packerText').textContent = m.packer; $('btnLoad').textContent = m.loadBtn;
   $('xPlanLabel').textContent = m.xlsLabel; $('emptyTitle').textContent = m.empty;
   document.title = 'Warehouse Jumpstart Indonesia — ' + m.title;
+  const other = state.menu === 'other';   // elemen khusus Planner disembunyikan di Other Request
+  $('driverSel').classList.toggle('hidden', other);
+  $('onlyCheck').closest('label').classList.toggle('hidden', other);
+  $('btnPrintTotal').classList.toggle('hidden', other); $('btnPrintDriver').classList.toggle('hidden', other);
+  document.querySelectorAll('#xlsxMenu [data-x="bulkyAll"], #xlsxMenu [data-x="bulkyDriver"]').forEach(b => b.classList.toggle('hidden', other));
+  $('planDateLbl').textContent = other ? 'Tanggal request' : 'Tanggal plan';
+  $('xPlanDesc').textContent = other ? 'Semua sheet Excel · produk & qty' : 'Semua driver, lokasi & produk';
+  $('dropSub').textContent = other ? 'Tarik & lepas file (.xlsx / .xls): Bahan Baku atau Surat Jalan TikTok · sheet SOP, Sheet1, Sheet2 dilewati' : 'Tarik & lepas file (.xlsx / .xls) ke sini, atau klik untuk memilih';
+  $('search').placeholder = other ? 'Cari sheet, lantai, produk, ID…' : 'Cari lokasi, produk, ID, driver, plat…';
 }
 function switchMenu(key) {
   if (!MENUS[key] || key === state.menu) return;
   snapshotMenu();
   state.menu = key; localStorage.setItem(LS.menu, key);
-  const w = WS[key] || { drivers: [], sheets: [], fileName: '', excelIds: new Map(), planDate: todayStr(), fileLabel: '', saveDisabled: true };
-  state.drivers = w.drivers; state.sheets = w.sheets; state.fileName = w.fileName; state.excelIds = w.excelIds;
+  const w = WS[key] || { drivers: [], sheets: [], req: [], fileName: '', excelIds: new Map(), planDate: todayStr(), fileLabel: '', saveDisabled: true };
+  state.drivers = w.drivers; state.sheets = w.sheets; state.req = w.req || []; state.fileName = w.fileName; state.excelIds = w.excelIds;
   $('planDate').value = w.planDate; $('fileName').textContent = w.fileLabel; $('btnSave').disabled = w.saveDisabled;
   $('search').value = ''; $('onlyCheck').checked = false; $('file').value = '';
   state.cache.clear(); // pencocokan ID memakai excelIds milik file menu tersebut
