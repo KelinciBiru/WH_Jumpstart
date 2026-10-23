@@ -123,13 +123,17 @@
     <div class="flex flex-col items-center border-b border-slate-200 px-4 pb-5 pt-7 text-center">
       <img data-logo alt="Jumpstart" class="h-auto w-40">
       <div class="display mt-4 whitespace-nowrap text-[.9rem] font-bold leading-snug">Warehouse Jumpstart Indonesia</div>
-      <div class="mt-1 whitespace-nowrap text-[11px] tracking-wide text-slate-500">Planner · Warehouse PG</div>
+      <div id="sideSub" class="mt-1 whitespace-nowrap text-[11px] tracking-wide text-slate-500">Planner · Warehouse PG</div>
     </div>
     <nav class="flex-1 px-4 pt-5" aria-label="Menu utama">
       <div class="nav-label">Menu</div>
-      <a href="#" class="nav-item nav-on" aria-current="page">
+      <a href="#" data-menu="planner" class="nav-item nav-on" aria-current="page">
         <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h4"/></svg>
         Planner
+      </a>
+      <a href="#" data-menu="other" class="nav-item mt-1">
+        <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Other Request
       </a>
     </nav>
     <div class="space-y-2.5 border-t border-slate-200 px-6 py-5 text-xs text-slate-500">
@@ -145,8 +149,8 @@
       <div class="flex items-center gap-3">
         <img data-logo alt="Jumpstart" class="h-7 w-auto md:hidden">
         <div>
-          <h1 class="text-2xl font-bold leading-none">Planner</h1>
-          <p class="hide-xs mt-1 text-xs text-slate-500">Rencana isi mobil per driver · untuk Packer &amp; Admin Warehouse</p>
+          <h1 id="pageTitle" class="text-2xl font-bold leading-none">Planner</h1>
+          <p id="pageSub" class="hide-xs mt-1 text-xs text-slate-500">Rencana isi mobil per driver · untuk Packer &amp; Admin Warehouse</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -159,6 +163,12 @@
     </header>
 
     <main class="flex-1 space-y-5 p-4 md:p-8">
+
+      <!-- PILIH MENU (layar kecil; di layar lebar memakai sidebar) -->
+      <nav class="no-print md:hidden inline-flex w-full rounded-lg bg-slate-100 p-1 text-sm" aria-label="Menu">
+        <button type="button" data-menu="planner" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Planner</button>
+        <button type="button" data-menu="other" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Other Request</button>
+      </nav>
 
       <!-- IMPORT (Admin) -->
       <section id="importCard" class="no-print panel p-4 md:p-5">
@@ -183,7 +193,7 @@
       <!-- Packer shortcut -->
       <section id="packerBar" class="no-print hidden panel p-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="text-sm text-slate-600">Mode Packer: tampilkan plan terakhir yang disimpan Admin.</div>
+          <div id="packerText" class="text-sm text-slate-600">Mode Packer: tampilkan plan terakhir yang disimpan Admin.</div>
           <button id="btnLoad" class="btn btn-dark">Muat plan terakhir</button>
         </div>
       </section>
@@ -239,7 +249,7 @@
           </button>
           <div id="xlsxMenu" class="hidden absolute right-0 z-30 mt-1 w-72 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
             <button type="button" data-x="plan" class="block w-full rounded-lg px-3 py-2 text-left hover:bg-indigo-50">
-              <span class="block text-sm font-semibold">Planner (detail)</span>
+              <span id="xPlanLabel" class="block text-sm font-semibold">Planner (detail)</span>
               <span class="block text-xs text-slate-500">Semua driver, lokasi &amp; produk</span>
             </button>
             <button type="button" data-x="bulkyAll" class="block w-full rounded-lg px-3 py-2 text-left hover:bg-indigo-50">
@@ -274,7 +284,7 @@
       <section id="result" class="space-y-4"></section>
 
       <div id="empty" class="empty">
-        <div class="display text-3xl font-bold">Belum ada plan</div>
+        <div id="emptyTitle" class="display text-3xl font-bold">Belum ada plan</div>
         <p class="mx-auto mt-2 max-w-md text-sm text-slate-600">Admin: import file Excel di kotak atas. Packer: pilih peran Packer lalu muat plan terakhir.</p>
       </div>
     </main>
@@ -316,7 +326,7 @@ document.querySelectorAll('img[data-logo]').forEach(i => i.src = LOGO_SRC);
 const FAVICON_SRC = 'data:image/png;base64,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'; // logo Jumpstart di atas latar putih
 document.getElementById('fav').href = FAVICON_SRC;
 document.getElementById('favApple').href = FAVICON_SRC;
-const LS = { url: 'planner_gas_url', sku: 'planner_sku_cache', ovr: 'planner_overrides', role: 'planner_role' };
+const LS = { url: 'planner_gas_url', sku: 'planner_sku_cache', ovr: 'planner_overrides', role: 'planner_role', menu: 'planner_menu' };
 const GAS_URL = () => localStorage.getItem(LS.url) || DEFAULT_GAS_URL;
 const gasReady = () => /^https:\/\/script\.google\.com\/.+\/exec/.test(GAS_URL());
 
@@ -324,7 +334,8 @@ const state = {
   sku: [], skuById: new Map(), skuByKey: new Map(), skuIdx: new Map(), skuEntries: [],
   excelIds: new Map(),            // normName -> ID dari baris "Need Refill 2" di Excel (cadangan)
   overrides: JSON.parse(localStorage.getItem(LS.ovr) || '{}'),
-  drivers: [], sheets: [], fileName: '', cache: new Map(), role: localStorage.getItem(LS.role) || 'admin'
+  drivers: [], sheets: [], fileName: '', cache: new Map(), role: localStorage.getItem(LS.role) || 'admin',
+  menu: localStorage.getItem(LS.menu) === 'other' ? 'other' : 'planner'
 };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -739,7 +750,7 @@ async function savePlan() {
   try {
     const r = await (await fetch(GAS_URL(), {
       method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'savePlan', fileName: state.fileName, savedBy: 'Admin', planDate: date, rows: flatRows(), totals: totalsPayload(), bulkyAll: bulkyAllPayload(), bulkyDriver: bulkyDriverPayload() })
+      body: JSON.stringify({ action: L().saveAction, fileName: state.fileName, savedBy: 'Admin', planDate: date, rows: flatRows(), totals: totalsPayload(), bulkyAll: bulkyAllPayload(), bulkyDriver: bulkyDriverPayload() })
     })).json();
     if (!r.ok) throw new Error(r.error);
     if (r.bulkyAllSaved === undefined) { // GAS yang ter-deploy masih versi lama (tidak mengenal data Bulky)
@@ -749,15 +760,15 @@ async function savePlan() {
     const skip = (r.skipped || 0) + (r.totalSkipped || 0) + (r.bulkyAllSkipped || 0) + (r.bulkyDriverSkipped || 0);
     if (!r.saved && !r.totalSaved && !r.bulkyAllSaved && !r.bulkyDriverSaved) toast(`Data tanggal ${dateLong(date)} sudah ada di spreadsheet, tidak dicatat ulang`, 5000);
     else toast(`Tercatat ${r.saved} baris plan + ${r.totalSaved || 0} total produk + ${r.bulkyAllSaved || 0} bulky all + ${r.bulkyDriverSaved || 0} bulky per-driver` + (skip ? ` · ${skip} baris sudah ada, dilewati` : ''), 5000);
-  } catch (e) { toast('Gagal menyimpan: ' + e.message, 4500); }
+  } catch (e) { toast('Gagal menyimpan: ' + e.message + (/Action tidak dikenal/.test(e.message) ? ' — GAS yang ter-deploy masih versi lama. Tempel kode terbaru → Deploy > Manage deployments > Edit > New version → Deploy.' : ''), /Action tidak dikenal/.test(e.message) ? 9000 : 4500); }
   btn.disabled = false; btn.innerHTML = label;
 }
 async function loadLatest() {
   if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
   try {
-    const r = await (await fetch(`${GAS_URL()}?action=getLatestPlan`)).json();
+    const r = await (await fetch(`${GAS_URL()}?action=${L().loadAction}`)).json();
     if (!r.ok) throw new Error(r.error);
-    if (!r.rows.length) return toast('Belum ada plan yang disimpan');
+    if (!r.rows.length) return toast(`Belum ada ${L().noun} yang disimpan`);
     const map = new Map();
     r.rows.forEach(x => {
       const key = x.driver.trim().replace(/\s+/g, ' ').toUpperCase();
@@ -773,14 +784,14 @@ async function loadLatest() {
     if (/^\d{4}-\d{2}-\d{2}$/.test(pd)) $('planDate').value = pd;
     $('btnSave').disabled = true;
     state.cache.clear(); buildDriverSelect(); render();
-    toast(`Plan ${r.planId} dimuat · disimpan ${r.meta?.savedAt || ''}`, 3500);
+    toast(`${L().noun} ${r.planId} dimuat · disimpan ${r.meta?.savedAt || ''}`, 3500);
   } catch (e) { toast('Gagal memuat plan: ' + e.message, 4500); }
 }
 function exportPlan() {
   const ws = XLSX.utils.json_to_sheet(flatRows().map(r => ({ Driver: r.driver, 'Plat Nomor': r.plate, 'VMC No': r.vmc, 'Location Name': r.location, 'ID Product': r.productId, Product: r.productName, Qty: r.qty, 'Asal Sheet Excel': r.sheet })));
   ws['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 55 }, { wch: 12 }, { wch: 48 }, { wch: 6 }, { wch: 18 }];
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Planner');
-  XLSX.writeFile(wb, `Planner_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, L().xlsSheet);
+  XLSX.writeFile(wb, `${L().xlsFile}_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 /* ---- Bulky: total per produk (All Driver / Per-Driver) ----
@@ -801,10 +812,10 @@ function exportBulky(mode) {
     const d = selectedDriver();
     if (!d) return toast('Pilih driver di dropdown filter terlebih dahulu', 3500);
     rows = bulkyList([d]).map(x => ({ 'ID Product': x.productId, Product: x.productName, 'Jumlah UOM/UOP': x.jumlah, 'Qty (Pcs)': x.qty, Tanggal: date, Driver: driverLabel(d) }));
-    name = `Bulky_PerDriver_${driverLabel(d).replace(/[^\w-]+/g, '_')}_${date}.xlsx`;
+    name = `${L().fp}Bulky_PerDriver_${driverLabel(d).replace(/[^\w-]+/g, '_')}_${date}.xlsx`;
   } else {
     rows = bulkyList(state.drivers).map(x => ({ 'ID Product': x.productId, Product: x.productName, 'Jumlah UOM/UOP': x.jumlah, 'Qty (Pcs)': x.qty, Tanggal: date }));
-    name = `Bulky_AllDriver_${date}.xlsx`;
+    name = `${L().fp}Bulky_AllDriver_${date}.xlsx`;
   }
   if (!rows.length) return toast('Tidak ada produk untuk diexport', 3000);
   const head = Object.keys(rows[0]);
@@ -901,18 +912,18 @@ function printTotal() {
   if (!state.drivers.length) return toast('Belum ada data');
   const date = $('planDate').value || todayStr();
   const rows = totalsFor(state.drivers).map(e => ({ id: e.id, name: e.name, qty: e.qty, sku: e.sku, bySheet: e.bySheet })).sort(byId);
-  printHtml(`<div class="pp-page">${printHead('Total Plan per Produk')}
+  printHtml(`<div class="pp-page">${printHead(`Total ${L().noun} per Produk`)}
     ${metaRows([['Tanggal', dateLong(date)], ['File Sumber', state.fileName], ...(multiSheet() ? [['Sheet Excel', sheetList(state.drivers).join(' + ') + ' (gabungan)']] : [])])}
-    ${reportTable(rows, 'Product Name')}</div>`, `Total_Produk_${date}`);
+    ${reportTable(rows, 'Product Name')}</div>`, `${L().fp}Total_Produk_${date}`);
 }
 function printDriverTotal() {
   const d = selectedDriver();
   if (!d) return toast('Pilih driver di dropdown terlebih dahulu');
   const date = $('planDate').value || todayStr();
   const rows = totalsFor([d]).map(e => ({ id: e.id, name: e.name, qty: e.qty, sku: e.sku, bySheet: e.bySheet })).sort(byId);
-  printHtml(`<div class="pp-page">${printHead('Total Plan per Produk · Driver')}
+  printHtml(`<div class="pp-page">${printHead(`Total ${L().noun} per Produk · Driver`)}
     ${metaRows([['Tanggal', dateLong(date)], ['Driver', d.driver], ['Plat Nomor', d.plate || '-'], ['Jumlah Lokasi', String(d.locations.length)], ['File Sumber', state.fileName], ...(multiSheet() ? [['Sheet Excel', sheetList([d]).join(' + ')]] : [])])}
-    ${reportTable(rows, 'Product Name')}</div>`, `Total_Produk_${d.driver}_${date}`);
+    ${reportTable(rows, 'Product Name')}</div>`, `${L().fp}Total_Produk_${d.driver}_${date}`);
 }
 function printDrivers() {
   if (!state.drivers.length) return toast('Belum ada data');
@@ -921,12 +932,12 @@ function printDrivers() {
   const pages = [];
   ds.forEach(d => d.locations.forEach(l => {
     const rows = l.items.map(it => { const m = resolve(it), sku = skuFor(it, m); return { id: m.id, name: sku ? sku.name : it.name, qty: it.qty, sku }; });
-    pages.push(`<div class="pp-page">${printHead('Plan Muatan Driver')}
+    pages.push(`<div class="pp-page">${printHead(L().loadTitle)}
       ${metaRows([['Tanggal', dateLong(date)], ['Driver', d.driver], ['Plat Nomor', l.plate || d.plate || '-'], ['VMC No', l.vmc], ['Location Name', l.name], ...(multiSheet() && l.sheet ? [['Asal Sheet', l.sheet]] : [])])}
       ${reportTable(rows, 'Product Name')}${signBlock(d.driver)}</div>`);
   }));
   if (!pages.length) return toast('Tidak ada lokasi untuk dicetak');
-  printHtml(pages.join(''), sel ? `Plan_${ds[0].driver}_${date}` : `Plan_Semua_Driver_${date}`);
+  printHtml(pages.join(''), sel ? `${L().fp || 'Plan_'}${ds[0].driver}_${date}` : `${L().fp || 'Plan_'}Semua_Driver_${date}`);
 }
 
 let fixKey = '';
@@ -946,6 +957,65 @@ function applyFix() {
   localStorage.setItem(LS.ovr, JSON.stringify(state.overrides));
   state.cache.clear(); $('fixDlg').close(); render(); toast('ID diperbarui');
 }
+
+/* =====================================================================
+   MENU: Planner & Other Request
+   Konsep sama: import Excel -> total per produk / per driver -> cetak PDF -> simpan ke spreadsheet.
+   Bedanya: setiap menu punya data sendiri (file, driver, tanggal) dan disimpan ke sheet sendiri
+   di spreadsheet "Dashboard Plan Warehouse PG" lewat action GAS yang berbeda.
+   ===================================================================== */
+const MENUS = {
+  planner: {
+    nav: 'Planner', title: 'Planner', sub: 'Rencana isi mobil per driver · untuk Packer & Admin Warehouse', side: 'Planner · Warehouse PG',
+    saveAction: 'savePlan', loadAction: 'getLatestPlan', noun: 'Plan', loadTitle: 'Plan Muatan Driver', fp: '',
+    xlsLabel: 'Planner (detail)', xlsSheet: 'Planner', xlsFile: 'Planner',
+    packer: 'Mode Packer: tampilkan plan terakhir yang disimpan Admin.', loadBtn: 'Muat plan terakhir', empty: 'Belum ada plan'
+  },
+  other: {
+    nav: 'Other Request', title: 'Other Request', sub: 'Permintaan tambahan di luar plan utama · untuk Packer & Admin Warehouse', side: 'Other Request · Warehouse PG',
+    saveAction: 'saveOtherRequest', loadAction: 'getLatestOtherRequest', noun: 'Other Request', loadTitle: 'Other Request Muatan Driver', fp: 'OtherRequest_',
+    xlsLabel: 'Other Request (detail)', xlsSheet: 'Other Request', xlsFile: 'OtherRequest',
+    packer: 'Mode Packer: tampilkan Other Request terakhir yang disimpan Admin.', loadBtn: 'Muat Other Request terakhir', empty: 'Belum ada Other Request'
+  }
+};
+const L = () => MENUS[state.menu];
+const WS = {}; // data per menu: dipertahankan saat berpindah menu (tanpa import ulang)
+
+function snapshotMenu() {
+  WS[state.menu] = {
+    drivers: state.drivers, sheets: state.sheets, fileName: state.fileName, excelIds: state.excelIds,
+    planDate: $('planDate').value, fileLabel: $('fileName').textContent, saveDisabled: $('btnSave').disabled
+  };
+}
+function applyMenu() {
+  const m = L();
+  document.querySelectorAll('.nav-item[data-menu]').forEach(a => {
+    const on = a.dataset.menu === state.menu;
+    a.classList.toggle('nav-on', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('.menu-btn').forEach(b => {
+    const on = b.dataset.menu === state.menu;
+    b.className = 'menu-btn flex-1 rounded-md px-3 py-2 font-semibold ' + (on ? 'bg-white shadow text-indigo-700' : 'text-slate-500');
+  });
+  $('pageTitle').textContent = m.title; $('pageSub').textContent = m.sub; $('sideSub').textContent = m.side;
+  $('packerText').textContent = m.packer; $('btnLoad').textContent = m.loadBtn;
+  $('xPlanLabel').textContent = m.xlsLabel; $('emptyTitle').textContent = m.empty;
+  document.title = 'Warehouse Jumpstart Indonesia — ' + m.title;
+}
+function switchMenu(key) {
+  if (!MENUS[key] || key === state.menu) return;
+  snapshotMenu();
+  state.menu = key; localStorage.setItem(LS.menu, key);
+  const w = WS[key] || { drivers: [], sheets: [], fileName: '', excelIds: new Map(), planDate: todayStr(), fileLabel: '', saveDisabled: true };
+  state.drivers = w.drivers; state.sheets = w.sheets; state.fileName = w.fileName; state.excelIds = w.excelIds;
+  $('planDate').value = w.planDate; $('fileName').textContent = w.fileLabel; $('btnSave').disabled = w.saveDisabled;
+  $('search').value = ''; $('onlyCheck').checked = false; $('file').value = '';
+  state.cache.clear(); // pencocokan ID memakai excelIds milik file menu tersebut
+  applyMenu(); buildDriverSelect(); render();
+  window.scrollTo({ top: 0 });
+}
+document.querySelectorAll('[data-menu]').forEach(el => el.addEventListener('click', e => { e.preventDefault(); switchMenu(el.dataset.menu); }));
 
 /* =====================================================================
    EVENT
@@ -1002,7 +1072,7 @@ $('fixClear').onclick = () => { delete state.overrides[fixKey]; localStorage.set
 $('fixInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyFix(); } });
 
 $('planDate').value = todayStr();
-applyRole(); loadSku(); render();
+applyMenu(); applyRole(); loadSku(); render();
 </script>
 </body>
 </html>
