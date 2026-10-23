@@ -428,7 +428,7 @@ async function loadSku(force = false) {
 
 /* =====================================================================
    IMPORT & PARSE EXCEL
-   Struktur file: baris driver (kol. VMC No = nama driver, kol. Location Name = plat)
+   Struktur file: baris driver (kol. VMC No = nama driver, kol. Location Name = plat, plat boleh kosong)
    diikuti baris lokasi; kolom produk dimulai setelah "Last Visit".
    ===================================================================== */
 /* ---- Sheet Excel: setiap lokasi & item membawa nama sheet asalnya; driver yang sama di beberapa sheet digabung ---- */
@@ -465,13 +465,14 @@ function parseWorkbook(wb) {
     let cur = null, curPlate = '';
     for (const r of rows.slice(hi + 1)) {
       const vmc = r[cVmc], loc = r[cLoc], lid = r[cId];
-      const isDriver = !lid && typeof vmc === 'string' && vmc.trim() && loc;
+      // Baris driver = nama di kolom VMC No tanpa Loc ID. Plat (kolom Location Name) OPSIONAL: boleh kosong.
+      const isDriver = !lid && typeof vmc === 'string' && vmc.trim() !== '';
       if (isDriver) {
         // Driver digabung berdasarkan NAMA saja (plat bisa berbeda antar sheet); semua plat dikumpulkan
-        const driver = vmc.trim().replace(/\s+/g, ' '), plate = cleanName(loc).toUpperCase(), key = driver.toUpperCase();
+        const driver = vmc.trim().replace(/\s+/g, ' '), plate = loc ? cleanName(loc).toUpperCase() : '', key = driver.toUpperCase();
         if (!map.has(key)) map.set(key, { key, driver, plate: '', plates: [], locations: [] });
         cur = map.get(key); curPlate = plate;
-        if (!cur.plates.includes(plate)) { cur.plates.push(plate); cur.plate = cur.plates.join(' / '); }
+        if (plate && !cur.plates.includes(plate)) { cur.plates.push(plate); cur.plate = cur.plates.join(' / '); }
         continue;
       }
       if (!cur || !loc || !(lid || typeof vmc === 'number')) continue;
@@ -493,7 +494,8 @@ async function handleFile(f) {
     $('fileName').textContent = f.name;
     $('btnSave').disabled = false;
     buildDriverSelect(); render();
-    toast(`Import berhasil: ${drivers.length} driver dari ${state.sheets.length} sheet (${state.sheets.join(', ')})`, 4000);
+    const skipped = wb.SheetNames.filter(sn => !state.sheets.includes(sn));
+    toast(`Import berhasil: ${drivers.length} driver dari ${state.sheets.length} sheet (${state.sheets.join(', ')})` + (skipped.length ? ` · sheet dilewati (tanpa data lokasi): ${skipped.join(', ')}` : ''), skipped.length ? 6000 : 4000);
   } catch (e) { toast('Gagal membaca file: ' + e.message, 4500); }
 }
 
@@ -597,7 +599,7 @@ function renderDriverTotals() {
   grid.classList.toggle('hidden', !d); grid.classList.toggle('grid', !!d);
   if (!d) { $('dtTitle').textContent = 'Total per driver'; $('dtMeta').textContent = ''; grid.innerHTML = ''; return; }
   const list = totalsFor([d]), qty = list.reduce((a, e) => a + e.qty, 0);
-  $('dtTitle').textContent = `Total ${d.driver} · ${d.plate}`;
+  $('dtTitle').textContent = `Total ${d.driver}${d.plate ? ' · ' + d.plate : ''}`;
   $('dtMeta').textContent = `${fmt(d.locations.length)} lokasi · ${fmt(list.length)} produk · ${fmt(qty)} total qty${multiSheet() ? ' · sheet: ' + sheetList([d]).join(' + ') : ''}`;
   grid.innerHTML = list.map(totalBadge).join('');
 }
@@ -609,7 +611,7 @@ const CHECK_TYPES = ['review', 'none', 'excel'];
 
 function buildDriverSelect() {
   $('driverSel').innerHTML = '<option value="">Semua driver</option>' +
-    state.drivers.map(d => `<option value="${esc(d.key)}">${esc(d.driver)} · ${esc(d.plate)}</option>`).join('');
+    state.drivers.map(d => `<option value="${esc(d.key)}">${esc(d.driver)}${d.plate ? ' · ' + esc(d.plate) : ''}</option>`).join('');
 }
 function badge(it, m) {
   const id = m.id ? `<span class="font-mono font-semibold num">${esc(m.id)}</span>` : '<span class="text-slate-300">—</span>';
@@ -681,7 +683,7 @@ function render() {
           <div class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">${esc(d.driver.slice(0, 2).toUpperCase())}</div>
           <div class="min-w-0">
             <div class="truncate font-semibold">${esc(d.driver)}</div>
-            <div class="mt-0.5 flex flex-wrap items-center gap-1"><span class="inline-block rounded-md border border-slate-300 bg-slate-50 px-2 py-0.5 font-mono text-xs font-semibold tracking-wide">${esc(d.plate)}</span>${[...shc].map(([s, n]) => shChip(s, ` · ${n} lokasi`)).join('')}</div>
+            <div class="mt-0.5 flex flex-wrap items-center gap-1"><span class="inline-block rounded-md border border-slate-300 bg-slate-50 px-2 py-0.5 font-mono text-xs font-semibold tracking-wide">${d.plate ? esc(d.plate) : '<span class="font-sans font-medium text-slate-400">Tanpa plat</span>'}</span>${[...shc].map(([s, n]) => shChip(s, ` · ${n} lokasi`)).join('')}</div>
           </div>
         </div>
         <div class="text-right text-xs text-slate-500"><div><b class="num text-slate-800">${d.locs.length}</b> lokasi · <b class="num text-slate-800">${di}</b> item</div><div>Total <b class="num text-slate-800">${fmt(dq)}</b> qty</div></div>
@@ -909,7 +911,7 @@ function printDriverTotal() {
   const date = $('planDate').value || todayStr();
   const rows = totalsFor([d]).map(e => ({ id: e.id, name: e.name, qty: e.qty, sku: e.sku, bySheet: e.bySheet })).sort(byId);
   printHtml(`<div class="pp-page">${printHead('Total Plan per Produk · Driver')}
-    ${metaRows([['Tanggal', dateLong(date)], ['Driver', d.driver], ['Plat Nomor', d.plate], ['Jumlah Lokasi', String(d.locations.length)], ['File Sumber', state.fileName], ...(multiSheet() ? [['Sheet Excel', sheetList([d]).join(' + ')]] : [])])}
+    ${metaRows([['Tanggal', dateLong(date)], ['Driver', d.driver], ['Plat Nomor', d.plate || '-'], ['Jumlah Lokasi', String(d.locations.length)], ['File Sumber', state.fileName], ...(multiSheet() ? [['Sheet Excel', sheetList([d]).join(' + ')]] : [])])}
     ${reportTable(rows, 'Product Name')}</div>`, `Total_Produk_${d.driver}_${date}`);
 }
 function printDrivers() {
@@ -920,7 +922,7 @@ function printDrivers() {
   ds.forEach(d => d.locations.forEach(l => {
     const rows = l.items.map(it => { const m = resolve(it), sku = skuFor(it, m); return { id: m.id, name: sku ? sku.name : it.name, qty: it.qty, sku }; });
     pages.push(`<div class="pp-page">${printHead('Plan Muatan Driver')}
-      ${metaRows([['Tanggal', dateLong(date)], ['Driver', d.driver], ['Plat Nomor', l.plate || d.plate], ['VMC No', l.vmc], ['Location Name', l.name], ...(multiSheet() && l.sheet ? [['Asal Sheet', l.sheet]] : [])])}
+      ${metaRows([['Tanggal', dateLong(date)], ['Driver', d.driver], ['Plat Nomor', l.plate || d.plate || '-'], ['VMC No', l.vmc], ['Location Name', l.name], ...(multiSheet() && l.sheet ? [['Asal Sheet', l.sheet]] : [])])}
       ${reportTable(rows, 'Product Name')}${signBlock(d.driver)}</div>`);
   }));
   if (!pages.length) return toast('Tidak ada lokasi untuk dicetak');
