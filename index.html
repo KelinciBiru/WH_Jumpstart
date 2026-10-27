@@ -258,9 +258,16 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
 .ck-del { border: 0; background: none; color: #98978D; font-size: .72rem; text-decoration: underline; padding: 0; margin-top: 2px; }
 .pp-tbl td.bad { font-weight: 700; }
 #scInfo .sc-card { border-radius: .75rem; padding: .7rem .8rem; }
+.shv-tbl { border-collapse: collapse; font-size: .8rem; width: max-content; min-width: 100%; }
+.shv-tbl th, .shv-tbl td { border-bottom: 1px solid var(--line); padding: .35rem .55rem; text-align: left; white-space: nowrap; vertical-align: top; }
+.shv-tbl thead th { position: sticky; top: 0; background: #F0F0ED; z-index: 1; }
+#shViewDlg { max-height: 92vh; }
+.sh-share { display: inline-flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.sh-stat { font-size: .72rem; font-weight: 600; color: #166534; }
 @media (max-width: 767.98px) {
   #mDock { grid-template-columns: 1fr 1fr 1fr 84px 1fr 1fr; }
   .dk { font-size: 10px; }
+  #shViewDlg[open] { margin: auto 0 0 !important; width: 100vw !important; max-width: 100vw !important; border-radius: 1.25rem 1.25rem 0 0 !important; }
   #ckScanDlg[open] { margin: auto 0 0 !important; width: 100vw !important; max-width: 100vw !important; border-radius: 1.25rem 1.25rem 0 0 !important; }
 }
 </style>
@@ -347,7 +354,7 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
         <div class="flex flex-wrap items-end gap-2">
           <label class="field">Isi Qty (Pcs) semua produk<input id="evAll" type="number" min="0" step="1" inputmode="numeric" placeholder="mis. 10"></label>
           <button id="evApply" type="button" class="btn btn-ghost">Terapkan ke semua</button>
-          <div class="ml-auto flex gap-2"><button id="evClear" type="button" class="btn btn-ghost">Kosongkan Qty</button><button id="evSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button></div>
+          <div class="ml-auto flex gap-2"><button id="evClear" type="button" class="btn btn-ghost">Kosongkan Qty</button><span class="sh-share"><button id="evShare" type="button" class="btn btn-ghost" title="Bagikan data Event (Excel) ke Team Checker">Share ke Checker</button><span class="sh-stat" data-for="evShare"></span><label class="flex items-center gap-1 text-xs font-semibold text-slate-600"><input type="checkbox" class="shAutoCk accent-indigo-600"> Share otomatis saat Simpan</label></span><button id="evSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button></div>
         </div>
         <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
           <span class="text-xs font-semibold text-slate-500">Cetak / PDF:</span>
@@ -371,6 +378,7 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
           <div class="ml-auto flex flex-wrap gap-2">
             <button id="fmClear" type="button" class="btn btn-ghost">Form Baru</button>
             <button id="fmPrint" type="button" class="btn btn-ghost">Cetak / PDF</button>
+            <span class="sh-share"><button id="fmShare" type="button" class="btn btn-ghost" title="Bagikan Form Others (Excel) ke Team Checker">Share ke Checker</button><span class="sh-stat" data-for="fmShare"></span><label class="flex items-center gap-1 text-xs font-semibold text-slate-600"><input type="checkbox" class="shAutoCk accent-indigo-600"> Share otomatis saat Simpan</label></span>
             <button id="fmSave" type="button" class="btn btn-accent">Simpan ke Spreadsheet</button>
           </div>
         </div>
@@ -380,6 +388,14 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
 
       <!-- CHECKER -->
       <section id="checkerPanel" class="no-print panel space-y-4 p-4 md:p-5">
+        <div id="shBox" class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="display text-sm font-bold">File plan dari Admin</div>
+            <span id="shDateLbl" class="text-xs text-slate-500"></span>
+            <button id="shRefresh" type="button" class="btn btn-ghost ml-auto">Muat file</button>
+          </div>
+          <div id="shList" class="mt-2 space-y-2"></div>
+        </div>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label class="field">Nama Checker<select id="ckName"><option value="">Memuat…</option></select></label>
           <label class="field">Tanggal Plan<input id="ckDate" type="date"></label>
@@ -400,11 +416,12 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
           <button id="ckGo" type="button" class="btn btn-dark">Cari</button>
           <button id="ckScan" type="button" class="btn btn-accent">
             <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10"/></svg>
-            Scan Barcode / QR
+            Scan Barcode / QR / Angka
           </button>
           <button id="ckLoad" type="button" class="btn btn-ghost">Muat data plan</button>
         </div>
         <p id="ckHint" class="text-xs text-slate-500"></p>
+        <p id="ckBcHit" class="text-xs text-slate-500"></p>
         <div id="ckStats" class="grid grid-cols-2 gap-2 sm:grid-cols-5"></div>
         <div id="ckTable"></div>
         <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
@@ -415,7 +432,7 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
             <button id="ckSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button>
           </div>
         </div>
-        <p class="text-xs text-slate-500">Qty Plan diambil dari sheet “Planner Data” (dalam Pcs). Tandai ✓ bila jumlah fisik sesuai, ✗ bila tidak — lalu isi Qty (Adjustment) dengan jumlah sebenarnya. Hasil dicatat ke sheet “Checker Result”; produk yang belum dicek tidak ikut disimpan.</p>
+        <p class="text-xs text-slate-500">Qty Plan diambil dari sheet “Planner Data” (dalam Pcs). Tandai ✓ bila jumlah fisik sesuai, ✗ bila tidak — lalu isi Qty (Adjustment) dengan jumlah sebenarnya. Hasil dicatat ke sheet “Checker Result”; produk yang belum dicek tidak ikut disimpan. Scan / ketik angka barcode dicari di sheet “Source Barcode” (ID Produk + nama produk); file plan yang dibagikan Admin muncul di kotak “File plan dari Admin”.</p>
       </section>
 
       <!-- IMPORT (Admin) -->
@@ -457,6 +474,7 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
           <button id="btnOBulkyAll" type="button" class="btn btn-ghost other-only hidden" title="Total per produk dari semua sheet Excel">Cetak / PDF · Bulky Semua Produk</button>
           <button id="btnOBulkySheet" type="button" class="btn btn-ghost other-only hidden" title="Total per produk, satu halaman per sheet">Cetak / PDF · Bulky Per-Sheet</button>
           <button id="btnOListSheet" type="button" class="btn btn-ghost other-only hidden" title="Daftar produk apa adanya, satu halaman per sheet">Cetak / PDF · List Produk Per-Sheet</button>
+          <span class="sh-share admin-only"><button id="btnShare" type="button" class="btn btn-ghost" title="Bagikan file Excel hari ini agar bisa dibuka Team Checker">Share ke Checker</button><span class="sh-stat" data-for="btnShare"></span><label class="flex items-center gap-1 text-xs font-semibold text-slate-600"><input type="checkbox" class="shAutoCk accent-indigo-600"> Share otomatis saat Simpan</label></span>
           <button id="btnSave" disabled class="btn btn-accent admin-only">Simpan ke Spreadsheet</button>
         </div>
         <p class="w-full text-xs text-slate-500">Data yang sudah tercatat pada tanggal yang sama tidak dicatat ulang; tanggal berbeda ditambahkan sebagai baris baru. Di dialog cetak pilih “Simpan sebagai PDF”.</p>
@@ -546,15 +564,39 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
 <dialog id="ckScanDlg" class="w-[min(96vw,520px)] rounded-2xl p-0 shadow-xl">
   <div class="p-4">
     <div class="flex items-center justify-between gap-3">
-      <h3 class="display text-lg font-bold">Scan Barcode / QR</h3>
+      <h3 class="display text-lg font-bold">Scan Barcode / QR / Angka</h3>
       <button id="scClose" type="button" class="btn btn-ghost">Selesai</button>
+    </div>
+    <div id="scModes" class="mt-3 inline-flex w-full rounded-lg bg-slate-100 p-1 text-sm">
+      <button type="button" data-scm="bc" class="flex-1 rounded-md px-3 py-1.5 font-semibold">Barcode / QR</button>
+      <button type="button" data-scm="ocr" class="flex-1 rounded-md px-3 py-1.5 font-semibold">Angka (OCR)</button>
     </div>
     <div class="relative mt-3 overflow-hidden rounded-xl bg-black" style="aspect-ratio:4/3">
       <video id="scVideo" playsinline muted class="h-full w-full object-cover"></video>
       <div id="scQr" class="hidden h-full w-full"></div>
-      <div class="pointer-events-none absolute inset-x-[10%] top-1/2 h-[2px] -translate-y-1/2 bg-[#FBB315] opacity-90 shadow-[0_0_12px_#FBB315]"></div>
+      <div id="scLine" class="pointer-events-none absolute inset-x-[10%] top-1/2 h-[2px] -translate-y-1/2 bg-[#FBB315] opacity-90 shadow-[0_0_12px_#FBB315]"></div>
+      <div id="scBand" class="pointer-events-none absolute hidden rounded-lg border-2 border-[#FBB315]" style="left:5%;right:5%;top:39%;height:22%;box-shadow:0 0 0 9999px rgba(0,0,0,.38)"></div>
+    </div>
+    <div id="scLive" class="mt-2 min-h-[18px] text-xs font-semibold text-slate-500"></div>
+    <div class="mt-2 flex gap-2">
+      <input id="scNum" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Atau ketik / tempel angka barcode…" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500">
+      <button id="scNumGo" type="button" class="btn btn-dark">Cari</button>
     </div>
     <div id="scInfo" class="mt-3 min-h-[96px]"></div>
+  </div>
+</dialog>
+
+<!-- FILE PLAN DARI ADMIN (Checker) -->
+<dialog id="shViewDlg" class="w-[min(96vw,1000px)] rounded-2xl p-0 shadow-xl">
+  <div class="flex max-h-[90vh] flex-col p-4">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0"><h3 id="shVTitle" class="display truncate text-lg font-bold"></h3><p id="shVMeta" class="text-xs text-slate-500"></p></div>
+      <div class="flex shrink-0 gap-2"><button id="shVDl" type="button" class="btn btn-ghost">Unduh</button><button id="shVClose" type="button" class="btn btn-dark">Tutup</button></div>
+    </div>
+    <div id="shVTabs" class="mt-3 flex gap-1 overflow-x-auto"></div>
+    <input id="shVSearch" type="search" placeholder="Cari di sheet ini…" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500">
+    <div id="shVCount" class="mt-1 text-xs text-slate-500"></div>
+    <div id="shVBody" class="mt-2 min-h-0 flex-1 overflow-auto rounded-xl ring-1 ring-slate-200"></div>
   </div>
 </dialog>
 
@@ -604,6 +646,7 @@ const state = {
   drivers: [], sheets: [], req: [], fileName: '', cache: new Map(), role: localStorage.getItem(LS.role) || 'admin',
   menu: ['other', 'checker'].includes(localStorage.getItem(LS.menu)) ? localStorage.getItem(LS.menu) : 'planner'
 };
+const SRC = { planner: null, other: null };   // file Excel asli hasil import (untuk Share ke Checker)
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cleanName = s => String(s ?? '').replace(/[\u00a0\u200b]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -765,10 +808,11 @@ async function handleFile(f) {
   if (!f) return;
   if (state.menu === 'other') return handleOtherFile(f);
   try {
-    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const buf = await f.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
     const drivers = parseWorkbook(wb);
     if (!drivers.length) return toast('Format tidak dikenali: kolom "Location Name" / "Last Visit" tidak ditemukan', 4500);
-    state.drivers = drivers; state.fileName = f.name; state.cache.clear();
+    state.drivers = drivers; state.fileName = f.name; state.cache.clear(); SRC.planner = { name: f.name, buf, type: f.type };
     state.sheets = wb.SheetNames.filter(sn => drivers.some(d => d.locations.some(l => l.sheet === sn)));
     $('fileName').textContent = f.name;
     $('btnSave').disabled = false;
@@ -1029,6 +1073,7 @@ async function savePlan() {
       btn.disabled = false; btn.innerHTML = label; return;
     }
     const skip = (r.skipped || 0) + (r.totalSkipped || 0) + (r.bulkyAllSkipped || 0) + (r.bulkyDriverSkipped || 0);
+    if (shAutoOn()) shareToChecker('planner', { auto: true });
     if (!r.saved && !r.totalSaved && !r.bulkyAllSaved && !r.bulkyDriverSaved) toast(`Data tanggal ${dateLong(date)} sudah ada di spreadsheet, tidak dicatat ulang`, 5000);
     else toast(`Tercatat ${r.saved} baris plan + ${r.totalSaved || 0} total produk + ${r.bulkyAllSaved || 0} bulky all + ${r.bulkyDriverSaved || 0} bulky per-driver` + (skip ? ` · ${skip} baris sudah ada, dilewati` : ''), 5000);
   } catch (e) { toast('Gagal menyimpan: ' + e.message + (/Action tidak dikenal/.test(e.message) ? ' — GAS yang ter-deploy masih versi lama. Tempel kode terbaru → Deploy > Manage deployments > Edit > New version → Deploy.' : ''), /Action tidak dikenal/.test(e.message) ? 9000 : 4500); }
@@ -1220,10 +1265,11 @@ function parseOtherWorkbook(wb) {
 
 async function handleOtherFile(f) {
   try {
-    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const buf = await f.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
     const { blocks, skipped, unknown } = parseOtherWorkbook(wb);
     if (!blocks.length) return toast('Format tidak dikenali: butuh kolom "Product ID" + "QTY" (Bahan Baku) atau "SKU ID" + "Floor" (Surat Jalan TikTok)', 5500);
-    state.req = blocks; state.fileName = f.name;
+    state.req = blocks; state.fileName = f.name; SRC.other = { name: f.name, buf, type: f.type };
     $('fileName').textContent = f.name; $('btnSave').disabled = false;
     render();
     const rowsN = blocks.reduce((a, b) => a + b.rows.length, 0);
@@ -1356,6 +1402,7 @@ async function saveOther() {
       body: JSON.stringify({ action: 'saveOtherRequest', fileName: state.fileName, savedBy: 'Admin', planDate: date, rows })
     })).json();
     if (!r.ok) throw new Error(r.error);
+    if (shAutoOn()) shareToChecker('other', { auto: true });
     if (!r.saved) toast(`Other Request tanggal ${dateLong(date)} sudah ada di spreadsheet, tidak dicatat ulang`, 5000);
     else toast(`Tercatat ${r.saved} baris ke sheet "${r.sheet}"` + (r.skipped ? ` · ${r.skipped} baris sudah ada, dilewati` : ''), 5000);
   } catch (e) {
@@ -1462,6 +1509,7 @@ async function saveEvent() {
     const r = await (await fetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'saveEvent', eventName: name, fileName: EV.fileName, savedBy: 'Admin', planDate: todayStr(), rows }) })).json();
     if (!r.ok) throw new Error(r.error);
+    if (shAutoOn()) shareToChecker('event', { auto: true });
     if (!r.saved) toast(`Event "${name}" tanggal ${dateLong(todayStr())} sudah ada di spreadsheet, tidak dicatat ulang`, 5000);
     else toast(`Tercatat ${r.saved} produk ke sheet "${r.sheet}"` + (r.skipped ? ` · ${r.skipped} baris sudah ada, dilewati` : ''), 5000);
   } catch (e) {
@@ -1571,6 +1619,7 @@ async function saveForm() {
       body: JSON.stringify({ action: 'saveFormOthers', savedBy: 'Admin', inputDate: d.input, shippingDate: d.ship, locationName: d.loc,
         rows: d.rows.map(x => ({ productId: x.id, productName: x.name, qtyPcs: x.pcs, qtyCarton: x.carton == null ? '' : x.carton })) }) })).json();
     if (!r.ok) throw new Error(r.error);
+    if (shAutoOn()) shareToChecker('form', { auto: true });
     if (!r.saved) toast(`Form untuk "${d.loc}" (kirim ${dateLong(d.ship)}) sudah ada di spreadsheet, tidak dicatat ulang`, 5000);
     else toast(`Tercatat ${r.saved} produk ke sheet "${r.sheet}"` + (r.skipped ? ` · ${r.skipped} baris sudah ada, dilewati` : ''), 5000);
   } catch (e) {
@@ -1960,7 +2009,7 @@ $('fixInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.prev
    ===================================================================== */
 const CK_TYPES = { driver: 'Bulky Per-Driver', all: 'Bulky All Driver', produk: 'Bulky Per Produk' };
 const CK_HINT = {
-  driver: 'Pilih driver, lalu cek tiap produk. Pencarian / scan hanya untuk produk milik driver tersebut.',
+  driver: 'Pilih driver, lalu cek tiap produk. Pencarian / scan (barcode, QR, atau angka) hanya untuk produk milik driver tersebut.',
   all: 'Total semua driver per produk. Pencarian menyaring daftar; scan menandai produk yang dipindai.',
   produk: 'Cari atau scan produk untuk menambahkannya ke daftar. Qty Plan = total produk itu di semua driver.'
 };
@@ -2030,7 +2079,7 @@ async function ckLoadPlan(date) {
       toast(date ? `Belum ada plan tersimpan untuk ${dateLong(date)}` : 'Belum ada plan tersimpan di spreadsheet', 4500);
     } else { ckIngest(r); $('ckDate').value = CK.plan.date; }
   } catch (e) { toast('Gagal memuat plan: ' + e.message, 5000); }
-  CK.loading = false; ckFillDrivers(); ckRender();
+  CK.loading = false; ckFillDrivers(); ckRender(); shLoadList();
 }
 
 /* ---------- daftar baris sesuai Type ---------- */
@@ -2042,7 +2091,7 @@ function ckRows() {
   return base.map(p => ({ key: p.key, id: p.id, name: p.name, plan: p.qty, driver: ckDrv(), mk: ckMk(p.key) })).sort(byId);
 }
 function ckMatch(p, q) {
-  q = q.trim(); if (!q) return true;
+  q = ckQ(q).trim(); if (!q) return true;
   const idq = idKey(q.split(/\s+[—-]\s+/)[0]);
   if (idq && idKey(p.id) === idq) return true;
   const pn = norm(p.name), pi = norm(p.id);
@@ -2134,7 +2183,8 @@ $('ckTable').addEventListener('input', e => {
 /* ---------- pencarian teks ---------- */
 function ckSubmitSearch() {
   if (!CK.plan) return toast('Muat data plan terlebih dahulu');
-  const q = $('ckSearch').value.trim();
+  const q0 = $('ckSearch').value.trim(), be = /^\d[\d\s.-]*$/.test(q0) ? bcLookup(q0) : null, q = ckQ(q0);
+  if (be && !CK.products.has(idKey(be.id))) { const i = bcInfo(be); return toast(`${i.id} — ${i.name} ada di Source Barcode tetapi tidak ada di plan tanggal ini`, 5000); }
   if (CK.type === 'produk') {
     if (!q) return toast('Ketik ID atau nama produk terlebih dahulu');
     const hits = [...CK.products.values()].filter(p => ckMatch(p, q));
@@ -2157,17 +2207,82 @@ let ckTm; $('ckSearch').addEventListener('input', () => { if (CK.type === 'produ
 $('ckSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ckSubmitSearch(); } });
 $('ckGo').onclick = ckSubmitSearch;
 
-/* ---------- scanner ---------- */
-const SC = { stream: null, det: null, timer: 0, h5: null, run: false, last: '', lastT: 0, cur: null, ac: null };
+/* ---------- Source Barcode (sheet "Source Barcode": barcode -> Product ID + Product Name) ---------- */
+const BC = { map: new Map(), n: 0, loaded: false, loading: null, last: 0, err: '' };
+const bcKey = d => String(d || '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');   // UPC-A 12 digit == EAN-13 berawalan 0
+function bcSet(items) {
+  const m = new Map();
+  (items || []).forEach(x => { const k = bcKey(x[0]); if (k.length >= 6 && !m.has(k)) m.set(k, { barcode: String(x[0]), id: String(x[1] || '').trim(), name: cleanName(x[2]) }); });
+  BC.map = m; BC.n = m.size; BC.loaded = true; BC.err = '';
+}
+const bcInfo = e => ({ id: e.id, name: e.name || ((state.skuByKey.get(idKey(e.id)) || {}).name) || '' });
+function bcLookup(raw) { const d = String(raw || '').replace(/\D/g, ''); return d.length >= 6 ? (BC.map.get(bcKey(d)) || null) : null; }
+function bcFindInText(text) {   // OCR: cari barcode terdaftar di dalam teks hasil baca (spasi antar-angka diabaikan)
+  const runs = String(text || '').replace(/(\d)[\s.\-](?=\d)/g, '$1').match(/\d{6,}/g) || [];
+  for (const r of runs) {
+    let h = BC.map.get(bcKey(r)); if (h) return { hit: h, code: r };
+    for (const L of [14, 13, 12, 8]) for (let i = 0; i + L <= r.length; i++) { h = BC.map.get(bcKey(r.slice(i, i + L))); if (h) return { hit: h, code: r.slice(i, i + L) }; }
+  }
+  return null;
+}
+function bcNear(digits) {       // saran: barcode terdaftar yang hanya beda 1 digit (salah baca OCR / salah ketik)
+  const k = bcKey(digits), out = []; if (k.length < 8) return out;
+  for (const [key, e] of BC.map) {
+    if (key.length !== k.length) continue;
+    let diff = 0; for (let i = 0; i < k.length && diff < 2; i++) if (key[i] !== k[i]) diff++;
+    if (diff === 1) { out.push(e); if (out.length >= 3) break; }
+  }
+  return out;
+}
+function ckQ(q) { const t = String(q || '').trim(); if (/^\d[\d\s.-]{5,}$/.test(t)) { const e = bcLookup(t); if (e) return e.id; } return t; }   // angka barcode -> Product ID
+function ckShowBc() {
+  const el = $('ckBcHit'); if (!el) return;
+  const q = $('ckSearch').value.trim(), d = q.replace(/\D/g, '');
+  let h = '';
+  if (/^\d[\d\s.-]*$/.test(q) && d.length >= 6) {
+    const e = bcLookup(d);
+    if (e) { const i = bcInfo(e); h = `<b class="text-emerald-700">Barcode ${esc(d)} → ${esc(i.id)} — ${esc(i.name)}</b>`; }
+    else h = BC.loaded ? (d.length >= 8 ? `<b class="text-red-600">Angka ${esc(d)} tidak ada di sheet Source Barcode</b>` : '') : 'Memuat Source Barcode…';
+  } else h = BC.loading ? 'Memuat Source Barcode…' : BC.err ? `<span class="text-red-600">Source Barcode: ${esc(BC.err)}</span>` : BC.loaded ? `Source Barcode: ${fmt(BC.n)} kode · scan atau ketik angka barcode untuk mencari produk` : '';
+  el.innerHTML = h;
+}
+async function loadBarcodes(force) {
+  if (BC.loading) return BC.loading;
+  if (!BC.loaded) { try { const c = JSON.parse(localStorage.getItem('planner_barcode_cache') || 'null'); if (c && c.length) bcSet(c); } catch (e) { /* abaikan cache rusak */ } }
+  if (!gasReady()) { ckShowBc(); return; }
+  BC.loading = (async () => {
+    ckShowBc();
+    try {
+      const r = await (await fetch(`${GAS_URL()}?action=getBarcodes${force ? '&refresh=1' : ''}`)).json();
+      if (!r.ok) throw new Error(r.error);
+      bcSet(r.items); BC.last = Date.now();
+      try { localStorage.setItem('planner_barcode_cache', JSON.stringify(r.items)); } catch (e) { /* penyimpanan penuh: abaikan */ }
+      if (force && r.conflicts && r.conflicts.length) toast(`${r.conflicts.length} barcode di Source Barcode terdaftar untuk lebih dari satu ID (dipakai baris pertama)`, 6000);
+    } catch (e) { BC.err = e.message + ckDeployHint(e); if (!BC.loaded) toast('Gagal memuat Source Barcode: ' + BC.err, 8000); }
+    BC.loading = null; ckShowBc();
+  })();
+  return BC.loading;
+}
+$('ckSearch').addEventListener('input', ckShowBc);
+
+/* ---------- scanner: barcode / QR (BarcodeDetector -> html5-qrcode) + angka (OCR Tesseract) + ketik angka ---------- */
+const SC = { stream: null, det: null, timer: 0, h5: null, run: false, last: '', lastT: 0, cur: null, ac: null,
+  mode: localStorage.getItem('planner_sc_mode') === 'ocr' ? 'ocr' : 'bc', worker: null, wkTimer: 0, ocrTimer: 0, psm: false, run2: '', run2n: 0, shown: '', cv: null };
 const SC_FORMATS = ['qr_code', 'ean_13', 'ean_8', 'code_128', 'code_39', 'code_93', 'upc_a', 'upc_e', 'itf', 'codabar', 'data_matrix'];
 const SC_LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js', 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js', 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'];
+const TESS_LIBS = ['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js', 'https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js'];
 function scBeep(ok) {
   try { const A = window.AudioContext || window.webkitAudioContext, c = SC.ac || (SC.ac = new A()), o = c.createOscillator(), g = c.createGain(); o.frequency.value = ok ? 1100 : 280; g.gain.value = .12; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + (ok ? .09 : .28)); } catch (e) { /* tanpa suara */ }
   if (navigator.vibrate) navigator.vibrate(ok ? 40 : [80, 60, 80]);
 }
 const scInfo = html => { $('scInfo').innerHTML = html; };
-const scIdle = () => scInfo('<div class="rounded-xl bg-slate-50 px-3 py-4 text-center text-sm text-slate-600">Arahkan kamera ke barcode / QR pada produk. Kode harus berisi Product ID.</div>');
+const scLive = t => { $('scLive').textContent = t || ''; };
+const scIdle = () => scInfo(`<div class="rounded-xl bg-slate-50 px-3 py-4 text-center text-sm text-slate-600">${SC.mode === 'ocr' ? 'Arahkan <b>angka di bawah barcode</b> ke dalam kotak kuning, atau ketik angkanya di atas.' : 'Arahkan kamera ke barcode / QR produk, atau ketik angka barcode di atas.'} Hasil dicari di sheet Source Barcode.</div>`);
 const scErr = t => scInfo(`<div class="sc-card" style="background:#FFF3F2;color:#991b1b"><b>${t}</b></div>`);
+function scModeUi() {
+  document.querySelectorAll('#scModes [data-scm]').forEach(b => { const on = b.dataset.scm === SC.mode; b.className = 'flex-1 rounded-md px-3 py-1.5 font-semibold ' + (on ? 'bg-white shadow text-indigo-700' : 'text-slate-500'); });
+  $('scBand').classList.toggle('hidden', SC.mode !== 'ocr'); $('scLine').classList.toggle('hidden', SC.mode === 'ocr');
+}
 function ckPlanQty(p) { return CK.type === 'driver' ? ((CK.byDriver.get($('ckDriver').value) || new Map()).get(p.key) || { qty: 0 }).qty : p.qty; }
 function ckResolve(raw) {
   const s = String(raw || '').trim(); if (!s) return null;
@@ -2175,86 +2290,181 @@ function ckResolve(raw) {
   for (const t of tries) { if (!t) continue; const k = idKey(t); if (CK.products.has(k)) return CK.products.get(k); }
   return null;
 }
-function scOnCode(raw) {
-  raw = String(raw || ''); if (!raw) return;
-  const now = Date.now(); if (raw === SC.last && now - SC.lastT < 2000) return;
+const scNearHtml = near => near.length ? '<div class="mt-2 text-xs font-semibold">Mungkin maksud:</div>' + near.map(n => { const i = bcInfo(n); return `<button type="button" class="btn btn-ghost mt-1 w-full !justify-start text-left" data-scpick="${esc(n.barcode)}"><span class="num">${esc(n.barcode)}</span> · ${esc(i.id)} — ${esc(i.name)}</button>`; }).join('') : '';
+async function scOnCode(raw, src) {
+  raw = String(raw || '').trim(); if (!raw) return;
+  const now = Date.now(); if (src !== 'manual' && raw === SC.last && now - SC.lastT < 2000) return;
   SC.last = raw; SC.lastT = now;
-  const p = ckResolve(raw);
-  if (!p) { scBeep(false); SC.cur = null; return scErr(`Kode “${esc(raw.slice(0, 40))}” tidak cocok dengan Product ID di plan`); }
-  if (CK.type === 'driver') {
-    const dn = $('ckDriver').value;
-    if (!(CK.byDriver.get(dn) || new Map()).has(p.key)) { scBeep(false); SC.cur = null; return scErr(`${esc(p.id)} — ${esc(p.name)}<br><span style="font-weight:600">tidak ada di plan driver ${esc(dn)}</span>`); }
+  let e = bcLookup(raw);
+  if (!e && raw.replace(/\D/g, '').length >= 6 && !BC.loading && now - BC.last > 45000 && gasReady()) {   // barcode baru ditambah di sheet? muat ulang sekali
+    scLive('Mencari di Source Barcode terbaru…'); await loadBarcodes(true); e = bcLookup(raw); scLive('');
   }
+  const p = e ? (CK.products.get(idKey(e.id)) || null) : ckResolve(raw);     // QR lama yang berisi Product ID tetap bisa
+  const info = e ? bcInfo(e) : (p ? { id: p.id, name: p.name } : null);
+  if (!info) {
+    scBeep(false); SC.cur = null;
+    const d = raw.replace(/\D/g, '');
+    return scInfo(`<div class="sc-card" style="background:#FFF3F2;color:#991b1b"><b>Kode “${esc(raw.slice(0, 40))}” tidak ditemukan di Source Barcode</b>${d.length >= 8 ? scNearHtml(bcNear(d)) : ''}</div>`);
+  }
+  if (!info.name && p) info.name = p.name;
+  const head = `<div class="num text-xs font-bold text-slate-500">${e ? 'Barcode ' + esc(e.barcode) : 'Kode produk'}</div>
+    <div class="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">ID Produk</div><div class="num text-xl font-extrabold">${esc(info.id)}</div>
+    <div class="text-sm font-bold leading-snug">${esc(info.name)}</div>`;
+  let miss = '';
+  if (!p) miss = 'Produk ada di Source Barcode, tetapi tidak ada di plan tanggal ' + dateLong(CK.plan.date);
+  else if (CK.type === 'driver') { const dn = $('ckDriver').value; if (!(CK.byDriver.get(dn) || new Map()).has(p.key)) miss = 'Produk ada di plan, tetapi tidak ada di plan driver ' + dn; }
+  if (miss) { scBeep(false); SC.cur = null; return scInfo(`<div class="sc-card" style="background:#FFF3F2">${head}<div class="mt-2 text-sm font-semibold" style="color:#991b1b">${esc(miss)}</div></div>`); }
   if (CK.type === 'produk' && !CK.picked.includes(p.key)) { CK.picked.push(p.key); ckPersist(); }
   const mk = ckMk(p.key), plan = ckPlanQty(p), st = (CK.marks[mk] || {}).s;
   SC.cur = { mk, plan, key: p.key };
   scBeep(true); ckRender();
-  scInfo(`<div class="sc-card" style="background:#FFF8E1">
-    <div class="num text-xs font-bold text-slate-500">${esc(p.id)}</div>
-    <div class="text-sm font-bold">${esc(p.name)}</div>
+  scInfo(`<div class="sc-card" style="background:#FFF8E1">${head}
     <div class="mt-1 text-sm">Qty Plan: <b class="text-lg">${fmt(plan)}</b>${st ? ` · <b>${st === 'OK' ? 'sudah ✓ sesuai' : 'sudah ✗ tidak sesuai'}</b>` : ''}</div>
     <div class="mt-2 flex gap-2"><button type="button" class="btn btn-dark flex-1" data-sc="ok" style="background:#16a34a">&#10003; Sesuai</button><button type="button" class="btn btn-dark flex-1" data-sc="bad" style="background:#dc2626">&#10007; Tidak sesuai</button></div></div>`);
 }
 $('scInfo').addEventListener('click', e => {
+  const pk = e.target.closest('[data-scpick]'); if (pk) return scOnCode(pk.dataset.scpick, 'manual');
   const b = e.target.closest('[data-sc]'); if (!b || !SC.cur) return;
   const { mk, plan } = SC.cur;
   if (b.dataset.sc === 'ok') { ckSetMark(mk, 'OK', plan); ckRender(); scInfo('<div class="sc-card" style="background:#F1FBF4;color:#166534"><b>&#10003; Ditandai sesuai — scan produk berikutnya</b></div>'); SC.cur = null; }
   else { ckSetMark(mk, 'NOT_OK', plan); scClose(); ckFlashRow(mk); setTimeout(() => { const row = [...$('ckTable').querySelectorAll('tr[data-mk]')].find(x => x.dataset.mk === mk); const i = row && row.querySelector('input[data-ck="adj"]'); if (i) { i.focus(); i.select(); } }, 350); }
 });
+function scManual() { const v = $('scNum').value.trim(); if (!v) return; scOnCode(v, 'manual'); $('scNum').select(); }
+$('scNumGo').onclick = scManual;
+$('scNum').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); scManual(); } });
+$('scNum').addEventListener('input', () => { const c = $('scNum').value.replace(/[^\d\sA-Za-z-]/g, ''); if (c !== $('scNum').value) $('scNum').value = c; });
 async function scLoop() {
-  if (!SC.run) return;
+  if (!SC.run || !SC.det) return;
   const v = $('scVideo');
-  try { if (v.readyState >= 2) { const res = await SC.det.detect(v); if (res.length) scOnCode(res[0].rawValue); } } catch (e) { /* frame gagal dibaca: lanjut */ }
+  try { if (v.readyState >= 2) { const res = await SC.det.detect(v); if (res.length) scOnCode(res[0].rawValue, 'cam'); } } catch (e) { /* frame gagal dibaca: lanjut */ }
   SC.timer = setTimeout(scLoop, 140);
 }
-function scLoadLib() {
-  return window.Html5Qrcode ? Promise.resolve() : new Promise((res, rej) => {
+function scLoadScript(urls, test, msg) {
+  return test() ? Promise.resolve() : new Promise((res, rej) => {
     let i = 0;
     const next = () => {
-      if (i >= SC_LIBS.length) return rej(new Error('Library scanner gagal dimuat — cek koneksi internet'));
-      const s = document.createElement('script'); s.src = SC_LIBS[i++];
-      s.onload = () => window.Html5Qrcode ? res() : next(); s.onerror = next; document.head.appendChild(s);
+      if (i >= urls.length) return rej(new Error(msg));
+      const s = document.createElement('script'); s.src = urls[i++];
+      s.onload = () => test() ? res() : next(); s.onerror = next; document.head.appendChild(s);
     };
     next();
   });
 }
-async function scStartNative() {
+const scLoadLib = () => scLoadScript(SC_LIBS, () => !!window.Html5Qrcode, 'Library scanner gagal dimuat — cek koneksi internet');
+const scLoadTess = () => scLoadScript(TESS_LIBS, () => !!window.Tesseract, 'Library OCR gagal dimuat — cek koneksi internet');
+async function scCamera() {
+  SC.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+  const v = $('scVideo'); v.srcObject = SC.stream; v.classList.remove('hidden'); $('scQr').classList.add('hidden');
+  await v.play();
+}
+async function scMakeDet() {
   let fm = SC_FORMATS; try { const sup = await BarcodeDetector.getSupportedFormats(); fm = SC_FORMATS.filter(f => sup.includes(f)); } catch (e) { /* pakai semua */ }
   if (!fm.length) throw new Error('format tidak didukung');
   SC.det = new BarcodeDetector({ formats: fm });
-  SC.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
-  const v = $('scVideo'); v.srcObject = SC.stream; v.classList.remove('hidden'); $('scQr').classList.add('hidden');
-  await v.play(); SC.run = true; scLoop();
 }
+async function scStartNative() { await scMakeDet(); await scCamera(); SC.run = true; scLoop(); }
 async function scStartFallback() {
   await scLoadLib();
   $('scVideo').classList.add('hidden'); $('scQr').classList.remove('hidden');
   SC.h5 = new Html5Qrcode('scQr', { verbose: false, experimentalFeatures: { useBarCodeDetectorIfSupported: true } });
-  await SC.h5.start({ facingMode: 'environment' }, { fps: 10, qrbox: (w, h) => ({ width: Math.floor(w * .85), height: Math.floor(Math.min(w, h) * .5) }) }, t => scOnCode(t), () => {});
+  await SC.h5.start({ facingMode: 'environment' }, { fps: 10, qrbox: (w, h) => ({ width: Math.floor(w * .85), height: Math.floor(Math.min(w, h) * .5) }) }, t => scOnCode(t, 'cam'), () => {});
 }
-async function scOpen() {
-  if (!CK.plan) return toast('Muat data plan terlebih dahulu');
-  if (CK.type === 'driver' && !$('ckDriver').value) return toast('Pilih driver terlebih dahulu', 3000);
-  SC.cur = null; SC.last = ''; scIdle(); $('ckScanDlg').showModal();
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return scErr('Kamera tidak tersedia. Buka halaman ini lewat HTTPS.');
+
+/* ---- OCR angka: potong kotak kuning -> grayscale + kontras -> Tesseract (hanya digit) -> cocokkan ke Source Barcode ---- */
+async function scGetWorker() {
+  clearTimeout(SC.wkTimer);
+  if (SC.worker) return SC.worker;
+  scLive('Memuat pembaca angka (OCR)… pertama kali butuh internet ±3 MB');
+  await scLoadTess();
+  const w = await Tesseract.createWorker('eng', 1, { logger: m => { if (m && typeof m.progress === 'number' && SC.run && !SC.worker) scLive(`Memuat OCR… ${Math.round(m.progress * 100)}%`); } });
+  await w.setParameters({ tessedit_char_whitelist: '0123456789', tessedit_pageseg_mode: '7' });
+  SC.worker = w; return w;
+}
+function scCrop(v) {
+  const vw = v.videoWidth, vh = v.videoHeight, visW = Math.min(vw, vh * 4 / 3);          // area yang tampak (object-cover 4:3)
+  const sw = Math.round(visW * .9), sh = Math.round(vh * .22), sx = Math.round((vw - sw) / 2), sy = Math.round((vh - sh) / 2);
+  const cv = SC.cv || (SC.cv = document.createElement('canvas')), W = 1000;
+  cv.width = W; cv.height = Math.max(60, Math.round(sh * W / sw));
+  const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(v, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+  const im = g.getImageData(0, 0, cv.width, cv.height), d = im.data, hist = new Uint32Array(256), tot = d.length / 4;
+  for (let i = 0; i < d.length; i += 4) { const y = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000 | 0; d[i] = d[i + 1] = d[i + 2] = y; hist[y]++; }
+  let lo = 0, hi = 255, a = 0;
+  for (; lo < 255; lo++) { a += hist[lo]; if (a > tot * .02) break; }
+  a = 0; for (; hi > 0; hi--) { a += hist[hi]; if (a > tot * .02) break; }
+  const span = Math.max(30, hi - lo);
+  for (let i = 0; i < d.length; i += 4) { const y = Math.max(0, Math.min(255, (d[i] - lo) * 255 / span)); d[i] = d[i + 1] = d[i + 2] = y; }
+  g.putImageData(im, 0, 0); return cv;
+}
+function scOcrHandle(text) {
+  const f = bcFindInText(text);
+  if (f) { SC.run2 = ''; SC.run2n = 0; SC.shown = ''; scLive('Terbaca: ' + f.code); return scOnCode(f.code, 'ocr'); }
+  const runs = (String(text).replace(/(\d)[\s.\-](?=\d)/g, '$1').match(/\d{8,}/g) || []).sort((a, b) => b.length - a.length);
+  if (!runs.length) return scLive('Arahkan angka barcode ke dalam kotak kuning…');
+  const r = runs[0]; scLive('Terbaca: ' + r + ' (belum cocok)');
+  SC.run2n = r === SC.run2 ? SC.run2n + 1 : 1; SC.run2 = r;
+  if (SC.run2n === 2 && SC.shown !== r) {      // bacaan sama 2x berturut-turut tapi tidak terdaftar
+    SC.shown = r; SC.cur = null; scBeep(false);
+    scInfo(`<div class="sc-card" style="background:#FFF3F2;color:#991b1b"><b>Angka ${esc(r)} tidak ada di Source Barcode</b>${scNearHtml(bcNear(r))}</div>`);
+  }
+}
+async function scOcrLoop() {
+  if (!SC.run || SC.mode !== 'ocr' || !SC.worker) return;
+  const v = $('scVideo');
   try {
-    if ('BarcodeDetector' in window) await scStartNative(); else await scStartFallback();
+    if (v.readyState >= 2 && v.videoWidth) {
+      await SC.worker.setParameters({ tessedit_pageseg_mode: SC.psm ? '11' : '7' }); SC.psm = !SC.psm;   // selang-seling: satu baris / teks tersebar
+      const { data } = await SC.worker.recognize(scCrop(v));
+      if (SC.run && SC.mode === 'ocr') scOcrHandle(data.text || '');
+    }
+  } catch (e) { /* frame gagal dibaca: lanjut */ }
+  if (SC.run && SC.mode === 'ocr') SC.ocrTimer = setTimeout(scOcrLoop, 200);
+}
+async function scStartOcr() {
+  await scCamera();
+  SC.run = true;
+  if ('BarcodeDetector' in window) { try { await scMakeDet(); scLoop(); } catch (e) { /* OCR saja */ } }   // barcode batang / QR tetap ikut terbaca
+  try { await scGetWorker(); }
+  catch (e) { scLive(''); return scErr('OCR gagal dimuat: ' + esc(e.message || e) + '. Gunakan kolom ketik angka di atas.'); }
+  if (!SC.run) return;
+  scLive('Arahkan angka barcode ke dalam kotak kuning…'); scOcrLoop();
+}
+
+async function scStartMode() {
+  scStop(true); scModeUi();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return scErr('Kamera tidak tersedia (buka lewat HTTPS). Anda tetap bisa mengetik angka barcode di atas.');
+  try {
+    if (SC.mode === 'ocr') await scStartOcr();
+    else if ('BarcodeDetector' in window) await scStartNative(); else await scStartFallback();
   } catch (e) {
-    if (e && /NotAllowed|Permission/i.test(e.name + e.message)) return scErr('Izin kamera ditolak. Izinkan akses kamera di pengaturan browser, lalu coba lagi.');
+    if (e && /NotAllowed|Permission/i.test(e.name + e.message)) return scErr('Izin kamera ditolak. Izinkan akses kamera di pengaturan browser, atau ketik angka barcode di atas.');
+    if (SC.mode === 'ocr') return scErr('Scanner gagal dimulai: ' + esc(e.message || e.name || e));
     try { scStop(true); await scStartFallback(); }
     catch (e2) { scErr('Scanner gagal dimulai: ' + esc(e2.message || e2.name || e2)); }
   }
 }
+async function scOpen() {
+  if (!CK.plan) return toast('Muat data plan terlebih dahulu');
+  if (CK.type === 'driver' && !$('ckDriver').value) return toast('Pilih driver terlebih dahulu', 3000);
+  SC.cur = null; SC.last = ''; SC.shown = ''; $('scNum').value = ''; scLive(''); scIdle(); scModeUi(); $('ckScanDlg').showModal();
+  loadBarcodes();
+  await scStartMode();
+}
 function scStop(keepDialog) {
-  SC.run = false; clearTimeout(SC.timer);
+  SC.run = false; clearTimeout(SC.timer); clearTimeout(SC.ocrTimer); SC.det = null;
   if (SC.stream) { SC.stream.getTracks().forEach(t => t.stop()); SC.stream = null; }
   const v = $('scVideo'); if (v) v.srcObject = null;
   if (SC.h5) { const h = SC.h5; SC.h5 = null; Promise.resolve().then(() => h.stop()).catch(() => {}).then(() => { try { h.clear(); } catch (e) { /* abaikan */ } }); }
+  $('scBand').classList.add('hidden'); $('scLine').classList.remove('hidden');
+  if (!keepDialog) { scLive(''); clearTimeout(SC.wkTimer); SC.wkTimer = setTimeout(() => { if (SC.worker && !SC.run) { try { SC.worker.terminate(); } catch (e) { /* abaikan */ } SC.worker = null; } }, 30000); }
 }
 function scClose() { scStop(); if ($('ckScanDlg').open) $('ckScanDlg').close(); }
 $('scClose').onclick = scClose;
 $('ckScanDlg').addEventListener('close', () => scStop());
 $('ckScan').onclick = scOpen;
+$('scModes').addEventListener('click', e => {
+  const b = e.target.closest('[data-scm]'); if (!b || b.dataset.scm === SC.mode) return;
+  SC.mode = b.dataset.scm; localStorage.setItem('planner_sc_mode', SC.mode); SC.cur = null; SC.last = ''; SC.shown = ''; scLive(''); scIdle(); scStartMode();
+});
 
 /* ---------- simpan ke spreadsheet ---------- */
 function ckDone() {
@@ -2318,17 +2528,159 @@ function ckApplyType() { $('ckType').value = CK.type; $('ckSearch').value = ''; 
 function ckEnter() {
   ckApplyType();
   if (!CK.names.length) ckLoadNames();
-  if (!CK.plan && !CK.loading) ckLoadPlan($('ckDate').value || '');
+  loadBarcodes();
+  if (!CK.plan && !CK.loading) ckLoadPlan($('ckDate').value || ''); else if (CK.plan) shLoadList();
 }
 $('ckType').onchange = () => { CK.type = $('ckType').value; localStorage.setItem('planner_ck_type', CK.type); ckApplyType(); };
 $('ckName').onchange = () => localStorage.setItem('planner_ck_name', $('ckName').value);
 $('ckDriver').onchange = () => { localStorage.setItem('planner_ck_driver', $('ckDriver').value); ckRender(); };
 $('ckDate').onchange = () => { if ($('ckDate').value) ckLoadPlan($('ckDate').value); };
-$('ckLoad').onclick = () => { ckLoadNames(true); ckLoadPlan($('ckDate').value || ''); };
+$('shRefresh').onclick = () => shLoadList();
+$('ckLoad').onclick = () => { ckLoadNames(true); loadBarcodes(true); ckLoadPlan($('ckDate').value || ''); };
 $('ckSave').onclick = ckSave;
 $('ckPrint').onclick = ckPrint;
 $('ckReset').onclick = ckReset;
 $('ckType').value = CK.type;
+
+/* =====================================================================
+   SHARE KE CHECKER — file Excel yang diimpor Admin (Planner / Other Request · Import) atau data Event / Form Others
+   dikirim ke GAS -> Google Drive + sheet "Shared Files". Team Checker membukanya di menu Checker (kotak "File plan dari Admin").
+   ===================================================================== */
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+const SH_BTN = { planner: 'btnShare', other: 'btnShare', event: 'evShare', form: 'fmShare' };
+const shAutoOn = () => localStorage.getItem('planner_share_auto') !== '0';
+document.querySelectorAll('.shAutoCk').forEach(c => {
+  c.checked = shAutoOn();
+  c.onchange = () => { localStorage.setItem('planner_share_auto', c.checked ? '1' : '0'); document.querySelectorAll('.shAutoCk').forEach(x => x.checked = c.checked); };
+});
+const shStat = (mod, t) => document.querySelectorAll(`.sh-stat[data-for="${SH_BTN[mod]}"]`).forEach(e => { e.textContent = t; e.style.color = /^⚠/.test(t) ? '#b91c1c' : '#166534'; });
+function b64Of(u8) { let s = ''; const CH = 0x8000; for (let i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH)); return btoa(s); }
+function hash32(s) { let a = 0x811c9dc5, b = 5381; for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); a = Math.imul(a ^ c, 16777619) >>> 0; b = (Math.imul(b, 33) ^ c) >>> 0; } return a.toString(16) + b.toString(16) + s.length.toString(16); }
+function aoaBook(name, aoa, wch) {
+  const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(aoa);
+  if (wch) ws['!cols'] = wch.map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws, name);
+  return { bytes: new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' })), checksum: hash32(JSON.stringify(aoa)) };   // hash isi data -> share ulang dengan data sama tidak jadi versi baru
+}
+function shBuild(mod) {
+  const nm = s => String(s || '').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (mod === 'planner') {
+    const date = $('planDate').value || todayStr();
+    if (SRC.planner) return { fileName: SRC.planner.name, bytes: new Uint8Array(SRC.planner.buf), mime: SRC.planner.type, planDate: date };
+    if (!state.drivers.length) return { error: 'Import file Excel plan terlebih dahulu' };
+    const rows = flatRows(), bk = aoaBook('Planner', [['Driver', 'Plat Nomor', 'VMC No', 'Location Name', 'Product ID', 'Product Name', 'Qty', 'Sheet'], ...rows.map(r => [r.driver, r.plate, r.vmc, r.location, r.productId, r.productName, r.qty, r.sheet])], [22, 14, 10, 36, 12, 50, 8, 10]);
+    return { fileName: `Plan_${date}.xlsx`, ...bk, mime: XLSX_MIME, planDate: date };
+  }
+  if (mod === 'other') {
+    const date = $('planDate').value || todayStr();
+    if (SRC.other) return { fileName: SRC.other.name, bytes: new Uint8Array(SRC.other.buf), mime: SRC.other.type, planDate: date };
+    if (!state.req.length) return { error: 'Import file Excel Other Request terlebih dahulu' };
+    const rows = reqRows(), bk = aoaBook('Other Request', [['Sheet', 'WH Origin', 'Destination', 'Flooring', 'Product ID', 'Product Name', 'Qty Pcs', 'Qty Carton'], ...rows.map(r => [r.sheet, r.whOrigin, r.destination, r.flooring, r.productId, r.productName, r.qtyPcs, r.qtyCarton])], [14, 14, 18, 10, 12, 50, 9, 10]);
+    return { fileName: `OtherRequest_${date}.xlsx`, ...bk, mime: XLSX_MIME, planDate: date };
+  }
+  if (mod === 'event') {
+    if (!EV.rows.length) return { error: 'Import file Event terlebih dahulu' };
+    const date = todayStr(), name = $('evName').value.trim() || 'Event';
+    const bk = aoaBook('Event', [['Event', 'Tanggal', 'Product ID', 'Product Name', 'Qty (Pcs)'], ...EV.rows.map(r => [name, date, r.id, r.name, r.qty === '' ? '' : Number(r.qty)])], [26, 12, 12, 50, 10]);
+    return { fileName: `Event_${nm(name)}_${date}.xlsx`, ...bk, mime: XLSX_MIME, planDate: date };
+  }
+  const d = fmData();
+  if (!d.rows.length) return { error: 'Tambah produk dan isi Qty minimal pada satu produk' };
+  const bk = aoaBook('Form Others', [['Input Date', d.input], ['Shipping Date', d.ship], ['Location Name', d.loc], [], ['ID Product', 'Product Name', 'Qty (Pcs)', 'Qty (Carton)'], ...d.rows.map(r => [r.id, r.name, r.pcs, r.carton == null ? '' : r.carton])], [14, 50, 12, 12]);
+  return { fileName: `FormOthers_${nm(d.loc) || 'Form'}_${d.ship || d.input}.xlsx`, ...bk, mime: XLSX_MIME, planDate: d.input };
+}
+async function shareToChecker(mod, opt = {}) {
+  const auto = !!opt.auto, say = (t, ms) => { if (!auto) toast(t, ms); };
+  if (!gasReady()) return say('Atur URL GAS terlebih dahulu', 3500);
+  const f = shBuild(mod);
+  if (f.error) { shStat(mod, '⚠ ' + f.error); return say(f.error, 3500); }
+  if (f.bytes.length > 9.5 * 1024 * 1024) { shStat(mod, '⚠ File terlalu besar'); return toast('File terlalu besar untuk dibagikan (maks 10 MB)', 4500); }
+  const btn = $(SH_BTN[mod]), label = btn.innerHTML; btn.disabled = true; btn.textContent = 'Membagikan…';
+  try {
+    const r = await (await fetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'shareFile', module: mod, fileName: f.fileName, mimeType: f.mime || '', planDate: f.planDate, sharedBy: 'Admin', checksum: f.checksum || '', dataBase64: b64Of(f.bytes) }) })).json();
+    if (!r.ok) throw new Error(r.error);
+    const hm = (r.sharedAt || '').slice(11, 16);
+    shStat(mod, r.saved ? `✓ Dibagikan ke Checker ${hm}${r.version > 1 ? ' (v' + r.version + ')' : ''}` : `✓ Sudah dibagikan ${hm} (isi sama)`);
+    say(r.saved ? `File “${f.fileName}” dibagikan ke Team Checker` : `File “${f.fileName}” sudah dibagikan sebelumnya (isi sama)`, 4000);
+  } catch (e) {
+    const old = /Action tidak dikenal/.test(e.message), perm = /Drive|authoriz|permission|izin/i.test(e.message);
+    shStat(mod, '⚠ Gagal share');
+    toast('Gagal share ke Checker: ' + e.message + (old ? ' — GAS yang ter-deploy masih versi lama. Tempel kode terbaru → Deploy > Manage deployments > Edit > New version → Deploy.' : perm ? ' — jalankan testSetup() di editor GAS dan setujui izin Google Drive, lalu deploy versi baru.' : ''), old || perm ? 9000 : 4500);
+  }
+  btn.disabled = false; btn.innerHTML = label;
+}
+$('btnShare').onclick = () => shareToChecker(state.menu === 'other' ? 'other' : 'planner');
+$('evShare').onclick = () => shareToChecker('event');
+$('fmShare').onclick = () => shareToChecker('form');
+
+/* ---- sisi Checker: daftar & buka file ---- */
+const SHF = { list: [], loading: false, err: '', files: new Map(), cur: null };
+const shDates = () => [...new Set([todayStr(), $('ckDate').value].filter(Boolean))];
+function shRender() {
+  const box = $('shList'), d = shDates();
+  $('shDateLbl').textContent = 'Hari ini ' + dateLong(todayStr()) + (d.length > 1 ? ' · plan ' + dateLong(d[1]) : '');
+  const msg = (t, c) => `<div class="text-xs ${c || 'text-slate-500'}">${t}</div>`;
+  if (SHF.loading) return void (box.innerHTML = msg('Memuat daftar file…'));
+  if (SHF.err) return void (box.innerHTML = msg(esc(SHF.err), 'text-red-600'));
+  if (!SHF.list.length) return void (box.innerHTML = msg('Belum ada file yang dibagikan Admin untuk hari ini.'));
+  box.innerHTML = SHF.list.map(f => `<div class="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
+    <div class="min-w-[200px] flex-1"><div class="break-all text-sm font-semibold">${esc(f.fileName)}</div>
+      <div class="text-[11px] text-slate-500"><span class="rounded bg-[#FBB315]/30 px-1.5 py-0.5 font-bold text-slate-700">${esc(f.module)}</span> · ${esc((f.sharedAt || '').slice(11, 16))} oleh ${esc(f.sharedBy || 'Admin')} · plan ${esc(f.planDate)} · ${fmt(f.sizeKb)} KB${f.version > 1 ? ` · v${f.version}${f.latest ? ' (terbaru)' : ' (lama)'}` : ''}</div></div>
+    <button type="button" class="btn btn-dark" data-shopen="${esc(f.fileId)}">Buka</button>
+    <button type="button" class="btn btn-ghost" data-shdl="${esc(f.fileId)}">Unduh</button></div>`).join('');
+}
+async function shLoadList() {
+  if (!gasReady()) { SHF.err = 'URL GAS belum diatur'; return shRender(); }
+  SHF.loading = true; SHF.err = ''; shRender();
+  try {
+    const r = await (await fetch(`${GAS_URL()}?action=listSharedFiles&dates=${encodeURIComponent(shDates().join(','))}`)).json();
+    if (!r.ok) throw new Error(r.error);
+    SHF.list = r.files || [];
+  } catch (e) { SHF.err = 'Gagal memuat file dari Admin: ' + e.message + ckDeployHint(e); SHF.list = []; }
+  SHF.loading = false; shRender();
+}
+async function shFetch(id) {
+  if (SHF.files.has(id)) return SHF.files.get(id);
+  const r = await (await fetch(`${GAS_URL()}?action=getSharedFile&fileId=${encodeURIComponent(id)}`)).json();
+  if (!r.ok) throw new Error(r.error);
+  SHF.files.set(id, r); return r;
+}
+function shSave(r) {
+  const bin = atob(r.dataBase64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u8], { type: r.mimeType || 'application/octet-stream' })); a.download = r.fileName;
+  document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function shShowSheet(name) {
+  const c = SHF.cur; if (!c) return;
+  c.sheet = name;
+  $('shVTabs').innerHTML = c.wb.SheetNames.map(n => `<button type="button" data-shsheet="${esc(n)}" class="shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold ${n === name ? 'bg-[#141414] text-white' : 'bg-slate-100 text-slate-600'}">${esc(n)}</button>`).join('');
+  const rows = XLSX.utils.sheet_to_json(c.wb.Sheets[name], { header: 1, raw: false, defval: '' }).filter(r => r.some(x => String(x).trim() !== ''));
+  const q = $('shVSearch').value.trim().toLowerCase(), cols = Math.min(30, Math.max(0, ...rows.map(r => r.length)));
+  const head = rows[0] || [], body = rows.slice(1).filter(r => !q || r.join(' ').toLowerCase().includes(q)), LIM = 1000;
+  $('shVCount').textContent = `${fmt(body.length)} baris${q ? ' cocok' : ''}${body.length > LIM ? ` · menampilkan ${fmt(LIM)} pertama (gunakan pencarian)` : ''}`;
+  $('shVBody').innerHTML = rows.length ? `<table class="shv-tbl"><thead><tr>${Array.from({ length: cols }, (_, i) => `<th>${esc(head[i] ?? '')}</th>`).join('')}</tr></thead><tbody>${body.slice(0, LIM).map(r => `<tr>${Array.from({ length: cols }, (_, i) => `<td>${esc(r[i] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '<div class="p-6 text-center text-sm text-slate-500">Sheet kosong.</div>';
+}
+async function shOpen(id) {
+  toast('Membuka file…', 8000);
+  try {
+    const r = await shFetch(id), wb = XLSX.read(r.dataBase64, { type: 'base64' });
+    SHF.cur = { r, wb, sheet: wb.SheetNames[0] };
+    $('shVTitle').textContent = r.fileName; $('shVMeta').textContent = `${r.module} · plan ${r.planDate} · dibagikan ${r.sharedAt} oleh ${r.sharedBy || 'Admin'} · hanya baca`;
+    $('shVSearch').value = ''; shShowSheet(wb.SheetNames[0]);
+    $('toast').classList.add('hidden'); $('shViewDlg').showModal();
+  } catch (e) { toast('Gagal membuka file: ' + e.message + ckDeployHint(e), 7000); }
+}
+$('shList').addEventListener('click', async e => {
+  const o = e.target.closest('[data-shopen]'), d = e.target.closest('[data-shdl]');
+  if (o) return shOpen(o.dataset.shopen);
+  if (d) { try { toast('Mengunduh…', 6000); shSave(await shFetch(d.dataset.shdl)); $('toast').classList.add('hidden'); } catch (err) { toast('Gagal mengunduh: ' + err.message, 5000); } }
+});
+$('shVTabs').addEventListener('click', e => { const b = e.target.closest('[data-shsheet]'); if (b) shShowSheet(b.dataset.shsheet); });
+let shTm; $('shVSearch').addEventListener('input', () => { clearTimeout(shTm); shTm = setTimeout(() => SHF.cur && shShowSheet(SHF.cur.sheet), 180); });
+$('shVDl').onclick = () => SHF.cur && shSave(SHF.cur.r);
+$('shVClose').onclick = () => $('shViewDlg').close();
 
 $('planDate').value = todayStr();
 applyMenu(); applyRole(); loadSku(); render();
@@ -2404,20 +2756,20 @@ applyMenu(); applyRole(); loadSku(); render();
   function sheetAksi() {
     const m = mode(), x = k => `#xlsxMenu [data-x="${k}"]`;
     let h = '<div class="ms-h">Aksi</div><div class="ms-s">Simpan, cetak, dan ekspor data</div>';
-    if (m === 'planner') h += grp('Simpan', item('btnSave', 'Simpan ke Spreadsheet', 'Catat plan ke Google Sheets', 'save', 1)) +
+    if (m === 'planner') h += grp('Simpan', item('btnSave', 'Simpan ke Spreadsheet', 'Catat plan ke Google Sheets', 'save', 1), item('btnShare', 'Share ke Checker', 'Bagikan file plan ke Team Checker', 'up')) +
       grp('Cetak / PDF', item('btnPrintTotal', 'Total per Produk', 'Semua driver digabung', 'print'), item('btnPrintDriver', 'Per Driver & Lokasi', 'Mengikuti driver di filter', 'print'), item('btnPrintDriverTotal', 'Total driver terpilih', 'Hanya driver yang dipilih', 'print')) +
       grp('Export Excel', item('', 'Planner (detail)', 'Semua driver, lokasi & produk', 'xls', 0, x('plan')), item('', 'Bulky · All Driver', 'Total per produk', 'xls', 0, x('bulkyAll')), item('', 'Bulky · Per-Driver', 'Driver yang dipilih', 'xls', 0, x('bulkyDriver')));
-    if (m === 'req') h += grp('Simpan', item('btnSave', 'Simpan ke Spreadsheet', 'Catat Other Request', 'save', 1)) +
+    if (m === 'req') h += grp('Simpan', item('btnSave', 'Simpan ke Spreadsheet', 'Catat Other Request', 'save', 1), item('btnShare', 'Share ke Checker', 'Bagikan file ke Team Checker', 'up')) +
       grp('Cetak / PDF', item('btnOBulkyAll', 'Bulky Semua Produk', 'Total dari semua sheet', 'print'), item('btnOBulkySheet', 'Bulky Per-Sheet', 'Satu halaman per sheet', 'print'), item('btnOListSheet', 'List Produk Per-Sheet', 'Daftar apa adanya', 'print')) +
       grp('Export Excel', item('', 'Other Request (detail)', 'Semua sheet Excel', 'xls', 0, x('plan')));
-    if (m === 'event') h += grp('Simpan', item('evSave', 'Simpan ke Spreadsheet', 'Catat data Event', 'save', 1)) +
+    if (m === 'event') h += grp('Simpan', item('evSave', 'Simpan ke Spreadsheet', 'Catat data Event', 'save', 1), item('evShare', 'Share ke Checker', 'Bagikan data Event ke Team Checker', 'up')) +
       grp('Cetak / PDF', item('evPrintAll', 'Bulky Semua Produk', 'Hanya produk yang diisi Qty', 'print'), item('evPrintSheet', 'Bulky Per-Sheet', 'Satu halaman per sheet', 'print'), item('evPrintList', 'List Produk Per-Sheet', 'Satu halaman per sheet', 'print')) +
       grp('Lainnya', item('evClear', 'Kosongkan Qty', 'Hapus semua isian Qty', 'trash'));
-    if (m === 'form') h += grp('Simpan', item('fmSave', 'Simpan ke Spreadsheet', 'Catat ke sheet Form Others', 'save', 1)) +
+    if (m === 'form') h += grp('Simpan', item('fmSave', 'Simpan ke Spreadsheet', 'Catat ke sheet Form Others', 'save', 1), item('fmShare', 'Share ke Checker', 'Bagikan Form Others ke Team Checker', 'up')) +
       grp('Cetak / PDF', item('fmPrint', 'Cetak / PDF', 'Form yang sedang diisi', 'print')) + grp('Lainnya', item('fmClear', 'Form Baru', 'Kosongkan form', 'trash'));
     if (m === 'checker') h += grp('Simpan', item('ckSave', 'Simpan ke Spreadsheet', 'Catat hasil ke sheet Checker Result', 'save', 1)) +
       grp('Cetak / PDF', item('ckPrint', 'Hasil Adjustment', 'Produk yang sudah dicek', 'print')) +
-      grp('Lainnya', item('ckLoad', 'Muat data plan', 'Ambil nama checker & plan terbaru', 'ref'), item('ckReset', 'Reset pengecekan', 'Kosongkan tanda ✓ / ✗ tampilan ini', 'trash'));
+      grp('Lainnya', item('ckLoad', 'Muat data plan', 'Ambil nama checker & plan terbaru', 'ref'), item('shRefresh', 'Muat file dari Admin', 'File plan yang dibagikan hari ini', 'ref'), item('ckReset', 'Reset pengecekan', 'Kosongkan tanda ✓ / ✗ tampilan ini', 'trash'));
     open(h);
   }
   function sheetSet() {
