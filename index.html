@@ -231,6 +231,39 @@ body.sheet{overflow:hidden}
 }
 </style>
 
+<style id="ck-css">
+/* ===== MENU CHECKER (additif) ===== */
+body:not(.ck-mode) #checkerPanel { display: none !important; }
+body.ck-mode #otherTabs, body.ck-mode #eventPanel, body.ck-mode #formPanel, body.ck-mode #importCard, body.ck-mode #packerBar,
+body.ck-mode #printBar, body.ck-mode #stats, body.ck-mode #insight, body.ck-mode #grandTotals, body.ck-mode #toolbar,
+body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display: none !important; }
+.field select, .field input[type=date] { border: 1px solid var(--line); border-radius: .5rem; padding: .4rem .7rem; font-size: .875rem; color: var(--ink); background: #fff; min-height: 38px; }
+.ck-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: .75rem; }
+.ck-tbl { width: 100%; border-collapse: collapse; font-size: .875rem; min-width: 640px; }
+.ck-tbl th { background: #F0F0ED; font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #52514B; text-align: left; padding: .55rem .65rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.ck-tbl td { padding: .5rem .65rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.ck-tbl tbody tr:last-child td { border-bottom: 0; }
+.ck-tbl tr.ok { background: #F1FBF4; } .ck-tbl tr.bad { background: #FFF3F2; }
+.ck-tbl tr.flash { animation: ckflash 1.5s ease-out; }
+@keyframes ckflash { 0%, 55% { background: #FEEDB8; } }
+.ck-mark { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: .65rem; border: 2px solid var(--line); background: #fff; color: #98978D; font-size: 1.3rem; font-weight: 700; line-height: 1; }
+.ck-mark.ok.on { background: #16a34a; border-color: #16a34a; color: #fff; }
+.ck-mark.bad.on { background: #dc2626; border-color: #dc2626; color: #fff; }
+.ck-step { display: inline-flex; align-items: center; gap: 4px; }
+.ck-step button { width: 38px; height: 38px; border-radius: .5rem; border: 1px solid var(--line); background: #fff; font-weight: 700; font-size: 1.15rem; line-height: 1; }
+.ck-step button:active { background: #FFF8E1; }
+.ck-step input { width: 74px; height: 38px; text-align: center; border: 1px solid var(--line); border-radius: .5rem; font-size: 1rem; font-weight: 700; }
+.ck-diff { margin-top: 2px; font-size: .72rem; font-weight: 700; color: #686760; }
+.ck-diff.pos { color: #166534; } .ck-diff.neg { color: #b91c1c; }
+.ck-del { border: 0; background: none; color: #98978D; font-size: .72rem; text-decoration: underline; padding: 0; margin-top: 2px; }
+.pp-tbl td.bad { font-weight: 700; }
+#scInfo .sc-card { border-radius: .75rem; padding: .7rem .8rem; }
+@media (max-width: 767.98px) {
+  #mDock { grid-template-columns: 1fr 1fr 1fr 84px 1fr 1fr; }
+  .dk { font-size: 10px; }
+  #ckScanDlg[open] { margin: auto 0 0 !important; width: 100vw !important; max-width: 100vw !important; border-radius: 1.25rem 1.25rem 0 0 !important; }
+}
+</style>
 </head>
 <body>
 
@@ -252,6 +285,10 @@ body.sheet{overflow:hidden}
       <a href="#" data-menu="other" class="nav-item mt-1">
         <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         Other Request
+      </a>
+      <a href="#" data-menu="checker" class="nav-item mt-1">
+        <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Checker
       </a>
     </nav>
     <div class="space-y-2.5 border-t border-slate-200 px-6 py-5 text-xs text-slate-500">
@@ -286,6 +323,7 @@ body.sheet{overflow:hidden}
       <nav class="no-print md:hidden inline-flex w-full rounded-lg bg-slate-100 p-1 text-sm" aria-label="Menu">
         <button type="button" data-menu="planner" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Planner</button>
         <button type="button" data-menu="other" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Other Request</button>
+        <button type="button" data-menu="checker" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Checker</button>
       </nav>
 
       <!-- TAB OTHER REQUEST: Import Request | Event -->
@@ -338,6 +376,46 @@ body.sheet{overflow:hidden}
         </div>
         <div id="fmTable"></div>
         <p class="text-xs text-slate-500">Qty (Carton) terisi otomatis dari UOM/UOP produk di Source SKU. Qty Pcs atau Carton boleh diisi, yang lain mengikuti. Data dicatat ke sheet “Form Others”; baris yang sama (tanggal input + shipping date + lokasi + produk) tidak dicatat ulang.</p>
+      </section>
+
+      <!-- CHECKER -->
+      <section id="checkerPanel" class="no-print panel space-y-4 p-4 md:p-5">
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label class="field">Nama Checker<select id="ckName"><option value="">Memuat…</option></select></label>
+          <label class="field">Tanggal Plan<input id="ckDate" type="date"></label>
+          <label class="field">Type Bulky
+            <select id="ckType">
+              <option value="driver">Bulky Per-Driver</option>
+              <option value="all">Bulky All Driver</option>
+              <option value="produk">Bulky Per Produk</option>
+            </select>
+          </label>
+          <label id="ckDriverWrap" class="field">Driver<select id="ckDriver"><option value="">— Pilih driver —</option></select></label>
+        </div>
+        <div class="flex flex-wrap items-end gap-2">
+          <label class="field min-w-[240px] flex-1">Cari produk (ID / nama)
+            <input id="ckSearch" type="text" list="ckList" placeholder="Ketik ID atau nama produk…" autocomplete="off" enterkeyhint="search">
+          </label>
+          <datalist id="ckList"></datalist>
+          <button id="ckGo" type="button" class="btn btn-dark">Cari</button>
+          <button id="ckScan" type="button" class="btn btn-accent">
+            <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10"/></svg>
+            Scan Barcode / QR
+          </button>
+          <button id="ckLoad" type="button" class="btn btn-ghost">Muat data plan</button>
+        </div>
+        <p id="ckHint" class="text-xs text-slate-500"></p>
+        <div id="ckStats" class="grid grid-cols-2 gap-2 sm:grid-cols-5"></div>
+        <div id="ckTable"></div>
+        <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
+          <button id="ckReset" type="button" class="btn btn-ghost">Reset pengecekan</button>
+          <label class="flex items-center gap-2 text-xs font-semibold text-slate-600"><input id="ckPrintBad" type="checkbox" class="accent-indigo-600"> Cetak hanya yang tidak sesuai</label>
+          <div class="ml-auto flex flex-wrap gap-2">
+            <button id="ckPrint" type="button" class="btn btn-ghost">Cetak / PDF · Hasil Adjustment</button>
+            <button id="ckSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500">Qty Plan diambil dari sheet “Planner Data” (dalam Pcs). Tandai ✓ bila jumlah fisik sesuai, ✗ bila tidak — lalu isi Qty (Adjustment) dengan jumlah sebenarnya. Hasil dicatat ke sheet “Checker Result”; produk yang belum dicek tidak ikut disimpan.</p>
       </section>
 
       <!-- IMPORT (Admin) -->
@@ -464,6 +542,22 @@ body.sheet{overflow:hidden}
   </div>
 </div>
 
+<!-- SCANNER CHECKER -->
+<dialog id="ckScanDlg" class="w-[min(96vw,520px)] rounded-2xl p-0 shadow-xl">
+  <div class="p-4">
+    <div class="flex items-center justify-between gap-3">
+      <h3 class="display text-lg font-bold">Scan Barcode / QR</h3>
+      <button id="scClose" type="button" class="btn btn-ghost">Selesai</button>
+    </div>
+    <div class="relative mt-3 overflow-hidden rounded-xl bg-black" style="aspect-ratio:4/3">
+      <video id="scVideo" playsinline muted class="h-full w-full object-cover"></video>
+      <div id="scQr" class="hidden h-full w-full"></div>
+      <div class="pointer-events-none absolute inset-x-[10%] top-1/2 h-[2px] -translate-y-1/2 bg-[#FBB315] opacity-90 shadow-[0_0_12px_#FBB315]"></div>
+    </div>
+    <div id="scInfo" class="mt-3 min-h-[96px]"></div>
+  </div>
+</dialog>
+
 <!-- FIX DIALOG -->
 <dialog id="fixDlg" class="w-[min(92vw,460px)] rounded-2xl p-0 shadow-xl">
   <form method="dialog" class="p-5">
@@ -508,7 +602,7 @@ const state = {
   excelIds: new Map(),            // normName -> ID dari baris "Need Refill 2" di Excel (cadangan)
   overrides: JSON.parse(localStorage.getItem(LS.ovr) || '{}'),
   drivers: [], sheets: [], req: [], fileName: '', cache: new Map(), role: localStorage.getItem(LS.role) || 'admin',
-  menu: localStorage.getItem(LS.menu) === 'other' ? 'other' : 'planner'
+  menu: ['other', 'checker'].includes(localStorage.getItem(LS.menu)) ? localStorage.getItem(LS.menu) : 'planner'
 };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -834,6 +928,7 @@ function stats() {
   return { drivers: state.drivers.length, loc, item, qty, chk, ai };
 }
 function render() {
+  if (state.menu === 'checker') return ckRender();
   if (state.menu === 'other') return renderOther();
   const has = state.drivers.length > 0;
   $('empty').classList.toggle('hidden', has);
@@ -1739,6 +1834,12 @@ const MENUS = {
     saveAction: 'saveOtherRequest', loadAction: 'getLatestOtherRequest', noun: 'Other Request', loadTitle: 'Other Request Muatan Driver', fp: 'OtherRequest_',
     xlsLabel: 'Other Request (detail)', xlsSheet: 'Other Request', xlsFile: 'OtherRequest',
     packer: 'Mode Packer: tampilkan Other Request terakhir yang disimpan Admin.', loadBtn: 'Muat Other Request terakhir', empty: 'Belum ada Other Request'
+  },
+  checker: {
+    nav: 'Checker', title: 'Checker', sub: 'Validasi jumlah Qty plan vs hasil hitung fisik · untuk Checker Warehouse', side: 'Checker · Warehouse PG',
+    saveAction: 'saveChecker', loadAction: 'getLatestPlan', noun: 'Checker', loadTitle: 'Validasi Qty Checker', fp: 'Checker_',
+    xlsLabel: 'Checker', xlsSheet: 'Checker', xlsFile: 'Checker',
+    packer: '', loadBtn: 'Muat data plan', empty: 'Belum ada data'
   }
 };
 const L = () => MENUS[state.menu];
@@ -1752,6 +1853,7 @@ function snapshotMenu() {
 }
 function applyMenu() {
   const m = L();
+  document.body.classList.toggle('ck-mode', state.menu === 'checker');
   document.querySelectorAll('.nav-item[data-menu]').forEach(a => {
     const on = a.dataset.menu === state.menu;
     a.classList.toggle('nav-on', on);
@@ -1776,6 +1878,7 @@ function applyMenu() {
   $('dropSub').textContent = other ? 'Tarik & lepas file (.xlsx / .xls): Bahan Baku atau Surat Jalan TikTok · sheet SOP, Sheet1, Sheet2 dilewati' : 'Tarik & lepas file (.xlsx / .xls) ke sini, atau klik untuk memilih';
   if (typeof applyOtherTab === 'function' && other !== undefined) { $('otherTabs').classList.toggle('hidden', !other); $('eventPanel').classList.toggle('hidden', !evMode()); $('formPanel').classList.toggle('hidden', !fmMode()); $('evDate').value = todayStr(); $('fmInput').value = todayStr(); }
   $('search').placeholder = other ? 'Cari sheet, lantai, produk, ID…' : 'Cari lokasi, produk, ID, driver, plat…';
+  if (state.menu === 'checker') ckEnter();
 }
 function switchMenu(key) {
   if (!MENUS[key] || key === state.menu) return;
@@ -1848,6 +1951,385 @@ $('fixApply').onclick = applyFix;
 $('fixClear').onclick = () => { delete state.overrides[fixKey]; localStorage.setItem(LS.ovr, JSON.stringify(state.overrides)); state.cache.clear(); $('fixDlg').close(); render(); };
 $('fixInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyFix(); } });
 
+/* =====================================================================
+   CHECKER — validasi Qty (plan vs hasil hitung fisik)
+   Qty Plan  : sheet "Planner Data" lewat action getLatestPlan?planDate= (Pcs, dijumlah per produk)
+   Checker   : sheet "Source" kolom C (C2:C) lewat action getCheckers
+   Simpan    : sheet "Checker Result" lewat action saveChecker
+   Scanner   : BarcodeDetector bawaan browser (deteksi on-device) -> cadangan html5-qrcode (ZXing)
+   ===================================================================== */
+const CK_TYPES = { driver: 'Bulky Per-Driver', all: 'Bulky All Driver', produk: 'Bulky Per Produk' };
+const CK_HINT = {
+  driver: 'Pilih driver, lalu cek tiap produk. Pencarian / scan hanya untuk produk milik driver tersebut.',
+  all: 'Total semua driver per produk. Pencarian menyaring daftar; scan menandai produk yang dipindai.',
+  produk: 'Cari atau scan produk untuk menambahkannya ke daftar. Qty Plan = total produk itu di semua driver.'
+};
+const CK = {
+  names: [], plan: null, products: new Map(), byDriver: new Map(), drivers: [], picked: [], marks: {}, loading: false, flash: '',
+  type: CK_TYPES[localStorage.getItem('planner_ck_type')] ? localStorage.getItem('planner_ck_type') : 'driver'
+};
+const ckR3 = n => Math.round((Number(n) || 0) * 1000) / 1000;
+const ckSgn = n => (n > 0 ? '+' : '') + fmt(n);
+const ckMsg = t => `<div class="rounded-xl border-2 border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">${t}</div>`;
+const ckDrv = () => CK.type === 'driver' ? $('ckDriver').value : '';
+const ckMk = key => `${CK.type}|${ckDrv()}|${key}`;
+const ckMarksKey = () => 'planner_ck_marks_' + (CK.plan ? CK.plan.date : '');
+function ckPersist() { try { localStorage.setItem(ckMarksKey(), JSON.stringify({ marks: CK.marks, picked: CK.picked })); } catch (e) { /* penyimpanan penuh: abaikan */ } }
+function ckRestore() {
+  try { const o = JSON.parse(localStorage.getItem(ckMarksKey()) || '{}'); CK.marks = o.marks || {}; CK.picked = o.picked || []; }
+  catch (e) { CK.marks = {}; CK.picked = []; }
+}
+const ckDeployHint = e => /Action tidak dikenal/.test(e.message) ? ' — GAS yang ter-deploy masih versi lama. Tempel kode terbaru → Deploy > Manage deployments > Edit > New version → Deploy.' : '';
+
+/* ---------- data: nama checker & plan ---------- */
+function ckFillNames() {
+  const sel = $('ckName'), keep = sel.value || localStorage.getItem('planner_ck_name') || '';
+  sel.innerHTML = '<option value="">— Pilih nama checker —</option>' + CK.names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  if (CK.names.includes(keep)) sel.value = keep;
+}
+async function ckLoadNames(force) {
+  if (!CK.names.length) { try { CK.names = JSON.parse(localStorage.getItem('planner_ck_names') || '[]'); } catch (e) { CK.names = []; } ckFillNames(); }
+  if (!gasReady()) return;
+  try {
+    const r = await (await fetch(`${GAS_URL()}?action=getCheckers${force ? '&refresh=1' : ''}`)).json();
+    if (!r.ok) throw new Error(r.error);
+    CK.names = r.checkers || []; localStorage.setItem('planner_ck_names', JSON.stringify(CK.names)); ckFillNames();
+    if (!CK.names.length) toast('Sheet “Source” kolom C (C2 ke bawah) masih kosong', 4500);
+  } catch (e) { toast('Gagal memuat nama checker: ' + e.message + ckDeployHint(e), ckDeployHint(e) ? 9000 : 4500); }
+}
+function ckIngest(r) {
+  const prods = new Map(), drvs = new Map();
+  (r.rows || []).forEach(x => {
+    const name = cleanName(x.productName), id = String(x.productId || '').trim();
+    const k = idKey(id) || norm(name); if (!k) return;
+    const q = Number(x.qty) || 0;
+    const p = prods.get(k) || { key: k, id, name, qty: 0 }; p.qty = ckR3(p.qty + q); prods.set(k, p);
+    const dn = cleanName(x.driver) || '(Tanpa Driver)';
+    if (!drvs.has(dn)) drvs.set(dn, new Map());
+    const dm = drvs.get(dn), d = dm.get(k) || { key: k, id: p.id, name: p.name, qty: 0 }; d.qty = ckR3(d.qty + q); dm.set(k, d);
+  });
+  CK.products = prods; CK.byDriver = drvs;
+  CK.drivers = [...drvs.keys()].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  CK.plan = { date: (r.meta && r.meta.planDate) || $('ckDate').value || todayStr(), rows: (r.rows || []).length };
+  ckRestore();
+  $('ckList').innerHTML = [...prods.values()].sort(byId).map(p => `<option value="${esc(p.id + ' — ' + p.name)}"></option>`).join('');
+}
+function ckFillDrivers() {
+  const sel = $('ckDriver'), keep = sel.value || localStorage.getItem('planner_ck_driver') || '';
+  sel.innerHTML = '<option value="">— Pilih driver —</option>' + CK.drivers.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  if (CK.drivers.includes(keep)) sel.value = keep;
+}
+async function ckLoadPlan(date) {
+  if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
+  CK.loading = true; ckRender();
+  try {
+    const r = await (await fetch(`${GAS_URL()}?action=getLatestPlan${date ? '&planDate=' + encodeURIComponent(date) : ''}`)).json();
+    if (!r.ok) throw new Error(r.error);
+    if (!(r.rows || []).length) {
+      CK.plan = null; CK.products = new Map(); CK.byDriver = new Map(); CK.drivers = []; CK.picked = []; CK.marks = {};
+      toast(date ? `Belum ada plan tersimpan untuk ${dateLong(date)}` : 'Belum ada plan tersimpan di spreadsheet', 4500);
+    } else { ckIngest(r); $('ckDate').value = CK.plan.date; }
+  } catch (e) { toast('Gagal memuat plan: ' + e.message, 5000); }
+  CK.loading = false; ckFillDrivers(); ckRender();
+}
+
+/* ---------- daftar baris sesuai Type ---------- */
+function ckRows() {
+  let base = [];
+  if (CK.type === 'driver') { const m = CK.byDriver.get($('ckDriver').value); base = m ? [...m.values()] : []; }
+  else if (CK.type === 'all') base = [...CK.products.values()];
+  else base = CK.picked.map(k => CK.products.get(k)).filter(Boolean);
+  return base.map(p => ({ key: p.key, id: p.id, name: p.name, plan: p.qty, driver: ckDrv(), mk: ckMk(p.key) })).sort(byId);
+}
+function ckMatch(p, q) {
+  q = q.trim(); if (!q) return true;
+  const idq = idKey(q.split(/\s+[—-]\s+/)[0]);
+  if (idq && idKey(p.id) === idq) return true;
+  const pn = norm(p.name), pi = norm(p.id);
+  return norm(q).split(' ').every(t => pn.includes(t) || pi.includes(t));
+}
+const ckAdj = (r, m) => m.s === 'OK' ? r.plan : (Number(m.adj) || 0);
+
+/* ---------- tampilan ---------- */
+function ckStats(rows) {
+  rows = rows || ckRows();
+  const ok = rows.filter(r => (CK.marks[r.mk] || {}).s === 'OK').length, bad = rows.filter(r => (CK.marks[r.mk] || {}).s === 'NOT_OK').length;
+  const box = (v, l, c) => `<div class="stat" style="${c ? 'border-left-color:' + c : ''}"><div class="v num">${fmt(v)}</div><div class="text-xs text-slate-500">${l}</div></div>`;
+  $('ckStats').innerHTML = box(rows.length, 'Total produk') + box(ok + bad, 'Sudah dicek') + box(ok, 'Sesuai ✓', '#16a34a') + box(bad, 'Tidak sesuai ✗', '#dc2626') + box(rows.length - ok - bad, 'Belum dicek', '#98978D');
+  $('ckSave').disabled = $('ckPrint').disabled = !(ok + bad);
+}
+function ckRender() {
+  const box = $('ckTable'), t = CK.type;
+  $('ckDriverWrap').classList.toggle('hidden', t !== 'driver');
+  $('ckHint').textContent = CK_HINT[t];
+  $('ckSearch').placeholder = t === 'produk' ? 'Ketik ID / nama produk, lalu Enter untuk menambahkan…' : 'Ketik ID atau nama produk untuk menyaring…';
+  $('ckGo').textContent = t === 'produk' ? 'Tambah' : 'Cari';
+  if (CK.loading) { ckStats([]); box.innerHTML = ckMsg('Memuat data plan…'); return; }
+  if (!CK.plan) { ckStats([]); box.innerHTML = ckMsg('Belum ada data plan. Pilih tanggal plan lalu tekan “Muat data plan”.'); return; }
+  const all = ckRows(); ckStats(all);
+  if (t === 'driver' && !$('ckDriver').value) { box.innerHTML = ckMsg('Pilih driver untuk menampilkan daftar produknya.'); return; }
+  if (t === 'produk' && !all.length) { box.innerHTML = ckMsg('Belum ada produk. Cari nama / ID produk atau scan barcode untuk menambahkannya.'); return; }
+  const q = t === 'produk' ? '' : $('ckSearch').value;
+  const rows = all.filter(r => ckMatch(r, q));
+  if (!rows.length) { box.innerHTML = ckMsg('Tidak ada produk yang cocok dengan pencarian.'); return; }
+  box.innerHTML = `<div class="ck-wrap"><table class="ck-tbl"><thead><tr>
+    <th style="width:44px">No</th><th>ID Product</th><th>Product Name</th><th class="text-right">Qty (Plan)</th><th>Sesuai?</th><th>Qty (Adjustment)</th>
+  </tr></thead><tbody>${rows.map((r, i) => {
+    const m = CK.marks[r.mk], st = m && m.s, info = unitInfo(state.skuByKey.get(idKey(r.id)));
+    const uom = info.tiers.length ? breakdown(r.plan, info).map(p => `${fmt(p.n)} ${esc(p.label)}`).join(' + ') : '';
+    const adj = st === 'NOT_OK' ? (Number(m.adj) || 0) : 0, d = adj - r.plan;
+    return `<tr data-mk="${esc(r.mk)}" data-key="${esc(r.key)}" data-plan="${r.plan}" class="${st === 'OK' ? 'ok' : st === 'NOT_OK' ? 'bad' : ''}${CK.flash === r.mk ? ' flash' : ''}">
+      <td class="num text-slate-500">${i + 1}</td>
+      <td class="num whitespace-nowrap font-semibold">${esc(r.id)}</td>
+      <td>${esc(r.name)}${t === 'produk' ? '<br><button type="button" class="ck-del" data-ck="del">hapus dari daftar</button>' : ''}</td>
+      <td class="num text-right"><b class="text-base">${fmt(r.plan)}</b>${uom ? `<div class="text-[11px] text-slate-500">${uom}</div>` : ''}</td>
+      <td><div class="flex gap-2">
+        <button type="button" class="ck-mark ok${st === 'OK' ? ' on' : ''}" data-ck="ok" aria-pressed="${st === 'OK'}" aria-label="Sesuai">&#10003;</button>
+        <button type="button" class="ck-mark bad${st === 'NOT_OK' ? ' on' : ''}" data-ck="bad" aria-pressed="${st === 'NOT_OK'}" aria-label="Tidak sesuai">&#10007;</button>
+      </div></td>
+      <td>${st === 'NOT_OK' ? `<div class="ck-step"><button type="button" data-ck="dec" aria-label="Kurangi">&minus;</button><input type="number" inputmode="numeric" min="0" step="1" value="${adj}" data-ck="adj" aria-label="Qty adjustment"><button type="button" data-ck="inc" aria-label="Tambah">+</button></div>
+        <div class="ck-diff ${d > 0 ? 'pos' : d < 0 ? 'neg' : ''}">Selisih ${ckSgn(d)}</div>` : '<span class="text-slate-400">—</span>'}</td>
+    </tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+function ckRowDiff(tr) {
+  const m = CK.marks[tr.dataset.mk], el = tr.querySelector('.ck-diff'); if (!m || !el) return;
+  const d = (Number(m.adj) || 0) - Number(tr.dataset.plan);
+  el.textContent = 'Selisih ' + ckSgn(d); el.className = 'ck-diff ' + (d > 0 ? 'pos' : d < 0 ? 'neg' : '');
+}
+function ckFlashRow(mk) {
+  CK.flash = mk; ckRender();
+  const tr = [...$('ckTable').querySelectorAll('tr[data-mk]')].find(x => x.dataset.mk === mk);
+  if (tr) tr.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  clearTimeout(ckFlashRow._t); ckFlashRow._t = setTimeout(() => { CK.flash = ''; }, 1600);
+}
+function ckSetMark(mk, s, plan) {
+  CK.marks[mk] = s === 'OK' ? { s } : { s, adj: (CK.marks[mk] && CK.marks[mk].adj != null) ? CK.marks[mk].adj : plan };
+  ckPersist();
+}
+
+/* ---------- interaksi tabel ---------- */
+$('ckTable').addEventListener('click', e => {
+  const b = e.target.closest('[data-ck]'); if (!b) return;
+  const tr = b.closest('tr'); if (!tr) return;
+  const mk = tr.dataset.mk, a = b.dataset.ck, m = CK.marks[mk], plan = Number(tr.dataset.plan) || 0;
+  if (a === 'ok' || a === 'bad') {
+    const s = a === 'ok' ? 'OK' : 'NOT_OK';
+    if (m && m.s === s) delete CK.marks[mk]; else ckSetMark(mk, s, plan);
+    ckPersist(); ckRender();
+    if (a === 'bad' && CK.marks[mk]) { const row = [...$('ckTable').querySelectorAll('tr[data-mk]')].find(x => x.dataset.mk === mk); const i = row && row.querySelector('input[data-ck="adj"]'); if (i) { i.focus(); i.select(); } }
+  } else if ((a === 'dec' || a === 'inc') && m) {
+    m.adj = Math.max(0, Math.floor(Number(m.adj) || 0) + (a === 'inc' ? 1 : -1));
+    tr.querySelector('input[data-ck="adj"]').value = m.adj; ckPersist(); ckRowDiff(tr); ckStats();
+  } else if (a === 'del') {
+    CK.picked = CK.picked.filter(k => k !== tr.dataset.key); delete CK.marks[mk]; ckPersist(); ckRender();
+  }
+});
+$('ckTable').addEventListener('input', e => {
+  const i = e.target.closest('input[data-ck="adj"]'); if (!i) return;
+  const tr = i.closest('tr'), m = CK.marks[tr.dataset.mk]; if (!m) return;
+  m.adj = Math.max(0, Math.floor(Number(i.value) || 0)); ckPersist(); ckRowDiff(tr); ckStats();
+});
+
+/* ---------- pencarian teks ---------- */
+function ckSubmitSearch() {
+  if (!CK.plan) return toast('Muat data plan terlebih dahulu');
+  const q = $('ckSearch').value.trim();
+  if (CK.type === 'produk') {
+    if (!q) return toast('Ketik ID atau nama produk terlebih dahulu');
+    const hits = [...CK.products.values()].filter(p => ckMatch(p, q));
+    const exact = hits.find(p => idKey(p.id) === idKey(q.split(/\s+[—-]\s+/)[0]));
+    const p = exact || (hits.length === 1 ? hits[0] : null);
+    if (!p) return toast(hits.length ? `${hits.length} produk cocok — perjelas ID / pilih dari daftar saran` : 'Produk tidak ada di plan tanggal ini', 3800);
+    ckAddPicked(p); $('ckSearch').value = '';
+  } else {
+    if (CK.type === 'driver' && !$('ckDriver').value) return toast('Pilih driver terlebih dahulu');
+    const hits = ckRows().filter(r => ckMatch(r, q));
+    if (!hits.length) return toast('Produk tidak ditemukan' + (CK.type === 'driver' ? ' pada plan driver ini' : ''), 3500);
+    ckRender(); if (hits.length === 1) ckFlashRow(hits[0].mk);
+  }
+}
+function ckAddPicked(p) {
+  if (!CK.picked.includes(p.key)) CK.picked.push(p.key);
+  ckPersist(); ckFlashRow(ckMk(p.key));
+}
+let ckTm; $('ckSearch').addEventListener('input', () => { if (CK.type === 'produk') return; clearTimeout(ckTm); ckTm = setTimeout(ckRender, 160); });
+$('ckSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ckSubmitSearch(); } });
+$('ckGo').onclick = ckSubmitSearch;
+
+/* ---------- scanner ---------- */
+const SC = { stream: null, det: null, timer: 0, h5: null, run: false, last: '', lastT: 0, cur: null, ac: null };
+const SC_FORMATS = ['qr_code', 'ean_13', 'ean_8', 'code_128', 'code_39', 'code_93', 'upc_a', 'upc_e', 'itf', 'codabar', 'data_matrix'];
+const SC_LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js', 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js', 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'];
+function scBeep(ok) {
+  try { const A = window.AudioContext || window.webkitAudioContext, c = SC.ac || (SC.ac = new A()), o = c.createOscillator(), g = c.createGain(); o.frequency.value = ok ? 1100 : 280; g.gain.value = .12; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + (ok ? .09 : .28)); } catch (e) { /* tanpa suara */ }
+  if (navigator.vibrate) navigator.vibrate(ok ? 40 : [80, 60, 80]);
+}
+const scInfo = html => { $('scInfo').innerHTML = html; };
+const scIdle = () => scInfo('<div class="rounded-xl bg-slate-50 px-3 py-4 text-center text-sm text-slate-600">Arahkan kamera ke barcode / QR pada produk. Kode harus berisi Product ID.</div>');
+const scErr = t => scInfo(`<div class="sc-card" style="background:#FFF3F2;color:#991b1b"><b>${t}</b></div>`);
+function ckPlanQty(p) { return CK.type === 'driver' ? ((CK.byDriver.get($('ckDriver').value) || new Map()).get(p.key) || { qty: 0 }).qty : p.qty; }
+function ckResolve(raw) {
+  const s = String(raw || '').trim(); if (!s) return null;
+  const tries = [s, s.replace(/[^A-Za-z0-9]/g, ''), ...s.split(/[^A-Za-z0-9]+/)];
+  for (const t of tries) { if (!t) continue; const k = idKey(t); if (CK.products.has(k)) return CK.products.get(k); }
+  return null;
+}
+function scOnCode(raw) {
+  raw = String(raw || ''); if (!raw) return;
+  const now = Date.now(); if (raw === SC.last && now - SC.lastT < 2000) return;
+  SC.last = raw; SC.lastT = now;
+  const p = ckResolve(raw);
+  if (!p) { scBeep(false); SC.cur = null; return scErr(`Kode “${esc(raw.slice(0, 40))}” tidak cocok dengan Product ID di plan`); }
+  if (CK.type === 'driver') {
+    const dn = $('ckDriver').value;
+    if (!(CK.byDriver.get(dn) || new Map()).has(p.key)) { scBeep(false); SC.cur = null; return scErr(`${esc(p.id)} — ${esc(p.name)}<br><span style="font-weight:600">tidak ada di plan driver ${esc(dn)}</span>`); }
+  }
+  if (CK.type === 'produk' && !CK.picked.includes(p.key)) { CK.picked.push(p.key); ckPersist(); }
+  const mk = ckMk(p.key), plan = ckPlanQty(p), st = (CK.marks[mk] || {}).s;
+  SC.cur = { mk, plan, key: p.key };
+  scBeep(true); ckRender();
+  scInfo(`<div class="sc-card" style="background:#FFF8E1">
+    <div class="num text-xs font-bold text-slate-500">${esc(p.id)}</div>
+    <div class="text-sm font-bold">${esc(p.name)}</div>
+    <div class="mt-1 text-sm">Qty Plan: <b class="text-lg">${fmt(plan)}</b>${st ? ` · <b>${st === 'OK' ? 'sudah ✓ sesuai' : 'sudah ✗ tidak sesuai'}</b>` : ''}</div>
+    <div class="mt-2 flex gap-2"><button type="button" class="btn btn-dark flex-1" data-sc="ok" style="background:#16a34a">&#10003; Sesuai</button><button type="button" class="btn btn-dark flex-1" data-sc="bad" style="background:#dc2626">&#10007; Tidak sesuai</button></div></div>`);
+}
+$('scInfo').addEventListener('click', e => {
+  const b = e.target.closest('[data-sc]'); if (!b || !SC.cur) return;
+  const { mk, plan } = SC.cur;
+  if (b.dataset.sc === 'ok') { ckSetMark(mk, 'OK', plan); ckRender(); scInfo('<div class="sc-card" style="background:#F1FBF4;color:#166534"><b>&#10003; Ditandai sesuai — scan produk berikutnya</b></div>'); SC.cur = null; }
+  else { ckSetMark(mk, 'NOT_OK', plan); scClose(); ckFlashRow(mk); setTimeout(() => { const row = [...$('ckTable').querySelectorAll('tr[data-mk]')].find(x => x.dataset.mk === mk); const i = row && row.querySelector('input[data-ck="adj"]'); if (i) { i.focus(); i.select(); } }, 350); }
+});
+async function scLoop() {
+  if (!SC.run) return;
+  const v = $('scVideo');
+  try { if (v.readyState >= 2) { const res = await SC.det.detect(v); if (res.length) scOnCode(res[0].rawValue); } } catch (e) { /* frame gagal dibaca: lanjut */ }
+  SC.timer = setTimeout(scLoop, 140);
+}
+function scLoadLib() {
+  return window.Html5Qrcode ? Promise.resolve() : new Promise((res, rej) => {
+    let i = 0;
+    const next = () => {
+      if (i >= SC_LIBS.length) return rej(new Error('Library scanner gagal dimuat — cek koneksi internet'));
+      const s = document.createElement('script'); s.src = SC_LIBS[i++];
+      s.onload = () => window.Html5Qrcode ? res() : next(); s.onerror = next; document.head.appendChild(s);
+    };
+    next();
+  });
+}
+async function scStartNative() {
+  let fm = SC_FORMATS; try { const sup = await BarcodeDetector.getSupportedFormats(); fm = SC_FORMATS.filter(f => sup.includes(f)); } catch (e) { /* pakai semua */ }
+  if (!fm.length) throw new Error('format tidak didukung');
+  SC.det = new BarcodeDetector({ formats: fm });
+  SC.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+  const v = $('scVideo'); v.srcObject = SC.stream; v.classList.remove('hidden'); $('scQr').classList.add('hidden');
+  await v.play(); SC.run = true; scLoop();
+}
+async function scStartFallback() {
+  await scLoadLib();
+  $('scVideo').classList.add('hidden'); $('scQr').classList.remove('hidden');
+  SC.h5 = new Html5Qrcode('scQr', { verbose: false, experimentalFeatures: { useBarCodeDetectorIfSupported: true } });
+  await SC.h5.start({ facingMode: 'environment' }, { fps: 10, qrbox: (w, h) => ({ width: Math.floor(w * .85), height: Math.floor(Math.min(w, h) * .5) }) }, t => scOnCode(t), () => {});
+}
+async function scOpen() {
+  if (!CK.plan) return toast('Muat data plan terlebih dahulu');
+  if (CK.type === 'driver' && !$('ckDriver').value) return toast('Pilih driver terlebih dahulu', 3000);
+  SC.cur = null; SC.last = ''; scIdle(); $('ckScanDlg').showModal();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return scErr('Kamera tidak tersedia. Buka halaman ini lewat HTTPS.');
+  try {
+    if ('BarcodeDetector' in window) await scStartNative(); else await scStartFallback();
+  } catch (e) {
+    if (e && /NotAllowed|Permission/i.test(e.name + e.message)) return scErr('Izin kamera ditolak. Izinkan akses kamera di pengaturan browser, lalu coba lagi.');
+    try { scStop(true); await scStartFallback(); }
+    catch (e2) { scErr('Scanner gagal dimulai: ' + esc(e2.message || e2.name || e2)); }
+  }
+}
+function scStop(keepDialog) {
+  SC.run = false; clearTimeout(SC.timer);
+  if (SC.stream) { SC.stream.getTracks().forEach(t => t.stop()); SC.stream = null; }
+  const v = $('scVideo'); if (v) v.srcObject = null;
+  if (SC.h5) { const h = SC.h5; SC.h5 = null; Promise.resolve().then(() => h.stop()).catch(() => {}).then(() => { try { h.clear(); } catch (e) { /* abaikan */ } }); }
+}
+function scClose() { scStop(); if ($('ckScanDlg').open) $('ckScanDlg').close(); }
+$('scClose').onclick = scClose;
+$('ckScanDlg').addEventListener('close', () => scStop());
+$('ckScan').onclick = scOpen;
+
+/* ---------- simpan ke spreadsheet ---------- */
+function ckDone() {
+  const all = ckRows();
+  return { all, done: all.filter(r => CK.marks[r.mk] && CK.marks[r.mk].s) };
+}
+async function ckSave() {
+  if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
+  const name = $('ckName').value; if (!name) return toast('Pilih Nama Checker terlebih dahulu', 3500);
+  if (!CK.plan) return toast('Muat data plan terlebih dahulu');
+  const { all, done } = ckDone();
+  if (!done.length) return toast('Belum ada produk yang dicek', 3000);
+  const same = done.filter(r => CK.marks[r.mk].s === 'NOT_OK' && ckR3(CK.marks[r.mk].adj) === ckR3(r.plan));
+  if (same.length) { $('ckSearch').value = ''; ckFlashRow(same[0].mk); return toast(`${same.length} produk bertanda ✗ tetapi Qty (Adjustment) masih sama dengan Qty Plan — ubah qty-nya, atau tandai ✓ bila sebenarnya sesuai`, 7000); }
+  const left = all.length - done.length;
+  if (left && !confirm(`${left} produk belum dicek dan tidak ikut disimpan.\nSimpan ${done.length} produk yang sudah dicek?`)) return;
+  const btn = $('ckSave'), label = btn.innerHTML; btn.disabled = true; btn.textContent = 'Menyimpan…';
+  try {
+    const r = await (await fetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'saveChecker', checkerName: name, type: CK.type, planDate: CK.plan.date, savedBy: state.role === 'admin' ? 'Admin' : 'Packer',
+        rows: done.map(r => { const m = CK.marks[r.mk]; return { driver: r.driver || '(Semua Driver)', productId: r.id, productName: r.name, qtyPlan: r.plan, qtyAdj: ckAdj(r, m), status: m.s }; }) }) })).json();
+    if (!r.ok) throw new Error(r.error);
+    toast(r.saved ? `Tercatat ${r.saved} baris ke sheet “${r.sheet}”` + (r.skipped ? ` · ${r.skipped} baris identik sudah ada, dilewati` : '') : 'Hasil yang sama sudah ada di spreadsheet, tidak dicatat ulang', 5000);
+  } catch (e) { toast('Gagal menyimpan: ' + e.message + ckDeployHint(e), ckDeployHint(e) ? 9000 : 4500); }
+  btn.innerHTML = label; ckStats();
+}
+
+/* ---------- cetak / PDF hasil adjustment ---------- */
+function ckPrint() {
+  const { all, done } = ckDone();
+  let rows = done.map(r => { const m = CK.marks[r.mk], ok = m.s === 'OK', adj = ckAdj(r, m); return { ...r, ok, adj, diff: ckR3(adj - r.plan) }; });
+  const nOk = rows.filter(r => r.ok).length, nBad = rows.length - nOk;
+  if ($('ckPrintBad').checked) rows = rows.filter(r => !r.ok);
+  if (!rows.length) return toast($('ckPrintBad').checked ? 'Belum ada produk yang ditandai tidak sesuai' : 'Belum ada produk yang dicek', 3000);
+  const name = $('ckName').value, date = CK.plan.date, label = CK_TYPES[CK.type];
+  const body = rows.map((r, i) => `<tr><td class="n">${i + 1}</td><td class="id">${esc(r.id)}</td><td>${esc(r.name)}</td><td class="n">${fmt(r.plan)}</td>
+    <td class="n ${r.ok ? '' : 'bad'}">${r.ok ? '&#10003;' : '&#10007;'}</td><td class="n ${r.ok ? '' : 'bad'}">${fmt(r.adj)}</td><td class="n ${r.ok ? '' : 'bad'}">${r.ok ? '0' : ckSgn(r.diff)}</td></tr>`).join('');
+  const tp = rows.reduce((a, r) => a + r.plan, 0), ta = rows.reduce((a, r) => a + r.adj, 0);
+  printHtml(`<div class="pp-page">${printHead('Hasil Validasi Qty · Checker')}
+    ${metaRows([['Tanggal Plan', dateLong(date)], ['Nama Checker', name], ['Type', label], ...(CK.type === 'driver' ? [['Driver', $('ckDriver').value]] : []),
+      ['Waktu Cetak', new Date().toLocaleString('id-ID')], ['Ringkasan', `${nOk} sesuai · ${nBad} tidak sesuai · ${all.length - done.length} belum dicek`]])}
+    <table class="pp-tbl">
+      <thead><tr><th style="width:9mm">No</th><th style="width:20mm">ID Product</th><th>Product Name</th><th style="width:19mm">Qty (Plan)</th><th style="width:15mm">Cek</th><th style="width:22mm">Qty (Adjustment)</th><th style="width:16mm">Selisih</th></tr></thead>
+      <tbody>${body}</tbody>
+      <tfoot><tr><td colspan="3" style="text-align:right">TOTAL (${fmt(rows.length)} produk)</td><td class="n">${fmt(tp)}</td><td></td><td class="n">${fmt(ta)}</td><td class="n">${ckSgn(ckR3(ta - tp))}</td></tr></tfoot>
+    </table>
+    <div class="pp-sign"><div><div class="ln"></div><b>Checker</b><br>( ${esc(name || '........................')} )</div><div><div class="ln"></div><b>Admin / Supervisor</b><br>( ........................ )</div></div></div>`,
+    `Checker_${(name || 'Checker').replace(/[\\/:*?"<>|]+/g, ' ').trim()}_${label.replace(/\s+/g, '')}_${date}`);
+}
+
+/* ---------- kontrol atas ---------- */
+function ckReset() {
+  const { all, done } = ckDone();
+  if (!done.length && !(CK.type === 'produk' && CK.picked.length)) return toast('Belum ada pengecekan untuk direset', 2500);
+  if (!confirm(`Reset pengecekan ${CK_TYPES[CK.type]}${CK.type === 'driver' ? ' · ' + $('ckDriver').value : ''}?\n${done.length} produk yang sudah dicek akan dikosongkan (data di spreadsheet tidak berubah).`)) return;
+  all.forEach(r => delete CK.marks[r.mk]);
+  if (CK.type === 'produk') CK.picked = [];
+  ckPersist(); ckRender();
+}
+function ckApplyType() { $('ckType').value = CK.type; $('ckSearch').value = ''; ckRender(); }
+function ckEnter() {
+  ckApplyType();
+  if (!CK.names.length) ckLoadNames();
+  if (!CK.plan && !CK.loading) ckLoadPlan($('ckDate').value || '');
+}
+$('ckType').onchange = () => { CK.type = $('ckType').value; localStorage.setItem('planner_ck_type', CK.type); ckApplyType(); };
+$('ckName').onchange = () => localStorage.setItem('planner_ck_name', $('ckName').value);
+$('ckDriver').onchange = () => { localStorage.setItem('planner_ck_driver', $('ckDriver').value); ckRender(); };
+$('ckDate').onchange = () => { if ($('ckDate').value) ckLoadPlan($('ckDate').value); };
+$('ckLoad').onclick = () => { ckLoadNames(true); ckLoadPlan($('ckDate').value || ''); };
+$('ckSave').onclick = ckSave;
+$('ckPrint').onclick = ckPrint;
+$('ckReset').onclick = ckReset;
+$('ckType').value = CK.type;
+
 $('planDate').value = todayStr();
 applyMenu(); applyRole(); loadSku(); render();
 </script>
@@ -1866,11 +2348,11 @@ applyMenu(); applyRole(); loadSku(); render();
     print:'M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z',
     xls:'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
     ref:'M4 4v6h6M20 20v-6h-6M20 9a8 8 0 00-14-3L4 10m16 4l-2 4a8 8 0 01-14-3',
-    plus:'M12 5v14M5 12h14', link:'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.700-5.700l-1 1M14 10a4 4 0 00-5.700 0l-3 3a4 4 0 005.700 5.700l1-1', trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'
+    plus:'M12 5v14M5 12h14', chk:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', scan:'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10', link:'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.700-5.700l-1 1M14 10a4 4 0 00-5.700 0l-3 3a4 4 0 005.700 5.700l1-1', trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'
   };
   const ic = k => `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="${I[k]}"/></svg>`;
   const $$ = id => document.getElementById(id);
-  const mode = () => fmMode() ? 'form' : evMode() ? 'event' : (state.menu === 'other' ? 'req' : 'planner');
+  const mode = () => state.menu === 'checker' ? 'checker' : fmMode() ? 'form' : evMode() ? 'event' : (state.menu === 'other' ? 'req' : 'planner');
   const hasData = () => (state.drivers && state.drivers.length) || (state.req && state.req.length);
 
   /* ---- elemen ---- */
@@ -1879,6 +2361,7 @@ applyMenu(); applyRole(); loadSku(); render();
   dock.innerHTML = `
     <button class="dk" data-d="planner">${ic('plan')}<span>Planner</span></button>
     <button class="dk" data-d="other">${ic('req')}<span>Request</span></button>
+    <button class="dk" data-d="checker">${ic('chk')}<span>Checker</span></button>
     <button class="dk dk-fab" data-d="fab"><i class="c"></i><span></span></button>
     <button class="dk" data-d="act">${ic('act')}<span>Aksi</span></button>
     <button class="dk" data-d="set">${ic('set')}<span>Setelan</span></button>`;
@@ -1892,6 +2375,7 @@ applyMenu(); applyRole(); loadSku(); render();
   /* ---- tombol tengah: aksi berikutnya yang paling masuk akal ---- */
   function fab() {
     const m = mode(), admin = state.role === 'admin';
+    if (m === 'checker') return { l: 'Scan', k: 'scan', go: () => $$('ckScan').click() };
     if (m === 'form') return { l: 'Tambah', k: 'plus', go: () => { const a = $$('fmAdd'); a.scrollIntoView({ block: 'center' }); a.focus(); } };
     if (m === 'event') return !$$('evSave').disabled ? { l: 'Simpan', k: 'save', s: 1, go: () => $$('evSave').click() } : { l: 'Import', k: 'up', go: () => $$('evFile').click() };
     if (!admin) return { l: 'Muat Plan', k: 'down', go: () => $$('btnLoad').click() };
@@ -1900,7 +2384,7 @@ applyMenu(); applyRole(); loadSku(); render();
   let cur;
   function sync() {
     if (!mq.matches) return;
-    dock.querySelectorAll('[data-d=planner],[data-d=other]').forEach(b => b.classList.toggle('on', b.dataset.d === state.menu));
+    dock.querySelectorAll('[data-d=planner],[data-d=other],[data-d=checker]').forEach(b => b.classList.toggle('on', b.dataset.d === state.menu));
     cur = fab(); const f = dock.querySelector('.dk-fab');
     f.classList.toggle('save', !!cur.s);
     f.querySelector('.c').innerHTML = ic(cur.k).replace('<svg', '<svg width="26" height="26"'); f.querySelector('span').textContent = cur.l;
@@ -1931,6 +2415,9 @@ applyMenu(); applyRole(); loadSku(); render();
       grp('Lainnya', item('evClear', 'Kosongkan Qty', 'Hapus semua isian Qty', 'trash'));
     if (m === 'form') h += grp('Simpan', item('fmSave', 'Simpan ke Spreadsheet', 'Catat ke sheet Form Others', 'save', 1)) +
       grp('Cetak / PDF', item('fmPrint', 'Cetak / PDF', 'Form yang sedang diisi', 'print')) + grp('Lainnya', item('fmClear', 'Form Baru', 'Kosongkan form', 'trash'));
+    if (m === 'checker') h += grp('Simpan', item('ckSave', 'Simpan ke Spreadsheet', 'Catat hasil ke sheet Checker Result', 'save', 1)) +
+      grp('Cetak / PDF', item('ckPrint', 'Hasil Adjustment', 'Produk yang sudah dicek', 'print')) +
+      grp('Lainnya', item('ckLoad', 'Muat data plan', 'Ambil nama checker & plan terbaru', 'ref'), item('ckReset', 'Reset pengecekan', 'Kosongkan tanda ✓ / ✗ tampilan ini', 'trash'));
     open(h);
   }
   function sheetSet() {
@@ -1945,7 +2432,7 @@ applyMenu(); applyRole(); loadSku(); render();
   /* ---- event ---- */
   dock.addEventListener('click', e => {
     const b = e.target.closest('[data-d]'); if (!b) return; const d = b.dataset.d;
-    if (d === 'planner' || d === 'other') { if (state.menu === d) window.scrollTo({ top: 0, behavior: 'smooth' }); else switchMenu(d); sync(); }
+    if (d === 'planner' || d === 'other' || d === 'checker') { if (state.menu === d) window.scrollTo({ top: 0, behavior: 'smooth' }); else switchMenu(d); sync(); }
     else if (d === 'fab') cur.go();
     else if (d === 'act') sheetAksi(); else sheetSet();
   });
@@ -1967,7 +2454,7 @@ applyMenu(); applyRole(); loadSku(); render();
   let raf; const q = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(sync); };
   const mo = new MutationObserver(q);
   ['btnSave', 'evSave'].forEach(i => mo.observe($$(i), { attributes: true, attributeFilter: ['disabled'] }));
-  ['stats', 'result', 'evTable'].forEach(i => mo.observe($$(i), { childList: true }));
+  ['stats', 'result', 'evTable', 'ckTable'].forEach(i => mo.observe($$(i), { childList: true }));
   mq.addEventListener('change', () => { close(); sync(); });
   sync();
 })();
