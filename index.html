@@ -223,6 +223,12 @@ body.sheet{overflow:hidden}
 .ms-st i{width:9px;height:9px;border-radius:50%;background:#98978D}
 }
 @media (max-width:767.98px) and (prefers-reduced-motion:reduce){#mSheet,.dk-fab .c,.btn{transition:none}}
+/* ===== CETAK / PDF: sembunyikan semua elemen mobile (dock, sheet, pill, toast) ===== */
+@media print{
+  #mDock,#mSheet,#mSheetBg,.m-pill,.dk,.dk-fab,#toast,nav[aria-label="Navigasi utama"]{display:none!important;visibility:hidden!important;height:0!important;position:static!important}
+  html,body{padding:0!important;margin:0!important;overflow:visible!important;height:auto!important}
+  body.sheet,body.kb{overflow:visible!important}
+}
 </style>
 
 </head>
