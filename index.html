@@ -791,6 +791,7 @@ function parseWorkbook(wb) {
     const H = rows[hi].map(c => typeof c === 'string' ? c.trim() : c);
     const cLoc = H.indexOf('Location Name'), cVmc = H.indexOf('VMC No'), cId = H.indexOf('Loc ID');
     const cLast = H.indexOf('Last Visit'), cStat = H.indexOf('Status');
+    const cPri = H.indexOf('Priority'), cType = H.indexOf('Type SKU');   // Priority "Full" -> Qty ikut sheet Master SKU (lihat applyFullFromMaster)
     if (cLast < 0) return;
 
     const prod = [];
@@ -815,10 +816,48 @@ function parseWorkbook(wb) {
       }
       if (!cur || !loc || !(lid || typeof vmc === 'number')) continue;
       const items = prod.map(p => ({ name: p.name, qty: Number(r[p.c]) || 0, sheet: sn })).filter(i => i.qty > 0);
-      if (items.length) cur.locations.push({ id: lid ? String(lid).trim() : '', name: cleanName(loc), vmc: vmc == null ? '' : String(vmc).trim(), sheet: sn, plate: curPlate, items });
+      const priority = cPri >= 0 ? cleanName(r[cPri]) : '', typeSku = cType >= 0 ? cleanName(r[cType]) : '';
+      const isFull = priority.toLowerCase() === 'full';
+      if (items.length || isFull) cur.locations.push({ id: lid ? String(lid).trim() : '', name: cleanName(loc), vmc: vmc == null ? '' : String(vmc).trim(), sheet: sn, plate: curPlate, items, priority, typeSku, full: isFull });
     }
   });
   return [...map.values()].filter(d => d.locations.length);
+}
+
+/* =====================================================================
+   PRIORITY "FULL" -> Qty mengikuti sheet "Master SKU" (via GAS ?action=getMasterSKU)
+   Lokasi dengan kolom Priority = "Full": seluruh item lokasi diganti dengan daftar produk + Qty
+   dari Master SKU untuk "Type SKU" yang sama. Lokasi non-Full tidak diubah.
+   ===================================================================== */
+const typeKey = v => String(v ?? '').replace(/[\u00a0\u200b]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+async function applyFullFromMaster(drivers) {
+  const fulls = drivers.flatMap(d => d.locations.filter(l => l.full));
+  const res = { total: fulls.length, applied: 0, missing: [], error: '' };
+  if (!fulls.length) return res;
+  // Lokasi Full tanpa Qty di Excel pun tetap diisi dari Master SKU
+  try {
+    if (!gasReady()) throw new Error('URL GAS belum diatur');
+    const r = await (await fetch(`${GAS_URL()}?action=getMasterSKU&refresh=1`)).json();
+    if (!r.ok) throw new Error(r.error);
+    const idx = new Map(r.types.map(t => [typeKey(t.type), t]));
+    const miss = new Set();
+    fulls.forEach(l => {
+      const t = idx.get(typeKey(l.typeSku));
+      if (!t || !t.items.length) { miss.add(l.typeSku || '(Type SKU kosong)'); return; }
+      l.items = t.items.map(it => {
+        const sk = it.id ? (state.skuById.get(String(it.id)) || state.skuByKey.get(idKey(it.id))) : null;
+        const name = cleanName(it.name || (sk && sk.name) || it.id);
+        const o = { name, qty: Number(it.qty) || 0, sheet: l.sheet, fromMaster: true };
+        if (it.id) o.savedId = String(sk ? sk.id : it.id);          // ID dari Master SKU dipakai langsung
+        return o;
+      }).filter(i => i.qty > 0);
+      res.applied++;
+    });
+    res.missing = [...miss];
+  } catch (e) { res.error = e.message; }
+  // Lokasi Full yang gagal diisi & tidak punya item Excel dibuang agar tidak jadi lokasi kosong
+  drivers.forEach(d => { d.locations = d.locations.filter(l => l.items.length); });
+  return res;
 }
 
 async function handleFile(f) {
@@ -829,13 +868,23 @@ async function handleFile(f) {
     const wb = XLSX.read(buf, { type: 'array' });
     const drivers = parseWorkbook(wb);
     if (!drivers.length) return toast('Format tidak dikenali: kolom "Location Name" / "Last Visit" tidak ditemukan', 4500);
+    const full = await applyFullFromMaster(drivers);
+    const fd = drivers.filter(d => d.locations.length);
+    if (!fd.length) return toast('Tidak ada lokasi dengan Qty. ' + (full.error || ''), 4500);
+    drivers.length = 0; drivers.push(...fd);
     state.drivers = drivers; state.fileName = f.name; state.cache.clear(); SRC.planner = { name: f.name, buf, type: f.type };
     state.sheets = wb.SheetNames.filter(sn => drivers.some(d => d.locations.some(l => l.sheet === sn)));
     $('fileName').textContent = f.name;
     $('btnSave').disabled = false;
     buildDriverSelect(); render();
     const skipped = wb.SheetNames.filter(sn => !state.sheets.includes(sn));
-    toast(`Import berhasil: ${drivers.length} driver dari ${state.sheets.length} sheet (${state.sheets.join(', ')})` + (skipped.length ? ` · sheet dilewati (tanpa data lokasi): ${skipped.join(', ')}` : ''), skipped.length ? 6000 : 4000);
+    let msg = `Import berhasil: ${drivers.length} driver dari ${state.sheets.length} sheet (${state.sheets.join(', ')})` + (skipped.length ? ` · sheet dilewati (tanpa data lokasi): ${skipped.join(', ')}` : '');
+    if (full.total) {
+      msg += ` · Priority Full: ${full.applied}/${full.total} lokasi memakai Qty Master SKU`;
+      if (full.error) msg += ` · GAGAL baca Master SKU (${full.error}) → Qty Excel dipakai`;
+      else if (full.missing.length) msg += ` · Type SKU tidak ada di Master SKU: ${full.missing.join('; ')} → Qty Excel dipakai`;
+    }
+    toast(msg, full.total && (full.error || full.missing.length) ? 9000 : skipped.length ? 6000 : 4000);
   } catch (e) { toast('Gagal membaca file: ' + e.message, 4500); }
 }
 
