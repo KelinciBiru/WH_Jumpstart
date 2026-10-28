@@ -258,6 +258,11 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
 .ck-del { border: 0; background: none; color: #98978D; font-size: .72rem; text-decoration: underline; padding: 0; margin-top: 2px; }
 .pp-tbl td.bad { font-weight: 700; }
 #scInfo .sc-card { border-radius: .75rem; padding: .7rem .8rem; }
+#scNum { font-size: 16px; }   /* iOS Safari zoom otomatis bila font input < 16px */
+#scFlash { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+#scFlash.on { animation: scFlash .55s ease-out; }
+@keyframes scFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+#scPhoto { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 .shv-tbl { border-collapse: collapse; font-size: .8rem; width: max-content; min-width: 100%; }
 .shv-tbl th, .shv-tbl td { border-bottom: 1px solid var(--line); padding: .35rem .55rem; text-align: left; white-space: nowrap; vertical-align: top; }
 .shv-tbl thead th { position: sticky; top: 0; background: #F0F0ED; z-index: 1; }
@@ -576,12 +581,17 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
       <button type="button" data-scm="ocr" class="flex-1 rounded-md px-3 py-1.5 font-semibold">Angka (OCR)</button>
     </div>
     <div class="relative mt-3 overflow-hidden rounded-xl bg-black" style="aspect-ratio:4/3">
-      <video id="scVideo" playsinline muted class="h-full w-full object-cover"></video>
+      <video id="scVideo" playsinline webkit-playsinline muted autoplay class="h-full w-full object-cover"></video>
       <div id="scQr" class="hidden h-full w-full"></div>
+      <div id="scFlash"></div>
       <div id="scLine" class="pointer-events-none absolute inset-x-[10%] top-1/2 h-[2px] -translate-y-1/2 bg-[#FBB315] opacity-90 shadow-[0_0_12px_#FBB315]"></div>
       <div id="scBand" class="pointer-events-none absolute hidden rounded-lg border-2 border-[#FBB315]" style="left:5%;right:5%;top:39%;height:22%;box-shadow:0 0 0 9999px rgba(0,0,0,.38)"></div>
     </div>
     <div id="scLive" class="mt-2 min-h-[18px] text-xs font-semibold text-slate-500"></div>
+    <div class="relative mt-2">
+      <label for="scPhoto" class="btn btn-ghost w-full cursor-pointer justify-center">Foto barcode (cadangan bila live scan sulit)</label>
+      <input id="scPhoto" type="file" accept="image/*" capture="environment">
+    </div>
     <div class="mt-2 flex gap-2">
       <input id="scNum" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Atau ketik / tempel angka barcode…" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500">
       <button id="scNumGo" type="button" class="btn btn-dark">Cari</button>
@@ -1034,7 +1044,7 @@ function render() {
 function renderInsight(s) {
   const lines = [];
   const perDriver = state.drivers.map(d => ({ d, q: d.locations.reduce((a, l) => a + l.items.reduce((x, i) => x + i.qty, 0), 0) })).sort((a, b) => b.q - a.q);
-  if (perDriver.length > 1) lines.push(`Muatan terbesar: <b>${esc(perDriver[0].d.driver)}</b> (${fmt(perDriver[0].q)} qty), terkecil: <b>${esc(perDriver.at(-1).d.driver)}</b> (${fmt(perDriver.at(-1).q)} qty).`);
+  if (perDriver.length > 1) lines.push(`Muatan terbesar: <b>${esc(perDriver[0].d.driver)}</b> (${fmt(perDriver[0].q)} qty), terkecil: <b>${esc(perDriver[perDriver.length - 1].d.driver)}</b> (${fmt(perDriver[perDriver.length - 1].q)} qty).`);
   const prod = new Map(); state.drivers.forEach(d => d.locations.forEach(l => l.items.forEach(i => prod.set(i.name, (prod.get(i.name) || 0) + i.qty))));
   const top = [...prod.entries()].sort((a, b) => b[1] - a[1])[0];
   if (top) lines.push(`Produk paling banyak disiapkan: <b>${esc(top[0])}</b> (${fmt(top[1])} qty).`);
@@ -2341,19 +2351,28 @@ async function loadBarcodes(force) {
 $('ckSearch').addEventListener('input', ckShowBc);
 
 /* ---------- scanner: barcode / QR (BarcodeDetector -> html5-qrcode) + angka (OCR Tesseract) + ketik angka ---------- */
-const SC = { stream: null, det: null, timer: 0, h5: null, run: false, last: '', lastT: 0, cur: null, ac: null,
+const SC = { stream: null, det: null, timer: 0, zx: null, zTimer: 0, zi: 0, zc: null, zOn: false, hit: false, bk: 0, wd: 0, run: false, last: '', lastT: 0, cur: null, ac: null,
   mode: localStorage.getItem('planner_sc_mode') === 'ocr' ? 'ocr' : 'bc', worker: null, wkTimer: 0, ocrTimer: 0, psm: false, run2: '', run2n: 0, shown: '', cv: null };
 const SC_FORMATS = ['qr_code', 'ean_13', 'ean_8', 'code_128', 'code_39', 'code_93', 'upc_a', 'upc_e', 'itf', 'codabar', 'data_matrix'];
-const SC_LIBS = ['https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js', 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js', 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'];
+const ZX_LIBS = ['https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js', 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js', 'https://fastly.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js'];
 const TESS_LIBS = ['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js', 'https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js'];
+function scAudio() {
+  try { const A = window.AudioContext || window.webkitAudioContext; if (!A) return; SC.ac = SC.ac || new A(); if (SC.ac.state === 'suspended') SC.ac.resume(); } catch (e) { /* tanpa suara */ }
+}
+function scFlash(ok) {
+  const f = $('scFlash'); if (!f) return;
+  f.style.background = ok ? 'rgba(34,197,94,.38)' : 'rgba(220,38,38,.32)'; f.style.boxShadow = 'inset 0 0 0 4px ' + (ok ? '#22c55e' : '#dc2626');
+  f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+}
 function scBeep(ok) {
-  try { const A = window.AudioContext || window.webkitAudioContext, c = SC.ac || (SC.ac = new A()), o = c.createOscillator(), g = c.createGain(); o.frequency.value = ok ? 1100 : 280; g.gain.value = .12; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + (ok ? .09 : .28)); } catch (e) { /* tanpa suara */ }
+  scFlash(ok);   // iPhone tidak mendukung getar & suara sering diblokir: kilatan layar selalu muncul
+  try { scAudio(); const c = SC.ac, o = c.createOscillator(), g = c.createGain(); o.frequency.value = ok ? 1100 : 280; g.gain.value = .12; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + (ok ? .09 : .28)); } catch (e) { /* tanpa suara */ }
   if (navigator.vibrate) navigator.vibrate(ok ? 40 : [80, 60, 80]);
 }
 const scInfo = html => { $('scInfo').innerHTML = html; };
 const scLive = t => { $('scLive').textContent = t || ''; };
 const scIdle = () => scInfo(`<div class="rounded-xl bg-slate-50 px-3 py-4 text-center text-sm text-slate-600">${SC.mode === 'ocr' ? 'Arahkan <b>angka di bawah barcode</b> ke dalam kotak kuning, atau ketik angkanya di atas.' : 'Arahkan kamera ke barcode / QR produk, atau ketik angka barcode di atas.'} Hasil dicari di sheet Source Barcode.</div>`);
-const scErr = t => scInfo(`<div class="sc-card" style="background:#FFF3F2;color:#991b1b"><b>${t}</b></div>`);
+const scErr = (t, retry) => scInfo(`<div class="sc-card" style="background:#FFF3F2;color:#991b1b"><b>${t}</b>${retry ? '<button type="button" class="btn btn-dark mt-2 w-full" data-scretry>Mulai ulang kamera</button>' : ''}</div>`);
 function scModeUi() {
   document.querySelectorAll('#scModes [data-scm]').forEach(b => { const on = b.dataset.scm === SC.mode; b.className = 'flex-1 rounded-md px-3 py-1.5 font-semibold ' + (on ? 'bg-white shadow text-indigo-700' : 'text-slate-500'); });
   $('scBand').classList.toggle('hidden', SC.mode !== 'ocr'); $('scLine').classList.toggle('hidden', SC.mode === 'ocr');
@@ -2398,6 +2417,8 @@ async function scOnCode(raw, src) {
     <div class="mt-2 flex gap-2"><button type="button" class="btn btn-dark flex-1" data-sc="ok" style="background:#16a34a">&#10003; Sesuai</button><button type="button" class="btn btn-dark flex-1" data-sc="bad" style="background:#dc2626">&#10007; Tidak sesuai</button></div></div>`);
 }
 $('scInfo').addEventListener('click', e => {
+  if (e.target.closest('[data-scretry]')) return scStartMode();
+  if (e.target.closest('[data-scplay]')) return scPlayVideo().then(ok => { if (ok) { scIdle(); scLive('Kamera aktif — arahkan ke barcode / QR'); } });
   const pk = e.target.closest('[data-scpick]'); if (pk) return scOnCode(pk.dataset.scpick, 'manual');
   const b = e.target.closest('[data-sc]'); if (!b || !SC.cur) return;
   const { mk, plan } = SC.cur;
@@ -2411,7 +2432,7 @@ $('scNum').addEventListener('input', () => { const c = $('scNum').value.replace(
 async function scLoop() {
   if (!SC.run || !SC.det) return;
   const v = $('scVideo');
-  try { if (v.readyState >= 2) { const res = await SC.det.detect(v); if (res.length) scOnCode(res[0].rawValue, 'cam'); } } catch (e) { /* frame gagal dibaca: lanjut */ }
+  try { if (v.readyState >= 2) { const res = await SC.det.detect(v); if (res.length) { SC.hit = true; scOnCode(res[0].rawValue, 'cam'); } } } catch (e) { /* frame gagal dibaca: lanjut */ }
   SC.timer = setTimeout(scLoop, 140);
 }
 function scLoadScript(urls, test, msg) {
@@ -2425,25 +2446,107 @@ function scLoadScript(urls, test, msg) {
     next();
   });
 }
-const scLoadLib = () => scLoadScript(SC_LIBS, () => !!window.Html5Qrcode, 'Library scanner gagal dimuat — cek koneksi internet');
+const scLoadZx = () => scLoadScript(ZX_LIBS, () => !!(window.ZXing && window.ZXing.MultiFormatReader), 'Library pemindai gagal dimuat — cek koneksi internet');
 const scLoadTess = () => scLoadScript(TESS_LIBS, () => !!window.Tesseract, 'Library OCR gagal dimuat — cek koneksi internet');
+async function scPlayVideo() {
+  const v = $('scVideo');
+  try { await Promise.race([v.play(), new Promise((_, rej) => setTimeout(() => rej(new Error('play timeout')), 4000))]); return true; }
+  catch (e) { return false; }   // iPhone: Mode Daya Rendah / autoplay diblokir sampai layar diketuk
+}
 async function scCamera() {
-  SC.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
-  const v = $('scVideo'); v.srcObject = SC.stream; v.classList.remove('hidden'); $('scQr').classList.add('hidden');
-  await v.play();
+  const tries = [   // 1080p = batang barcode lebih tajam; turun bertahap bila kamera menolak
+    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
+    { video: { facingMode: { ideal: 'environment' } }, audio: false },
+    { video: true, audio: false }
+  ];
+  let lastErr;
+  for (const c of tries) {
+    try { SC.stream = await navigator.mediaDevices.getUserMedia(c); break; }
+    catch (e) { lastErr = e; if (/NotAllowed|Permission|Security/i.test(e.name + e.message)) throw e; }
+  }
+  if (!SC.stream) throw lastErr || new Error('Kamera tidak bisa dibuka');
+  const v = $('scVideo'); v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
+  v.srcObject = SC.stream; v.classList.remove('hidden'); $('scQr').classList.add('hidden');
+  try { const tr = SC.stream.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}; if (cap.focusMode && cap.focusMode.indexOf('continuous') >= 0) await tr.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch (e) { /* fokus bawaan */ }
+  if (!(await scPlayVideo())) scInfo('<div class="sc-card" style="background:#FFF8E1"><b>Kamera siap, tetapi iPhone menahan pemutaran video (mis. Mode Daya Rendah).</b><button type="button" class="btn btn-dark mt-2 w-full" data-scplay>Ketuk untuk memulai kamera</button></div>');
 }
 async function scMakeDet() {
   let fm = SC_FORMATS; try { const sup = await BarcodeDetector.getSupportedFormats(); fm = SC_FORMATS.filter(f => sup.includes(f)); } catch (e) { /* pakai semua */ }
   if (!fm.length) throw new Error('format tidak didukung');
   SC.det = new BarcodeDetector({ formats: fm });
 }
-async function scStartNative() { await scMakeDet(); await scCamera(); SC.run = true; scLoop(); }
-async function scStartFallback() {
-  await scLoadLib();
-  $('scVideo').classList.add('hidden'); $('scQr').classList.remove('hidden');
-  SC.h5 = new Html5Qrcode('scQr', { verbose: false, experimentalFeatures: { useBarCodeDetectorIfSupported: true } });
-  await SC.h5.start({ facingMode: 'environment' }, { fps: 10, qrbox: (w, h) => ({ width: Math.floor(w * .85), height: Math.floor(Math.min(w, h) * .5) }) }, t => scOnCode(t, 'cam'), () => {});
+async function scStartNative() {
+  await scMakeDet(); await scCamera(); SC.run = true; scLive('Kamera aktif — arahkan ke barcode / QR'); scLoop();
+  SC.bk = setTimeout(() => { if (SC.run && SC.mode === 'bc' && !SC.hit) scZxStart(); }, 6000);   // BarcodeDetector ada tapi tak pernah membaca (HP tanpa Google Play Services): nyalakan ZXing
 }
+async function scStartZx() { await scCamera(); SC.run = true; await scZxStart(); }
+
+/* ---- pemindai ZXing (iPhone / Safari tidak punya BarcodeDetector): frame -> canvas -> luminance -> MultiFormatReader.
+   Tiap putaran memakai variasi berbeda (frame penuh / pita tengah, skala, binarizer, putar 90°) karena ZXing
+   gagal bila modul barcode terlalu besar (kamera dekat) atau terlalu kecil (jauh). ---- */
+const ZX_V = [[0, 640, 0, 0], [1, 1280, 0, 0], [0, 400, 0, 0], [1, 800, 0, 0], [0, 640, 1, 0], [1, 1280, 1, 0], [0, 960, 0, 0], [1, 640, 0, 0], [0, 640, 0, 1], [0, 800, 1, 1]];   // [pita, lebar maks, global-binarizer, putar]
+function scZxInit() {
+  if (SC.zx) return;
+  const F = ZXing.BarcodeFormat, H = ZXing.DecodeHintType, h = new Map();
+  h.set(H.POSSIBLE_FORMATS, [F.QR_CODE, F.EAN_13, F.EAN_8, F.CODE_128, F.CODE_39, F.CODE_93, F.UPC_A, F.UPC_E, F.ITF, F.CODABAR, F.DATA_MATRIX]);
+  h.set(H.TRY_HARDER, true);
+  SC.zx = new ZXing.MultiFormatReader(); SC.zx.setHints(h);
+}
+function scZxDecode(rgba, w, h, alt, rot) {
+  let lum = new Uint8ClampedArray(w * h);
+  for (let i = 0, j = 0; i < lum.length; i++, j += 4) lum[i] = (rgba[j] * 299 + rgba[j + 1] * 587 + rgba[j + 2] * 114) / 1000;
+  if (rot) { const r = new Uint8ClampedArray(w * h); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) r[x * h + (h - 1 - y)] = lum[y * w + x]; lum = r; const t = w; w = h; h = t; }
+  const src = new ZXing.RGBLuminanceSource(lum, w, h), bin = alt ? new ZXing.GlobalHistogramBinarizer(src) : new ZXing.HybridBinarizer(src);
+  try { return SC.zx.decode(new ZXing.BinaryBitmap(bin)).getText() || ''; } catch (e) { return ''; }
+}
+function scZxGrab(v, band, maxW) {
+  const vw = v.videoWidth, vh = v.videoHeight, visW = Math.min(vw, vh * 4 / 3), visH = Math.min(vh, vw * 3 / 4);   // area yang tampak (object-cover 4:3), juga untuk stream portrait iPhone
+  const cw = Math.round(band ? visW * .85 : visW), ch = Math.round(band ? visH * .4 : visH), sx = Math.round((vw - cw) / 2), sy = Math.round((vh - ch) / 2);
+  const k = Math.min(1, maxW / cw), W = Math.max(1, Math.round(cw * k)), H = Math.max(1, Math.round(ch * k));
+  const cv = SC.zc || (SC.zc = document.createElement('canvas')); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d', { willReadFrequently: true }); g.imageSmoothingQuality = 'high'; g.drawImage(v, sx, sy, cw, ch, 0, 0, W, H);
+  return g.getImageData(0, 0, W, H);
+}
+function scZxLoop() {
+  if (!SC.run || !SC.zx) return;
+  const v = $('scVideo');
+  try {
+    if (v.readyState >= 2 && v.videoWidth) {
+      const a = ZX_V[SC.zi++ % ZX_V.length], im = scZxGrab(v, a[0], a[1]), t = scZxDecode(im.data, im.width, im.height, a[2], a[3]);
+      if (t) { SC.hit = true; scOnCode(t, 'cam'); }
+    }
+  } catch (e) { /* frame gagal dibaca: lanjut */ }
+  SC.zTimer = setTimeout(scZxLoop, 40);
+}
+async function scZxStart() {
+  if (SC.zOn) return; SC.zOn = true;
+  try { scLive('Memuat pemindai…'); await scLoadZx(); scZxInit(); }
+  catch (e) { SC.zOn = false; scLive(''); return scErr('Pemindai gagal dimuat: ' + esc(e.message || e) + '. Gunakan tombol Foto barcode atau ketik angka di atas.', true); }
+  if (!SC.run) return;
+  scLive('Kamera aktif — arahkan ke barcode / QR'); scZxLoop();
+}
+/* foto barcode (cadangan): kamera bawaan HP fokusnya paling tajam; decode foto di beberapa skala */
+async function scDecodePhoto(file) {
+  scInfo('<div class="rounded-xl bg-slate-50 px-3 py-4 text-center text-sm text-slate-600">Membaca foto…</div>');
+  let url;
+  try {
+    await scLoadZx(); scZxInit();
+    url = URL.createObjectURL(file);
+    const img = new Image(); await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('Foto tidak bisa dibuka')); img.src = url; });
+    const iw = img.naturalWidth, ih = img.naturalHeight, cv = document.createElement('canvas'), g = cv.getContext('2d', { willReadFrequently: true });
+    for (const [mw, alt, rot] of [[1000, 0, 0], [1600, 0, 0], [640, 0, 0], [2400, 0, 0], [1000, 1, 0], [400, 0, 0], [1000, 0, 1], [1600, 1, 1], [1600, 1, 0]]) {
+      const k = Math.min(1, mw / iw); cv.width = Math.max(1, Math.round(iw * k)); cv.height = Math.max(1, Math.round(ih * k));
+      g.imageSmoothingQuality = 'high'; g.drawImage(img, 0, 0, cv.width, cv.height);
+      const im = g.getImageData(0, 0, cv.width, cv.height), t = scZxDecode(im.data, im.width, im.height, alt, rot);
+      if (t) return scOnCode(t, 'manual');
+      await new Promise(r => setTimeout(r, 0));
+    }
+    scErr('Barcode tidak terbaca dari foto. Dekatkan, pastikan terang & tidak bergoyang, lalu foto lagi — atau ketik angka barcode di atas.');
+  } catch (e) { scErr('Foto gagal dibaca: ' + esc(e.message || e)); }
+  finally { if (url) URL.revokeObjectURL(url); }
+}
+$('scPhoto').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) scDecodePhoto(f); });
+$('scVideo').addEventListener('click', () => { scPlayVideo(); });
 
 /* ---- OCR angka: potong kotak kuning -> grayscale + kontras -> Tesseract (hanya digit) -> cocokkan ke Source Barcode ---- */
 async function scGetWorker() {
@@ -2456,8 +2559,8 @@ async function scGetWorker() {
   SC.worker = w; return w;
 }
 function scCrop(v) {
-  const vw = v.videoWidth, vh = v.videoHeight, visW = Math.min(vw, vh * 4 / 3);          // area yang tampak (object-cover 4:3)
-  const sw = Math.round(visW * .9), sh = Math.round(vh * .22), sx = Math.round((vw - sw) / 2), sy = Math.round((vh - sh) / 2);
+  const vw = v.videoWidth, vh = v.videoHeight, visW = Math.min(vw, vh * 4 / 3), visH = Math.min(vh, vw * 3 / 4);   // area yang tampak (object-cover 4:3), juga untuk stream portrait iPhone
+  const sw = Math.round(visW * .9), sh = Math.round(visH * .22), sx = Math.round((vw - sw) / 2), sy = Math.round((vh - sh) / 2);
   const cv = SC.cv || (SC.cv = document.createElement('canvas')), W = 1000;
   cv.width = W; cv.height = Math.max(60, Math.round(sh * W / sw));
   const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(v, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
@@ -2505,30 +2608,31 @@ async function scStartOcr() {
 }
 
 async function scStartMode() {
-  scStop(true); scModeUi();
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return scErr('Kamera tidak tersedia (buka lewat HTTPS). Anda tetap bisa mengetik angka barcode di atas.');
+  scStop(true); scModeUi(); scIdle();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return scErr('Kamera tidak tersedia (buka lewat HTTPS dan gunakan Safari / Chrome terbaru). Anda tetap bisa memakai tombol Foto barcode atau mengetik angka barcode di atas.');
   try {
     if (SC.mode === 'ocr') await scStartOcr();
-    else if ('BarcodeDetector' in window) await scStartNative(); else await scStartFallback();
+    else if ('BarcodeDetector' in window) { try { await scStartNative(); } catch (e) { if (e && /NotAllowed|Permission|Security/i.test(e.name + e.message)) throw e; scStop(true); await scStartZx(); } }
+    else await scStartZx();
   } catch (e) {
-    if (e && /NotAllowed|Permission/i.test(e.name + e.message)) return scErr('Izin kamera ditolak. Izinkan akses kamera di pengaturan browser, atau ketik angka barcode di atas.');
-    if (SC.mode === 'ocr') return scErr('Scanner gagal dimulai: ' + esc(e.message || e.name || e));
-    try { scStop(true); await scStartFallback(); }
-    catch (e2) { scErr('Scanner gagal dimulai: ' + esc(e2.message || e2.name || e2)); }
+    if (e && /NotAllowed|Permission|Security/i.test(e.name + e.message)) return scErr('Izin kamera ditolak. iPhone: Pengaturan › Safari › Kamera › Izinkan (atau ketuk “aA” di address bar › Pengaturan Situs Web). Android: ketuk ikon gembok › Izin › Kamera. Atau pakai tombol Foto barcode / ketik angka di atas.', true);
+    scStop(true); scErr('Scanner gagal dimulai: ' + esc(e.message || e.name || e), true); return;
   }
+  clearTimeout(SC.wd); SC.wd = setTimeout(() => { const v = $('scVideo'); if (SC.run && $('ckScanDlg').open && !v.videoWidth) scErr('Kamera tidak mengirim gambar. Tutup aplikasi lain yang memakai kamera, lalu coba lagi.', true); }, 7000);
 }
 async function scOpen() {
   if (!CK.plan) return toast('Pilih file yang divalidasi terlebih dahulu');
   if (CK.type === 'driver' && !$('ckDriver').value) return toast('Pilih driver terlebih dahulu', 3000);
-  SC.cur = null; SC.last = ''; SC.shown = ''; $('scNum').value = ''; scLive(''); scIdle(); scModeUi(); $('ckScanDlg').showModal();
+  scAudio();   // dari ketukan pengguna: wajib di iOS agar bunyi bip bisa berbunyi
+  SC.cur = null; SC.last = ''; SC.shown = ''; $('scNum').value = ''; scLive(''); scIdle(); scModeUi();
+  const dlg = $('ckScanDlg'); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   loadBarcodes();
   await scStartMode();
 }
 function scStop(keepDialog) {
-  SC.run = false; clearTimeout(SC.timer); clearTimeout(SC.ocrTimer); SC.det = null;
+  SC.run = false; clearTimeout(SC.timer); clearTimeout(SC.ocrTimer); clearTimeout(SC.zTimer); clearTimeout(SC.bk); clearTimeout(SC.wd); SC.zOn = false; SC.hit = false; SC.det = null;
   if (SC.stream) { SC.stream.getTracks().forEach(t => t.stop()); SC.stream = null; }
   const v = $('scVideo'); if (v) v.srcObject = null;
-  if (SC.h5) { const h = SC.h5; SC.h5 = null; Promise.resolve().then(() => h.stop()).catch(() => {}).then(() => { try { h.clear(); } catch (e) { /* abaikan */ } }); }
   $('scBand').classList.add('hidden'); $('scLine').classList.remove('hidden');
   if (!keepDialog) { scLive(''); clearTimeout(SC.wkTimer); SC.wkTimer = setTimeout(() => { if (SC.worker && !SC.run) { try { SC.worker.terminate(); } catch (e) { /* abaikan */ } SC.worker = null; } }, 30000); }
 }
