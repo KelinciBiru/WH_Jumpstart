@@ -763,7 +763,10 @@ const sheetIdx = s => Math.max(0, state.sheets.indexOf(s));
 const shChip = (s, extra = '') => multiSheet() && s ? `<span class="sh-chip sh-${sheetIdx(s) % 6}" title="Asal sheet Excel: ${esc(s)}">${esc(s)}${extra}</span>` : '';
 const shBreak = map => multiSheet() && map && map.size ? `<div class="mt-1 flex flex-wrap gap-1">${[...map].map(([s, q]) => shChip(s, ` · ${fmt(q)}`)).join('')}</div>` : '';
 const sheetList = ds => [...new Set(ds.flatMap(d => d.locations.map(l => l.sheet)).filter(Boolean))];
-const sheetNote = r => (multiSheet() || r.showSheets) && r.bySheet && r.bySheet.size ? `<div class="pp-sh">${[...r.bySheet].map(([s, q]) => esc(s) + ': ' + fmt(q)).join(' · ')}</div>` : '';
+/* Label di bawah nama produk (cetak Other Request · Import): per lantai "Floor 30: 4 Carton"; bila produk tak punya
+   database carton (UOM/UOP kosong / kemasan tunggal) → hitung Pcs saja "Floor 30: 12 Pcs". Selalu tampil, walau hanya satu lantai. */
+const floorNote = r => r.byFloor && r.byFloor.size ? `<div class="pp-sh">${[...r.byFloor].map(([f, a]) => esc(f) + ': ' + (a.ok ? fmtDec(round2(a.ctn)) + ' Carton' : fmt(a.pcs) + ' Pcs')).join(' · ')}</div>` : '';
+const sheetNote = r => r.byFloor ? floorNote(r) : (multiSheet() || r.showSheets) && r.bySheet && r.bySheet.size ? `<div class="pp-sh">${[...r.bySheet].map(([s, q]) => esc(s) + ': ' + fmt(q)).join(' · ')}</div>` : '';
 
 function parseWorkbook(wb) {
   const map = new Map(); state.excelIds = new Map();
@@ -1794,13 +1797,22 @@ function bulkyRows(blocks, by) {
   blocks.forEach(b => b.rows.forEach(r => {
     const key = r.id ? 'id:' + idKey(r.id) : 'nm:' + norm(r.name);
     let e = map.get(key);
-    if (!e) { e = { id: r.id, name: (r.sku && r.sku.name) || r.name, qty: 0, sku: r.sku, bySheet: new Map() }; map.set(key, e); }
-    e.qty += r.pcs;
-    const lab = by === 'floor' ? r.floor : b.sheet;
-    if (lab && r.pcs > 0) { labels.add(lab); e.bySheet.set(lab, (e.bySheet.get(lab) || 0) + r.pcs); }
+    if (!e) { e = { id: r.id, name: (r.sku && r.sku.name) || r.name, qty: 0, ctn: 0, sku: r.sku, bySheet: new Map(), byFloor: new Map() }; map.set(key, e); }
+    e.qty += r.pcs; e.ctn += r.carton || 0;
+    const has = r.pcs > 0 || (r.carton || 0) > 0;
+    if (by === 'floor') {
+      // rincian per lantai: SELALU dicatat (juga bila produk hanya ada di satu lantai / hanya berisi Carton tanpa UOM)
+      const lab = r.floor || '';
+      if (lab && has) {
+        let a = e.byFloor.get(lab); if (!a) { a = { pcs: 0, ctn: 0, ok: true }; e.byFloor.set(lab, a); }
+        a.pcs += r.pcs;
+        if (r.carton == null) a.ok = false; else a.ctn += r.carton;   // salah satu baris tanpa database carton → tampil Pcs
+      }
+    } else if (b.sheet && r.pcs > 0) { labels.add(b.sheet); e.bySheet.set(b.sheet, (e.bySheet.get(b.sheet) || 0) + r.pcs); }
   }));
-  const show = labels.size > 1;   // rincian hanya bila ada lebih dari satu sheet / lantai
-  return [...map.values()].filter(e => e.qty > 0).map(e => ({ ...e, showSheets: show })).sort(byId);
+  const show = labels.size > 1;   // rincian per sheet (Bulky Semua Produk) hanya bila ada lebih dari satu sheet
+  return [...map.values()].filter(e => e.qty > 0 || e.ctn > 0)
+    .map(e => ({ ...e, showSheets: show, byFloor: by === 'floor' ? e.byFloor : null })).sort(byId);
 }
 const ctxMeta = (c, extra = []) => [['Tanggal', dateLong(c.date)], ...(c.ev ? [['Event', c.name]] : []), ...extra, ['File Sumber', c.file]];
 const sheetMeta = b => [['Sheet Excel', b.sheet], ...(b.kind === 'tiktok' ? [['WH Origin', b.whOrigin], ['Destination', b.destination]] : [])];
