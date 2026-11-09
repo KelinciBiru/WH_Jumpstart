@@ -270,11 +270,22 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
 .sh-share { display: inline-flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .sh-stat { font-size: .72rem; font-weight: 600; color: #166534; }
 @media (max-width: 767.98px) {
-  #mDock { grid-template-columns: 1fr 1fr 1fr 84px 1fr 1fr; }
-  .dk { font-size: 10px; }
+  #mDock { grid-template-columns: 1fr 1fr 1fr 1fr 84px 1fr 1fr; }   /* 4 menu (Planner, Request, Checker, Retur) + tombol tengah + Aksi + Setelan */
+  .dk { font-size: 9.5px; }
   #shViewDlg[open] { margin: auto 0 0 !important; width: 100vw !important; max-width: 100vw !important; border-radius: 1.25rem 1.25rem 0 0 !important; }
   #ckScanDlg[open] { margin: auto 0 0 !important; width: 100vw !important; max-width: 100vw !important; border-radius: 1.25rem 1.25rem 0 0 !important; }
 }
+</style>
+
+<style id="ri-css">
+/* ===== MENU RETUR INBOUND (additif) ===== */
+body.ri-mode #otherTabs, body.ri-mode #eventPanel, body.ri-mode #formPanel, body.ri-mode #importCard, body.ri-mode #packerBar,
+body.ri-mode #printBar, body.ri-mode #stats, body.ri-mode #insight, body.ri-mode #grandTotals, body.ri-mode #toolbar,
+body.ri-mode #driverTotals, body.ri-mode #result, body.ri-mode #empty { display: none !important; }
+#riInput, #riName { font-size: 16px; }   /* iOS Safari zoom otomatis bila font input < 16px */
+#riTable tr.saved { background: #F1FBF4; }
+#riTable .ri-tag { display: inline-block; border-radius: 9999px; background: #dcfce7; color: #166534; font-size: 10px; font-weight: 700; padding: 1px 8px; }
+#scInfo .ck-step input { width: 84px; }
 </style>
 </head>
 <body>
@@ -301,6 +312,10 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
       <a href="#" data-menu="checker" class="nav-item mt-1">
         <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
         Checker
+      </a>
+      <a href="#" data-menu="retur" class="nav-item mt-1">
+        <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11"/></svg>
+        Retur Inbound
       </a>
     </nav>
     <div class="space-y-2.5 border-t border-slate-200 px-6 py-5 text-xs text-slate-500">
@@ -336,6 +351,7 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
         <button type="button" data-menu="planner" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Planner</button>
         <button type="button" data-menu="other" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Other Request</button>
         <button type="button" data-menu="checker" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Checker</button>
+        <button type="button" data-menu="retur" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Retur</button>
       </nav>
 
       <!-- TAB OTHER REQUEST: Import Request | Event -->
@@ -359,7 +375,7 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
         <div class="flex flex-wrap items-end gap-2">
           <label class="field">Isi Qty (Pcs) semua produk<input id="evAll" type="number" min="0" step="1" inputmode="numeric" placeholder="mis. 10"></label>
           <button id="evApply" type="button" class="btn btn-ghost">Terapkan ke semua</button>
-          <div class="ml-auto flex gap-2"><button id="evClear" type="button" class="btn btn-ghost">Kosongkan Qty</button><span class="sh-share"><button id="evShare" type="button" class="btn btn-ghost" title="Bagikan data Event (Excel) ke Team Checker">Share ke Checker</button><span class="sh-stat" data-for="evShare"></span><label class="flex items-center gap-1 text-xs font-semibold text-slate-600"><input type="checkbox" class="shAutoCk accent-indigo-600"> Share otomatis saat Simpan</label></span><button id="evSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button></div>
+          <div class="ml-auto flex gap-2"><button id="evClear" type="button" class="btn btn-ghost">Kosongkan Qty</button><button id="evCsv" type="button" class="btn btn-ghost" title="Download data Event (produk yang diisi Qty) sebagai file .csv">Download CSV</button><span class="sh-share"><button id="evShare" type="button" class="btn btn-ghost" title="Bagikan data Event (Excel) ke Team Checker">Share ke Checker</button><span class="sh-stat" data-for="evShare"></span><label class="flex items-center gap-1 text-xs font-semibold text-slate-600"><input type="checkbox" class="shAutoCk accent-indigo-600"> Share otomatis saat Simpan</label></span><button id="evSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button></div>
         </div>
         <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
           <span class="text-xs font-semibold text-slate-500">Cetak / PDF:</span>
@@ -383,6 +399,7 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
           <div class="ml-auto flex flex-wrap gap-2">
             <button id="fmClear" type="button" class="btn btn-ghost">Form Baru</button>
             <button id="fmPrint" type="button" class="btn btn-ghost">Cetak / PDF</button>
+            <button id="fmCsv" type="button" class="btn btn-ghost" title="Download form yang sedang diisi sebagai file .csv">Download CSV</button>
             <span class="sh-share"><button id="fmShare" type="button" class="btn btn-ghost" title="Bagikan Form Others (Excel) ke Team Checker">Share ke Checker</button><span class="sh-stat" data-for="fmShare"></span><label class="flex items-center gap-1 text-xs font-semibold text-slate-600"><input type="checkbox" class="shAutoCk accent-indigo-600"> Share otomatis saat Simpan</label></span>
             <button id="fmSave" type="button" class="btn btn-accent">Simpan ke Spreadsheet</button>
           </div>
@@ -442,6 +459,36 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
           </div>
         </div>
         <p class="text-xs text-slate-500">Qty Plan diambil dari <b>file yang dibagikan Admin</b> dan dipilih pada kolom “File yang divalidasi” (dalam Pcs). Bila Admin membagikan lebih dari satu file, pilih file yang ingin divalidasi; file yang salah bisa di-Hapus dari daftar. Tandai ✓ bila jumlah fisik sesuai, ✗ bila tidak — lalu isi Qty (Adjustment) dengan jumlah sebenarnya. Hasil dicatat ke sheet “Checker Result”; produk yang belum dicek tidak ikut disimpan. Scan / ketik angka barcode dicari di sheet “Source Barcode” (ID Produk + nama produk).</p>
+      </section>
+
+      <!-- RETUR INBOUND -->
+      <section id="returPanel" class="no-print hidden panel space-y-4 p-4 md:p-5">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="field">Nama Checker<select id="riName"><option value="">Memuat…</option></select></label>
+          <label class="field">Tanggal Retur<input id="riDate" type="date"></label>
+        </div>
+        <div class="flex flex-wrap items-end gap-2">
+          <button id="riScan" type="button" class="btn btn-accent">
+            <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10"/></svg>
+            Scan Barcode / QR / Angka
+          </button>
+          <label class="field min-w-[220px] flex-1">Atau ketik / tembak angka barcode (Enter)
+            <input id="riInput" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="mis. 8997204670332">
+          </label>
+          <button id="riAdd" type="button" class="btn btn-dark">Tambah</button>
+        </div>
+        <p id="riHint" class="text-xs text-slate-500"></p>
+        <div id="riStats" class="grid grid-cols-2 gap-2 sm:grid-cols-4"></div>
+        <div id="riTable"></div>
+        <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
+          <button id="riClear" type="button" class="btn btn-ghost">Bersihkan layar</button>
+          <button id="riReload" type="button" class="btn btn-ghost">Muat ulang nama &amp; barcode</button>
+          <div class="ml-auto flex flex-wrap gap-2">
+            <button id="riCsv" type="button" class="btn btn-ghost">Download CSV</button>
+            <button id="riSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500">Nama Checker diambil dari sheet “Source”, barcode dari sheet “Source Barcode”. Setiap scan menjadi <b>baris baru</b> (produk yang sama di-scan lagi tidak menimpa) dan Qty bisa diubah. Baris yang sudah tersimpan ke sheet “Retur Inbound” ditandai ✓ dan tidak dikirim ulang.</p>
       </section>
 
       <!-- IMPORT (Admin) -->
@@ -530,6 +577,10 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
               <span id="xPlanLabel" class="block text-sm font-semibold">Planner (detail)</span>
               <span id="xPlanDesc" class="block text-xs text-slate-500">Semua driver, lokasi &amp; produk</span>
             </button>
+            <button type="button" id="xCsv" data-x="csv" class="other-only hidden block w-full rounded-lg px-3 py-2 text-left hover:bg-indigo-50">
+              <span class="block text-sm font-semibold">Download CSV (.csv)</span>
+              <span class="block text-xs text-slate-500">Semua sheet Excel digabung · bisa dibuka di Excel</span>
+            </button>
             <button type="button" data-x="bulkyAll" class="block w-full rounded-lg px-3 py-2 text-left hover:bg-indigo-50">
               <span class="block text-sm font-semibold">Bulky · All Driver</span>
               <span class="block text-xs text-slate-500">Total per produk dari semua driver</span>
@@ -573,7 +624,7 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
 <dialog id="ckScanDlg" class="w-[min(96vw,520px)] rounded-2xl p-0 shadow-xl">
   <div class="p-4">
     <div class="flex items-center justify-between gap-3">
-      <h3 class="display text-lg font-bold">Scan Barcode / QR / Angka</h3>
+      <h3 id="scTitle" class="display text-lg font-bold">Scan Barcode / QR / Angka</h3>
       <button id="scClose" type="button" class="btn btn-ghost">Selesai</button>
     </div>
     <div id="scModes" class="mt-3 inline-flex w-full rounded-lg bg-slate-100 p-1 text-sm">
@@ -658,7 +709,7 @@ const state = {
   excelIds: new Map(),            // normName -> ID dari baris "Need Refill 2" di Excel (cadangan)
   overrides: JSON.parse(localStorage.getItem(LS.ovr) || '{}'),
   drivers: [], sheets: [], req: [], fileName: '', cache: new Map(), role: localStorage.getItem(LS.role) || 'admin',
-  menu: ['other', 'checker'].includes(localStorage.getItem(LS.menu)) ? localStorage.getItem(LS.menu) : 'planner'
+  menu: ['other', 'checker', 'retur'].includes(localStorage.getItem(LS.menu)) ? localStorage.getItem(LS.menu) : 'planner'
 };
 const SRC = { planner: null, other: null };   // file Excel asli hasil import (untuk Share ke Checker)
 const $ = id => document.getElementById(id);
@@ -1038,6 +1089,7 @@ function stats() {
   return { drivers: state.drivers.length, loc, item, qty, chk, ai };
 }
 function render() {
+  if (state.menu === 'retur') return riRender();
   if (state.menu === 'checker') return ckRender();
   if (state.menu === 'other') return renderOther();
   const has = state.drivers.length > 0;
@@ -1209,7 +1261,7 @@ function exportBulky(mode) {
   XLSX.writeFile(wb, name);
   toast(`Export ${perDriver ? 'Bulky Per-Driver' : 'Bulky All Driver'}: ${rows.length} produk`, 3000);
 }
-function exportXlsx(mode) { return mode === 'bulkyAll' || mode === 'bulkyDriver' ? exportBulky(mode) : exportPlan(); }
+function exportXlsx(mode) { if (mode === 'csv') return exportOtherCsv(); return mode === 'bulkyAll' || mode === 'bulkyDriver' ? exportBulky(mode) : exportPlan(); }
 
 /* =====================================================================
    OTHER REQUEST — import Excel multi-sheet
@@ -1964,6 +2016,12 @@ const MENUS = {
     saveAction: 'saveChecker', loadAction: 'getLatestPlan', noun: 'Checker', loadTitle: 'Validasi Qty Checker', fp: 'Checker_',
     xlsLabel: 'Checker', xlsSheet: 'Checker', xlsFile: 'Checker',
     packer: '', loadBtn: 'Muat data plan', empty: 'Belum ada data'
+  },
+  retur: {
+    nav: 'Retur Inbound', title: 'Retur Inbound', sub: 'Catat barang retur masuk dengan scan barcode · untuk Checker Warehouse', side: 'Retur Inbound · Warehouse PG',
+    saveAction: 'saveReturInbound', loadAction: '', noun: 'Retur Inbound', loadTitle: 'Retur Inbound', fp: 'ReturInbound_',
+    xlsLabel: 'Retur Inbound', xlsSheet: 'Retur Inbound', xlsFile: 'ReturInbound',
+    packer: '', loadBtn: 'Muat data', empty: 'Belum ada data'
   }
 };
 const L = () => MENUS[state.menu];
@@ -1978,6 +2036,8 @@ function snapshotMenu() {
 function applyMenu() {
   const m = L();
   document.body.classList.toggle('ck-mode', state.menu === 'checker');
+  document.body.classList.toggle('ri-mode', state.menu === 'retur');
+  $('returPanel').classList.toggle('hidden', state.menu !== 'retur');
   document.querySelectorAll('.nav-item[data-menu]').forEach(a => {
     const on = a.dataset.menu === state.menu;
     a.classList.toggle('nav-on', on);
@@ -2003,6 +2063,7 @@ function applyMenu() {
   if (typeof applyOtherTab === 'function' && other !== undefined) { $('otherTabs').classList.toggle('hidden', !other); $('eventPanel').classList.toggle('hidden', !evMode()); $('formPanel').classList.toggle('hidden', !fmMode()); $('evDate').value = todayStr(); $('fmInput').value = todayStr(); }
   $('search').placeholder = other ? 'Cari sheet, lantai, produk, ID…' : 'Cari lokasi, produk, ID, driver, plat…';
   if (state.menu === 'checker') ckEnter();
+  if (state.menu === 'retur') riEnter();
 }
 function switchMenu(key) {
   if (!MENUS[key] || key === state.menu) return;
@@ -2370,6 +2431,7 @@ function bcNear(digits) {       // saran: barcode terdaftar yang hanya beda 1 di
 }
 function ckQ(q) { const t = String(q || '').trim(); if (/^\d[\d\s.-]{5,}$/.test(t)) { const e = bcLookup(t); if (e) return e.id; } return t; }   // angka barcode -> Product ID
 function ckShowBc() {
+  if (typeof riShowBc === 'function') riShowBc();
   const el = $('ckBcHit'); if (!el) return;
   const q = $('ckSearch').value.trim(), d = q.replace(/\D/g, '');
   let h = '';
@@ -2436,6 +2498,7 @@ function ckResolve(raw) {
 const scNearHtml = near => near.length ? '<div class="mt-2 text-xs font-semibold">Mungkin maksud:</div>' + near.map(n => { const i = bcInfo(n); return `<button type="button" class="btn btn-ghost mt-1 w-full !justify-start text-left" data-scpick="${esc(n.barcode)}"><span class="num">${esc(n.barcode)}</span> · ${esc(i.id)} — ${esc(i.name)}</button>`; }).join('') : '';
 async function scOnCode(raw, src) {
   raw = String(raw || '').trim(); if (!raw) return;
+  if (SC.target === 'ri') return riOnCode(raw, src);   // scanner dipakai menu Retur Inbound
   const now = Date.now(); if (src !== 'manual' && raw === SC.last && now - SC.lastT < 2000) return;
   SC.last = raw; SC.lastT = now;
   let e = bcLookup(raw);
@@ -2672,6 +2735,7 @@ async function scStartMode() {
 async function scOpen() {
   if (!CK.plan) return toast('Pilih file yang divalidasi terlebih dahulu');
   if (CK.type === 'driver' && !$('ckDriver').value) return toast('Pilih driver terlebih dahulu', 3000);
+  SC.target = 'ck'; $('scTitle').textContent = 'Scan Barcode / QR / Angka';
   scAudio();   // dari ketukan pengguna: wajib di iOS agar bunyi bip bisa berbunyi
   SC.cur = null; SC.last = ''; SC.shown = ''; $('scNum').value = ''; scLive(''); scIdle(); scModeUi();
   const dlg = $('ckScanDlg'); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
@@ -2927,6 +2991,268 @@ let shTm; $('shVSearch').addEventListener('input', () => { clearTimeout(shTm); s
 $('shVDl').onclick = () => SHF.cur && shSave(SHF.cur.r);
 $('shVClose').onclick = () => $('shViewDlg').close();
 
+/* =====================================================================
+   DOWNLOAD CSV — dibuka langsung di Excel
+   • BOM UTF-8 agar huruf/tanda baca tampil benar.
+   • Baris "sep=," di awal: Excel dengan pengaturan regional Indonesia (pemisah daftar ";") tetap memisah kolom dengan benar.
+     Bila CSV dibuka di aplikasi lain (Google Sheets / Numbers) dan baris itu mengganggu, ubah CSV_EXCEL_SEP_LINE jadi false.
+   • Angka panjang (barcode >= 11 digit) ditulis ="..." supaya Excel tidak mengubahnya jadi 8,99E+12.
+   ===================================================================== */
+const CSV_EXCEL_SEP_LINE = true;
+function csvCell(v) {
+  const s = v == null ? '' : String(v);
+  if (/^\d{11,}$/.test(s)) return '="' + s + '"';
+  return /[",\r\n]/.test(s) || /^\s|\s$/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function downloadCsv(filename, headers, rows) {
+  const text = (CSV_EXCEL_SEP_LINE ? 'sep=,\r\n' : '') + [headers, ...rows].map(r => r.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF' + text], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* Other Request · Import Request */
+function exportOtherCsv() {
+  if (!state.req.length) return toast('Belum ada data Other Request', 3000);
+  const rows = reqRows(), date = planDateVal();
+  downloadCsv(`OtherRequest_ImportRequest_${date}.csv`,
+    ['Tanggal Request', 'File Sumber', 'Asal Sheet Excel', 'WH Origin', 'Destination', 'Flooring', 'Product ID', 'Product Name', 'Qty Pcs', 'Qty Carton'],
+    rows.map(r => [date, state.fileName || '', r.sheet, r.whOrigin, r.destination, r.flooring, r.productId, r.productName, r.qtyPcs, r.qtyCarton]));
+  toast(`Download CSV Import Request: ${rows.length} baris`, 3000);
+}
+/* Other Request · Event (produk yang diisi Qty, sama seperti yang disimpan ke spreadsheet) */
+function exportEventCsv() {
+  if (!EV.rows.length) return toast('Import file Event terlebih dahulu', 3000);
+  const rows = EV.rows.filter(r => Number(r.qty) > 0);
+  if (!rows.length) return toast('Isi Qty (Pcs) minimal pada satu produk', 3500);
+  const name = $('evName').value.trim(), date = $('evDate').value || todayStr();
+  downloadCsv(`Event_${name || 'Request'}_${date}.csv`,
+    ['Tanggal', 'Nama Event', 'File Sumber', 'Product ID', 'Product Name', 'Qty (Pcs)', 'Asal Sheet Excel'],
+    rows.map(r => [date, name, EV.fileName, r.id, r.name, Number(r.qty), (r.sheets || []).join(', ')]));
+  toast(`Download CSV Event: ${rows.length} produk`, 3000);
+}
+/* Other Request · Form Others */
+function exportFormCsv() {
+  const d = fmData();
+  if (!d.rows.length) return toast('Tambah produk dan isi Qty minimal pada satu produk', 3500);
+  downloadCsv(`FormOthers_${d.loc || 'Form'}_${d.ship || d.input}.csv`,
+    ['Input Date', 'Shipping Date', 'Location Name', 'Product ID', 'Product Name', 'Qty (Pcs)', 'Qty (Carton)'],
+    d.rows.map(r => [d.input, d.ship, d.loc, r.id, r.name, r.pcs, r.carton == null ? '' : r.carton]));
+  toast(`Download CSV Form Others: ${d.rows.length} produk`, 3000);
+}
+$('evCsv').onclick = exportEventCsv;
+$('fmCsv').onclick = exportFormCsv;
+
+/* =====================================================================
+   RETUR INBOUND — scan barang retur masuk
+   Nama Checker : sheet "Source" (action getCheckers — sama dengan menu Checker)
+   Barcode      : sheet "Source Barcode" (action getBarcodes) -> Product ID + Product Name
+   Tiap scan = BARIS BARU (tidak menimpa); Qty bisa diubah.
+   Simpan       : sheet baru "Retur Inbound" lewat action saveReturInbound (hanya baris yang belum tersimpan).
+   ===================================================================== */
+const RI = { rows: [], cur: '', lastRaw: '', lastSeen: 0 };   // row: { sid, at, code, id, name, qty, saved }
+const RI_KEY = 'planner_ri_rows', RI_NAME = 'planner_ri_name';
+const riNow = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
+const riSid = () => Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+const riQty = r => Math.max(0, Math.floor(Number(r.qty) || 0));
+const riInDlg = () => $('ckScanDlg').open && SC.target === 'ri';
+function riPersist() { try { localStorage.setItem(RI_KEY, JSON.stringify(RI.rows)); } catch (e) { /* penyimpanan penuh: abaikan */ } }
+(function riRestore() { try { const r = JSON.parse(localStorage.getItem(RI_KEY) || '[]'); if (Array.isArray(r)) RI.rows = r.filter(x => x && x.sid && (x.id || x.name)); } catch (e) { RI.rows = []; } })();
+
+function riFillNames() {
+  const sel = $('riName'), keep = sel.value || localStorage.getItem(RI_NAME) || '';
+  sel.innerHTML = '<option value="">— Pilih nama checker —</option>' + CK.names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  if (CK.names.includes(keep)) sel.value = keep;
+}
+function riShowBc() {
+  const el = $('riHint'); if (!el) return;
+  el.innerHTML = BC.loading ? 'Memuat Source Barcode…' : BC.err ? `<span class="text-red-600">Source Barcode: ${esc(BC.err)}</span>`
+    : BC.loaded ? `Source Barcode: ${fmt(BC.n)} kode · scan atau ketik angka barcode — setiap scan menjadi baris baru` : '';
+}
+async function riEnter() {
+  if (!$('riDate').value) $('riDate').value = todayStr();
+  riFillNames(); riRender(); riShowBc();
+  loadBarcodes();
+  if (!CK.names.length) { await ckLoadNames(); riFillNames(); }
+}
+
+const riTotals = () => ({ n: RI.rows.length, qty: RI.rows.reduce((a, r) => a + riQty(r), 0), open: RI.rows.filter(r => !r.saved).length });
+function riStats() {
+  const t = riTotals(), box = (v, l, c) => `<div class="stat" style="${c ? 'border-left-color:' + c : ''}"><div class="v num">${fmt(v)}</div><div class="text-xs text-slate-500">${l}</div></div>`;
+  $('riStats').innerHTML = box(t.n, 'Baris scan') + box(t.qty, 'Total Qty') + box(t.n - t.open, 'Tersimpan ✓', '#16a34a') + box(t.open, 'Belum disimpan', '#98978D');
+  $('riSave').disabled = !t.open; $('riCsv').disabled = !t.n; $('riClear').disabled = !t.n;
+}
+function riFlash(sid) {
+  const tr = [...$('riTable').querySelectorAll('tr[data-sid]')].find(x => x.dataset.sid === sid); if (!tr) return;
+  tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
+  if (!$('ckScanDlg').open) tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+function riRender(flashSid) {
+  const box = $('riTable'); if (!box) return;
+  if (!RI.rows.length) {
+    box.innerHTML = '<div class="rounded-xl border-2 border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">Belum ada data. Klik <b>Scan Barcode / QR / Angka</b> atau ketik angka barcode — setiap scan muncul sebagai baris baru.</div>';
+    return riStats();
+  }
+  box.innerHTML = `<div class="ck-wrap"><table class="ck-tbl" style="min-width:700px">
+    <thead><tr><th style="width:44px">No</th><th>Waktu Scan</th><th>Barcode / Input</th><th>ID Produk</th><th>Product Name</th><th>Qty</th><th></th></tr></thead>
+    <tbody>${RI.rows.map((r, i) => `<tr data-sid="${esc(r.sid)}" class="${r.saved ? 'saved' : ''}">
+      <td class="num">${i + 1}</td>
+      <td class="num whitespace-nowrap text-xs text-slate-600">${esc(String(r.at || '').slice(11))}</td>
+      <td class="num whitespace-nowrap text-xs">${esc(r.code)}</td>
+      <td class="num whitespace-nowrap font-mono font-semibold">${esc(r.id)}</td>
+      <td>${esc(r.name)}</td>
+      <td>${r.saved ? `<b class="num">${fmt(riQty(r))}</b>` : `<div class="ck-step"><button type="button" data-rib="dec" data-sid="${esc(r.sid)}" aria-label="Kurangi Qty">−</button><input data-riq="${esc(r.sid)}" type="number" min="1" step="1" inputmode="numeric" value="${esc(r.qty)}" aria-label="Qty"><button type="button" data-rib="inc" data-sid="${esc(r.sid)}" aria-label="Tambah Qty">+</button></div>`}</td>
+      <td class="whitespace-nowrap">${r.saved ? '<span class="ri-tag">Tersimpan ✓</span>' : `<button type="button" data-rib="del" data-sid="${esc(r.sid)}" class="rounded p-2 text-slate-400 hover:text-red-600" aria-label="Hapus baris" title="Hapus baris">✕</button>`}</td>
+    </tr>`).join('')}</tbody>
+    <tfoot><tr class="bg-slate-50 font-bold"><td colspan="5" style="text-align:right">TOTAL (${fmt(RI.rows.length)} baris)</td><td class="num" id="riTotQty"></td><td></td></tr></tfoot></table></div>`;
+  $('riTotQty').textContent = fmt(riTotals().qty);
+  riStats();
+  if (flashSid) riFlash(flashSid);
+}
+
+/* ---- scan / input ---- */
+async function riResolve(raw) {
+  let e = bcLookup(raw);
+  const digits = raw.replace(/\D/g, '');
+  if (!e && !BC.loaded && gasReady()) { scLive('Memuat Source Barcode…'); await loadBarcodes(); e = bcLookup(raw); scLive(''); }
+  if (!e && digits.length >= 6 && !BC.loading && Date.now() - BC.last > 45000 && gasReady()) {   // barcode baru ditambah di sheet? muat ulang sekali
+    scLive('Mencari di Source Barcode terbaru…'); await loadBarcodes(true); e = bcLookup(raw); scLive('');
+  }
+  if (e) { const i = bcInfo(e); if (i.id || i.name) return { id: i.id, name: i.name, code: e.barcode }; }
+  const s = skuOf(raw);   // cadangan: Product ID langsung (mis. QR lama berisi Product ID)
+  return s ? { id: String(s.id), name: s.name, code: raw } : null;
+}
+function riAddRow(hit, raw) {
+  const r = { sid: riSid(), at: riNow(), code: String(hit.code || raw), id: String(hit.id || ''), name: hit.name || '', qty: 1, saved: false };
+  RI.rows.push(r); RI.cur = r.sid; riPersist(); riRender(r.sid);
+  return r;
+}
+function riCard(r) {
+  const t = riTotals();
+  scInfo(`<div class="sc-card" style="background:#F1FBF4">
+    <div class="num text-xs font-bold text-slate-500">${r.code ? 'Barcode ' + esc(r.code) + ' · ' : ''}baris #${RI.rows.indexOf(r) + 1}</div>
+    <div class="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">ID Produk</div><div class="num text-xl font-extrabold">${esc(r.id)}</div>
+    <div class="text-sm font-bold leading-snug">${esc(r.name)}</div>
+    <div class="mt-2 flex items-center justify-between gap-2">
+      <div class="ck-step"><button type="button" data-ri="dec" aria-label="Kurangi Qty">−</button><input data-ri="qty" type="number" min="1" step="1" inputmode="numeric" value="${riQty(r)}" aria-label="Qty"><button type="button" data-ri="inc" aria-label="Tambah Qty">+</button></div>
+      <button type="button" class="btn btn-ghost" data-ri="undo">Batalkan</button>
+    </div>
+    <div class="mt-2 text-xs font-semibold text-emerald-700">&#10003; Masuk daftar · total ${fmt(t.n)} baris · ${fmt(t.qty)} qty — scan produk berikutnya</div></div>`);
+}
+async function riOnCode(raw, src) {
+  raw = String(raw || '').trim(); if (!raw) return;
+  if (src !== 'manual') {   // kamera / OCR: kode yang sama terus terbaca selama masih diarahkan -> dihitung 1 scan; angkat kamera sejenak untuk scan ulang
+    const now = Date.now(), same = raw === RI.lastRaw && now - RI.lastSeen < 1800;
+    RI.lastRaw = raw; RI.lastSeen = now;
+    if (same) return;
+  }
+  const hit = await riResolve(raw);
+  if (!hit) {
+    scBeep(false); RI.cur = '';
+    const d = raw.replace(/\D/g, '');
+    if (!riInDlg()) return toast(`Kode “${raw.slice(0, 40)}” tidak ditemukan di Source Barcode`, 4000);
+    return scInfo(`<div class="sc-card" style="background:#FFF3F2;color:#991b1b"><b>Kode “${esc(raw.slice(0, 40))}” tidak ditemukan di Source Barcode</b><div class="mt-1 text-xs">Tidak ditambahkan ke daftar.</div>${d.length >= 8 ? scNearHtml(bcNear(d)) : ''}</div>`);
+  }
+  const r = riAddRow(hit, raw);
+  scBeep(true);
+  if (riInDlg()) riCard(r); else toast(`✓ ${r.id} — ${r.name} ditambahkan (baris #${RI.rows.length})`, 2200);
+}
+async function riScanOpen() {
+  SC.target = 'ri'; $('scTitle').textContent = 'Scan Retur Inbound';
+  scAudio(); SC.cur = null; SC.last = ''; SC.shown = ''; RI.lastRaw = ''; $('scNum').value = ''; scLive(''); scIdle(); scModeUi();
+  const dlg = $('ckScanDlg'); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  loadBarcodes();
+  await scStartMode();
+}
+function riManual() {
+  const inp = $('riInput'), v = inp.value.trim(); if (!v) return;
+  scAudio(); inp.value = '';
+  riOnCode(v, 'manual').then(() => inp.focus());
+}
+
+/* ---- kartu hasil scan di dialog: ubah Qty / batalkan ---- */
+$('scInfo').addEventListener('click', e => {
+  const b = e.target.closest('[data-ri]'); if (!b || SC.target !== 'ri') return;
+  const r = RI.rows.find(x => x.sid === RI.cur), a = b.dataset.ri; if (!r) return;
+  if (a === 'undo') {
+    if (r.saved) return;
+    RI.rows = RI.rows.filter(x => x !== r); RI.cur = ''; riPersist(); riRender();
+    return scInfo('<div class="sc-card" style="background:#FFF8E1"><b>Scan terakhir dibatalkan</b> — scan produk berikutnya</div>');
+  }
+  if (r.saved) return;
+  if (a === 'dec') r.qty = Math.max(1, riQty(r) - 1); else if (a === 'inc') r.qty = riQty(r) + 1; else return;
+  const i = $('scInfo').querySelector('input[data-ri="qty"]'); if (i) i.value = r.qty;
+  riPersist(); riRender();
+});
+$('scInfo').addEventListener('input', e => {
+  if (SC.target !== 'ri' || e.target.dataset.ri !== 'qty') return;
+  const r = RI.rows.find(x => x.sid === RI.cur); if (!r || r.saved) return;
+  r.qty = e.target.value === '' ? '' : Math.max(0, Math.floor(Number(e.target.value) || 0));
+  riPersist(); riRender();
+});
+
+/* ---- tabel: ubah Qty / hapus baris ---- */
+$('riTable').addEventListener('click', e => {
+  const b = e.target.closest('[data-rib]'); if (!b) return;
+  const r = RI.rows.find(x => x.sid === b.dataset.sid); if (!r || r.saved) return;
+  const a = b.dataset.rib;
+  if (a === 'dec') r.qty = Math.max(1, riQty(r) - 1);
+  else if (a === 'inc') r.qty = riQty(r) + 1;
+  else if (a === 'del') RI.rows = RI.rows.filter(x => x !== r);
+  riPersist(); riRender();
+});
+$('riTable').addEventListener('input', e => {
+  const sid = e.target.dataset.riq; if (!sid) return;
+  const r = RI.rows.find(x => x.sid === sid); if (!r || r.saved) return;
+  r.qty = e.target.value === '' ? '' : Math.max(0, Math.floor(Number(e.target.value) || 0));
+  riPersist(); riStats(); const t = $('riTotQty'); if (t) t.textContent = fmt(riTotals().qty);
+});
+
+/* ---- simpan / CSV / bersihkan layar ---- */
+async function riSave() {
+  if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
+  const name = $('riName').value; if (!name) { $('riName').focus(); return toast('Pilih Nama Checker terlebih dahulu', 3500); }
+  const date = $('riDate').value; if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toast('Isi Tanggal Retur terlebih dahulu', 3500);
+  const open = RI.rows.filter(r => !r.saved);
+  if (!open.length) return toast('Semua baris sudah tersimpan', 3000);
+  const bad = open.find(r => riQty(r) < 1);
+  if (bad) { riFlash(bad.sid); return toast('Ada baris dengan Qty kosong / 0 — isi Qty minimal 1 atau hapus barisnya', 5000); }
+  const btn = $('riSave'), label = btn.innerHTML; btn.disabled = true; btn.textContent = 'Menyimpan…';
+  try {
+    const r = await (await fetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'saveReturInbound', checkerName: name, returDate: date, savedBy: name,
+        rows: open.map(x => ({ scanId: x.sid, scannedAt: x.at, barcode: x.code, productId: x.id, productName: x.name, qty: riQty(x) })) }) })).json();
+    if (!r.ok) throw new Error(r.error);
+    const done = new Set(open.map(x => x.sid)); RI.rows.forEach(x => { if (done.has(x.sid)) x.saved = true; });
+    riPersist(); riRender();
+    toast(`Tercatat ${r.saved} baris ke sheet “${r.sheet}”` + (r.skipped ? ` · ${r.skipped} baris sudah ada, dilewati` : ''), 5000);
+  } catch (e) { toast('Gagal menyimpan: ' + e.message + ckDeployHint(e), ckDeployHint(e) ? 9000 : 4500); }
+  btn.innerHTML = label; riStats();
+}
+function riCsv() {
+  if (!RI.rows.length) return toast('Belum ada data untuk diunduh', 3000);
+  const name = $('riName').value, date = $('riDate').value || todayStr();
+  downloadCsv(`ReturInbound_${name || 'Checker'}_${date}.csv`,
+    ['No', 'Tanggal Retur', 'Nama Checker', 'Waktu Scan', 'Barcode / Input', 'Product ID', 'Product Name', 'Qty', 'Status'],
+    RI.rows.map((r, i) => [i + 1, date, name, r.at, r.code, r.id, r.name, riQty(r), r.saved ? 'Tersimpan' : 'Belum disimpan']));
+  toast(`Download CSV Retur Inbound: ${RI.rows.length} baris`, 3000);
+}
+function riClear() {
+  const t = riTotals();
+  if (!t.n) return toast('Layar sudah kosong', 2000);
+  if (t.open && !confirm(`${t.open} baris belum disimpan ke spreadsheet dan akan hilang dari layar.\nBersihkan layar?`)) return;
+  RI.rows = []; RI.cur = ''; RI.lastRaw = ''; $('riInput').value = ''; riPersist(); riRender();
+  toast('Layar dibersihkan', 2000);
+}
+$('riScan').onclick = riScanOpen;
+$('riAdd').onclick = riManual;
+$('riInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); riManual(); } });
+$('riName').onchange = () => localStorage.setItem(RI_NAME, $('riName').value);
+$('riSave').onclick = riSave; $('riCsv').onclick = riCsv; $('riClear').onclick = riClear;
+$('riReload').onclick = async () => { await ckLoadNames(true); riFillNames(); loadBarcodes(true); };
+
 $('planDate').value = todayStr();
 applyMenu(); applyRole(); loadSku(); render();
 </script>
@@ -2945,11 +3271,11 @@ applyMenu(); applyRole(); loadSku(); render();
     print:'M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z',
     xls:'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
     ref:'M4 4v6h6M20 20v-6h-6M20 9a8 8 0 00-14-3L4 10m16 4l-2 4a8 8 0 01-14-3',
-    plus:'M12 5v14M5 12h14', chk:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', scan:'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10', link:'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.700-5.700l-1 1M14 10a4 4 0 00-5.700 0l-3 3a4 4 0 005.700 5.700l1-1', trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'
+    ret:'M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11', plus:'M12 5v14M5 12h14', chk:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', scan:'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10', link:'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.700-5.700l-1 1M14 10a4 4 0 00-5.700 0l-3 3a4 4 0 005.700 5.700l1-1', trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'
   };
   const ic = k => `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="${I[k]}"/></svg>`;
   const $$ = id => document.getElementById(id);
-  const mode = () => state.menu === 'checker' ? 'checker' : fmMode() ? 'form' : evMode() ? 'event' : (state.menu === 'other' ? 'req' : 'planner');
+  const mode = () => state.menu === 'retur' ? 'retur' : state.menu === 'checker' ? 'checker' : fmMode() ? 'form' : evMode() ? 'event' : (state.menu === 'other' ? 'req' : 'planner');
   const hasData = () => (state.drivers && state.drivers.length) || (state.req && state.req.length);
 
   /* ---- elemen ---- */
@@ -2959,6 +3285,7 @@ applyMenu(); applyRole(); loadSku(); render();
     <button class="dk" data-d="planner">${ic('plan')}<span>Planner</span></button>
     <button class="dk" data-d="other">${ic('req')}<span>Request</span></button>
     <button class="dk" data-d="checker">${ic('chk')}<span>Checker</span></button>
+    <button class="dk" data-d="retur">${ic('ret')}<span>Retur</span></button>
     <button class="dk dk-fab" data-d="fab"><i class="c"></i><span></span></button>
     <button class="dk" data-d="act">${ic('act')}<span>Aksi</span></button>
     <button class="dk" data-d="set">${ic('set')}<span>Setelan</span></button>`;
@@ -2972,6 +3299,7 @@ applyMenu(); applyRole(); loadSku(); render();
   /* ---- tombol tengah: aksi berikutnya yang paling masuk akal ---- */
   function fab() {
     const m = mode(), admin = state.role === 'admin';
+    if (m === 'retur') return { l: 'Scan', k: 'scan', go: () => $$('riScan').click() };
     if (m === 'checker') return { l: 'Scan', k: 'scan', go: () => $$('ckScan').click() };
     if (m === 'form') return { l: 'Tambah', k: 'plus', go: () => { const a = $$('fmAdd'); a.scrollIntoView({ block: 'center' }); a.focus(); } };
     if (m === 'event') return !$$('evSave').disabled ? { l: 'Simpan', k: 'save', s: 1, go: () => $$('evSave').click() } : { l: 'Import', k: 'up', go: () => $$('evFile').click() };
@@ -2981,7 +3309,7 @@ applyMenu(); applyRole(); loadSku(); render();
   let cur;
   function sync() {
     if (!mq.matches) return;
-    dock.querySelectorAll('[data-d=planner],[data-d=other],[data-d=checker]').forEach(b => b.classList.toggle('on', b.dataset.d === state.menu));
+    dock.querySelectorAll('[data-d=planner],[data-d=other],[data-d=checker],[data-d=retur]').forEach(b => b.classList.toggle('on', b.dataset.d === state.menu));
     cur = fab(); const f = dock.querySelector('.dk-fab');
     f.classList.toggle('save', !!cur.s);
     f.querySelector('.c').innerHTML = ic(cur.k).replace('<svg', '<svg width="26" height="26"'); f.querySelector('span').textContent = cur.l;
@@ -2995,7 +3323,7 @@ applyMenu(); applyRole(); loadSku(); render();
     const el = sel ? document.querySelector(sel) : $$(id);
     if (!el || el.classList.contains('hidden')) return '';
     const off = el.disabled || (el.parentElement && el.parentElement.closest('.hidden'));
-    return `<button class="ms-i${pri ? ' pri' : ''}" data-go="${sel || '#' + id}"${off ? ' disabled' : ''}><span class="ic">${ic(k)}</span><span><b>${label}</b><small>${off ? 'Import / muat data dulu' : desc}</small></span></button>`;
+    return `<button class="ms-i${pri ? ' pri' : ''}" data-go="${(sel || '#' + id).replace(/"/g, '&quot;')}"${off ? ' disabled' : ''}><span class="ic">${ic(k)}</span><span><b>${label}</b><small>${off ? (/^ri[A-Z]/.test(id) ? 'Scan data dulu' : 'Import / muat data dulu') : desc}</small></span></button>`;
   };
   const grp = (t, ...xs) => { const h = xs.join(''); return h ? `<div class="ms-g">${t}</div>${h}` : ''; };
   function sheetAksi() {
@@ -3006,12 +3334,15 @@ applyMenu(); applyRole(); loadSku(); render();
       grp('Export Excel', item('', 'Planner (detail)', 'Semua driver, lokasi & produk', 'xls', 0, x('plan')), item('', 'Bulky · All Driver', 'Total per produk', 'xls', 0, x('bulkyAll')), item('', 'Bulky · Per-Driver', 'Driver yang dipilih', 'xls', 0, x('bulkyDriver')));
     if (m === 'req') h += grp('Simpan', item('btnSave', 'Simpan ke Spreadsheet', 'Catat Other Request', 'save', 1), item('btnShare', 'Share ke Checker', 'Bagikan file ke Team Checker', 'up')) +
       grp('Cetak / PDF', item('btnOBulkyAll', 'Bulky Semua Produk', 'Total dari semua sheet', 'print'), item('btnOBulkySheet', 'Bulky Per-Sheet', 'Satu halaman per sheet', 'print'), item('btnOListSheet', 'List Produk Per-Sheet', 'Daftar apa adanya', 'print')) +
-      grp('Export Excel', item('', 'Other Request (detail)', 'Semua sheet Excel', 'xls', 0, x('plan')));
+      grp('Export Excel', item('', 'Other Request (detail)', 'Semua sheet Excel', 'xls', 0, x('plan')), item('xCsv', 'Download CSV', 'Semua sheet digabung (.csv)', 'xls'));
     if (m === 'event') h += grp('Simpan', item('evSave', 'Simpan ke Spreadsheet', 'Catat data Event', 'save', 1), item('evShare', 'Share ke Checker', 'Bagikan data Event ke Team Checker', 'up')) +
       grp('Cetak / PDF', item('evPrintAll', 'Bulky Semua Produk', 'Hanya produk yang diisi Qty', 'print'), item('evPrintSheet', 'Bulky Per-Sheet', 'Satu halaman per sheet', 'print'), item('evPrintList', 'List Produk Per-Sheet', 'Satu halaman per sheet', 'print')) +
-      grp('Lainnya', item('evClear', 'Kosongkan Qty', 'Hapus semua isian Qty', 'trash'));
+      grp('Download', item('evCsv', 'Download CSV', 'Produk yang diisi Qty (.csv)', 'xls')) + grp('Lainnya', item('evClear', 'Kosongkan Qty', 'Hapus semua isian Qty', 'trash'));
     if (m === 'form') h += grp('Simpan', item('fmSave', 'Simpan ke Spreadsheet', 'Catat ke sheet Form Others', 'save', 1), item('fmShare', 'Share ke Checker', 'Bagikan Form Others ke Team Checker', 'up')) +
-      grp('Cetak / PDF', item('fmPrint', 'Cetak / PDF', 'Form yang sedang diisi', 'print')) + grp('Lainnya', item('fmClear', 'Form Baru', 'Kosongkan form', 'trash'));
+      grp('Cetak / PDF', item('fmPrint', 'Cetak / PDF', 'Form yang sedang diisi', 'print')) + grp('Download', item('fmCsv', 'Download CSV', 'Form yang sedang diisi (.csv)', 'xls')) + grp('Lainnya', item('fmClear', 'Form Baru', 'Kosongkan form', 'trash'));
+    if (m === 'retur') h += grp('Simpan', item('riSave', 'Simpan ke Spreadsheet', 'Catat ke sheet Retur Inbound', 'save', 1)) +
+      grp('Download', item('riCsv', 'Download CSV', 'Semua baris di layar (.csv)', 'xls')) +
+      grp('Lainnya', item('riReload', 'Muat ulang nama & barcode', 'Ambil data Source & Source Barcode terbaru', 'ref'), item('riClear', 'Bersihkan layar', 'Kosongkan daftar scan', 'trash'));
     if (m === 'checker') h += grp('Simpan', item('ckSave', 'Simpan ke Spreadsheet', 'Catat hasil ke sheet Checker Result', 'save', 1)) +
       grp('Cetak / PDF', item('ckPrint', 'Hasil Adjustment', 'Produk yang sudah dicek', 'print')) +
       grp('Lainnya', item('ckLoad', 'Muat ulang file', 'Ambil nama checker & file dari Admin', 'ref'), item('shRefresh', 'Muat file dari Admin', 'File plan yang dibagikan hari ini', 'ref'), item('ckReset', 'Reset pengecekan', 'Kosongkan tanda ✓ / ✗ tampilan ini', 'trash'));
@@ -3029,7 +3360,7 @@ applyMenu(); applyRole(); loadSku(); render();
   /* ---- event ---- */
   dock.addEventListener('click', e => {
     const b = e.target.closest('[data-d]'); if (!b) return; const d = b.dataset.d;
-    if (d === 'planner' || d === 'other' || d === 'checker') { if (state.menu === d) window.scrollTo({ top: 0, behavior: 'smooth' }); else switchMenu(d); sync(); }
+    if (d === 'planner' || d === 'other' || d === 'checker' || d === 'retur') { if (state.menu === d) window.scrollTo({ top: 0, behavior: 'smooth' }); else switchMenu(d); sync(); }
     else if (d === 'fab') cur.go();
     else if (d === 'act') sheetAksi(); else sheetSet();
   });
@@ -3050,8 +3381,8 @@ applyMenu(); applyRole(); loadSku(); render();
   ['applyMenu', 'applyRole', 'applyOtherTab'].forEach(n => { const o = window[n]; if (typeof o === 'function') window[n] = function () { const r = o.apply(this, arguments); sync(); return r; }; });
   let raf; const q = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(sync); };
   const mo = new MutationObserver(q);
-  ['btnSave', 'evSave'].forEach(i => mo.observe($$(i), { attributes: true, attributeFilter: ['disabled'] }));
-  ['stats', 'result', 'evTable', 'ckTable'].forEach(i => mo.observe($$(i), { childList: true }));
+  ['btnSave', 'evSave', 'riSave'].forEach(i => mo.observe($$(i), { attributes: true, attributeFilter: ['disabled'] }));
+  ['stats', 'result', 'evTable', 'ckTable', 'riTable'].forEach(i => mo.observe($$(i), { childList: true }));
   mq.addEventListener('change', () => { close(); sync(); });
   sync();
 })();
