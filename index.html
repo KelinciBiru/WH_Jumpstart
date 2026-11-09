@@ -284,6 +284,15 @@ body.ri-mode #printBar, body.ri-mode #stats, body.ri-mode #insight, body.ri-mode
 body.ri-mode #driverTotals, body.ri-mode #result, body.ri-mode #empty { display: none !important; }
 #riInput, #riName { font-size: 16px; }   /* iOS Safari zoom otomatis bila font input < 16px */
 #riTable tr.saved { background: #F1FBF4; }
+#riCat { font-size: 16px; }
+#riSug { position: absolute; left: 0; right: 0; top: 100%; z-index: 40; margin-top: 2px; max-height: 280px; overflow-y: auto; background: #fff; border: 1px solid var(--line); border-radius: .6rem; box-shadow: 0 8px 24px rgba(0,0,0,.14); }
+#riSug[hidden] { display: none; }
+#riSug button { display: block; width: 100%; text-align: left; padding: .5rem .75rem; border-bottom: 1px solid #f1f1ee; font-weight: 500; }
+#riSug button:last-child { border-bottom: 0; }
+#riSug button.on, #riSug button:hover { background: #FFF4D6; }
+#riSug .sg-n { font-size: .8rem; font-weight: 600; color: #141414; line-height: 1.25; }
+#riSug .sg-m { font-size: .7rem; color: #6b6a63; }
+#riSug mark { background: #FBB315; color: #141414; border-radius: 2px; padding: 0 1px; }
 #riTable .ri-tag { display: inline-block; border-radius: 9999px; background: #dcfce7; color: #166534; font-size: 10px; font-weight: 700; padding: 1px 8px; }
 #scInfo .ck-step input { width: 84px; }
 </style>
@@ -467,13 +476,23 @@ body.ri-mode #driverTotals, body.ri-mode #result, body.ri-mode #empty { display:
           <label class="field">Nama Checker<select id="riName"><option value="">Memuat…</option></select></label>
           <label class="field">Tanggal Retur<input id="riDate" type="date"></label>
         </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="field">Category<select id="riCat">
+            <option value="">— Pilih Category —</option>
+            <option value="Reture Car">Reture Car</option>
+            <option value="Reture Dispatch">Reture Dispatch</option>
+            <option value="Reture Event">Reture Event</option>
+            <option value="Reture Tiktok">Reture Tiktok</option>
+          </select></label>
+        </div>
         <div class="flex flex-wrap items-end gap-2">
           <button id="riScan" type="button" class="btn btn-accent">
             <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10"/></svg>
             Scan Barcode / QR / Angka
           </button>
-          <label class="field min-w-[220px] flex-1">Atau ketik / tembak angka barcode (Enter)
-            <input id="riInput" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="mis. 8997204670332">
+          <label class="field relative min-w-[220px] flex-1">Atau ketik nama / ID / tembak barcode (Enter)
+            <input id="riInput" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="mis. 8997204670332 atau ketik nama produk">
+            <div id="riSug" hidden role="listbox"></div>
           </label>
           <button id="riAdd" type="button" class="btn btn-dark">Tambah</button>
         </div>
@@ -3052,8 +3071,9 @@ $('fmCsv').onclick = exportFormCsv;
    Tiap scan = BARIS BARU (tidak menimpa); Qty bisa diubah.
    Simpan       : sheet baru "Retur Inbound" lewat action saveReturInbound (hanya baris yang belum tersimpan).
    ===================================================================== */
-const RI = { rows: [], cur: '', lastRaw: '', lastSeen: 0 };   // row: { sid, at, code, id, name, qty, saved }
-const RI_KEY = 'planner_ri_rows', RI_NAME = 'planner_ri_name';
+const RI = { rows: [], cur: '', lastRaw: '', lastSeen: 0, sug: [], sugI: -1 };   // row: { sid, at, cat, code, id, name, qty, saved }
+const RI_KEY = 'planner_ri_rows', RI_NAME = 'planner_ri_name', RI_CAT = 'planner_ri_cat';
+const RI_CATS = ['Reture Car', 'Reture Dispatch', 'Reture Event', 'Reture Tiktok'];
 const riNow = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
 const riSid = () => Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
 const riQty = r => Math.max(0, Math.floor(Number(r.qty) || 0));
@@ -3066,6 +3086,12 @@ function riFillNames() {
   sel.innerHTML = '<option value="">— Pilih nama checker —</option>' + CK.names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
   if (CK.names.includes(keep)) sel.value = keep;
 }
+function riFillCat() { const c = localStorage.getItem(RI_CAT) || ''; if (RI_CATS.includes(c) && !$('riCat').value) $('riCat').value = c; }
+function riNeedCat() {
+  const c = $('riCat').value;
+  if (RI_CATS.includes(c)) return c;
+  $('riCat').focus(); toast('Pilih Category retur terlebih dahulu', 3500); return '';
+}
 function riShowBc() {
   const el = $('riHint'); if (!el) return;
   el.innerHTML = BC.loading ? 'Memuat Source Barcode…' : BC.err ? `<span class="text-red-600">Source Barcode: ${esc(BC.err)}</span>`
@@ -3073,7 +3099,7 @@ function riShowBc() {
 }
 async function riEnter() {
   if (!$('riDate').value) $('riDate').value = todayStr();
-  riFillNames(); riRender(); riShowBc();
+  riFillNames(); riFillCat(); riRender(); riShowBc();
   loadBarcodes();
   if (!CK.names.length) { await ckLoadNames(); riFillNames(); }
 }
@@ -3095,18 +3121,19 @@ function riRender(flashSid) {
     box.innerHTML = '<div class="rounded-xl border-2 border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">Belum ada data. Klik <b>Scan Barcode / QR / Angka</b> atau ketik angka barcode — setiap scan muncul sebagai baris baru.</div>';
     return riStats();
   }
-  box.innerHTML = `<div class="ck-wrap"><table class="ck-tbl" style="min-width:700px">
-    <thead><tr><th style="width:44px">No</th><th>Waktu Scan</th><th>Barcode / Input</th><th>ID Produk</th><th>Product Name</th><th>Qty</th><th></th></tr></thead>
+  box.innerHTML = `<div class="ck-wrap"><table class="ck-tbl" style="min-width:780px">
+    <thead><tr><th style="width:44px">No</th><th>Waktu Scan</th><th>Category</th><th>Barcode / Input</th><th>ID Produk</th><th>Product Name</th><th>Qty</th><th></th></tr></thead>
     <tbody>${RI.rows.map((r, i) => `<tr data-sid="${esc(r.sid)}" class="${r.saved ? 'saved' : ''}">
       <td class="num">${i + 1}</td>
       <td class="num whitespace-nowrap text-xs text-slate-600">${esc(String(r.at || '').slice(11))}</td>
+      <td class="whitespace-nowrap text-xs font-semibold">${esc(r.cat || '-')}</td>
       <td class="num whitespace-nowrap text-xs">${esc(r.code)}</td>
       <td class="num whitespace-nowrap font-mono font-semibold">${esc(r.id)}</td>
       <td>${esc(r.name)}</td>
       <td>${r.saved ? `<b class="num">${fmt(riQty(r))}</b>` : `<div class="ck-step"><button type="button" data-rib="dec" data-sid="${esc(r.sid)}" aria-label="Kurangi Qty">−</button><input data-riq="${esc(r.sid)}" type="number" min="1" step="1" inputmode="numeric" value="${esc(r.qty)}" aria-label="Qty"><button type="button" data-rib="inc" data-sid="${esc(r.sid)}" aria-label="Tambah Qty">+</button></div>`}</td>
       <td class="whitespace-nowrap">${r.saved ? '<span class="ri-tag">Tersimpan ✓</span>' : `<button type="button" data-rib="del" data-sid="${esc(r.sid)}" class="rounded p-2 text-slate-400 hover:text-red-600" aria-label="Hapus baris" title="Hapus baris">✕</button>`}</td>
     </tr>`).join('')}</tbody>
-    <tfoot><tr class="bg-slate-50 font-bold"><td colspan="5" style="text-align:right">TOTAL (${fmt(RI.rows.length)} baris)</td><td class="num" id="riTotQty"></td><td></td></tr></tfoot></table></div>`;
+    <tfoot><tr class="bg-slate-50 font-bold"><td colspan="6" style="text-align:right">TOTAL (${fmt(RI.rows.length)} baris)</td><td class="num" id="riTotQty"></td><td></td></tr></tfoot></table></div>`;
   $('riTotQty').textContent = fmt(riTotals().qty);
   riStats();
   if (flashSid) riFlash(flashSid);
@@ -3125,14 +3152,14 @@ async function riResolve(raw) {
   return s ? { id: String(s.id), name: s.name, code: raw } : null;
 }
 function riAddRow(hit, raw) {
-  const r = { sid: riSid(), at: riNow(), code: String(hit.code || raw), id: String(hit.id || ''), name: hit.name || '', qty: 1, saved: false };
+  const r = { sid: riSid(), at: riNow(), cat: $('riCat').value, code: String(hit.code || raw), id: String(hit.id || ''), name: hit.name || '', qty: 1, saved: false };
   RI.rows.push(r); RI.cur = r.sid; riPersist(); riRender(r.sid);
   return r;
 }
 function riCard(r) {
   const t = riTotals();
   scInfo(`<div class="sc-card" style="background:#F1FBF4">
-    <div class="num text-xs font-bold text-slate-500">${r.code ? 'Barcode ' + esc(r.code) + ' · ' : ''}baris #${RI.rows.indexOf(r) + 1}</div>
+    <div class="num text-xs font-bold text-slate-500">${esc(r.cat || '')} · ${r.code ? 'Barcode ' + esc(r.code) + ' · ' : ''}baris #${RI.rows.indexOf(r) + 1}</div>
     <div class="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">ID Produk</div><div class="num text-xl font-extrabold">${esc(r.id)}</div>
     <div class="text-sm font-bold leading-snug">${esc(r.name)}</div>
     <div class="mt-2 flex items-center justify-between gap-2">
@@ -3143,6 +3170,7 @@ function riCard(r) {
 }
 async function riOnCode(raw, src) {
   raw = String(raw || '').trim(); if (!raw) return;
+  if (!riNeedCat()) return;
   if (src !== 'manual') {   // kamera / OCR: kode yang sama terus terbaca selama masih diarahkan -> dihitung 1 scan; angkat kamera sejenak untuk scan ulang
     const now = Date.now(), same = raw === RI.lastRaw && now - RI.lastSeen < 1800;
     RI.lastRaw = raw; RI.lastSeen = now;
@@ -3160,15 +3188,64 @@ async function riOnCode(raw, src) {
   if (riInDlg()) riCard(r); else toast(`✓ ${r.id} — ${r.name} ditambahkan (baris #${RI.rows.length})`, 2200);
 }
 async function riScanOpen() {
+  if (!riNeedCat()) return;
   SC.target = 'ri'; $('scTitle').textContent = 'Scan Retur Inbound';
   scAudio(); SC.cur = null; SC.last = ''; SC.shown = ''; RI.lastRaw = ''; $('scNum').value = ''; scLive(''); scIdle(); scModeUi();
   const dlg = $('ckScanDlg'); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   loadBarcodes();
   await scStartMode();
 }
+/* ---- suggest: ketik huruf / angka -> cari di Source Barcode (nama, ID produk, barcode) ---- */
+function riSearch(q) {
+  const t = norm(q); if (t.length < 2) return [];
+  const toks = t.split(' ').filter(Boolean), d = String(q).replace(/\D/g, ''), byId = new Map(), out = [];
+  for (const [key, e] of BC.map) {
+    const i = bcInfo(e), nm = norm(i.name), idn = norm(i.id);
+    let sc = 0;
+    if (toks.every(k => nm.includes(k) || idn.includes(k))) sc = (nm.startsWith(t) || idn === t) ? 3 : nm.includes(t) ? 2 : 1;
+    else if (d.length >= 4 && key.includes(bcKey(d))) sc = 1;
+    if (!sc) continue;
+    const cur = byId.get(i.id + '|' + i.name);
+    if (!cur) { const o = { sc, id: i.id, name: i.name, code: e.barcode }; byId.set(i.id + '|' + i.name, o); out.push(o); }
+    else if (d.length >= 4 && key.includes(bcKey(d))) cur.code = e.barcode;
+  }
+  return out.sort((a, b) => b.sc - a.sc || a.name.localeCompare(b.name)).slice(0, 8);
+}
+function riHl(txt, q) {
+  let s = esc(txt);
+  norm(q).split(' ').filter(k => k.length > 1).forEach(k => { try { s = s.replace(new RegExp('(' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { /* abaikan */ } });
+  return s;
+}
+function riSugHide() { RI.sug = []; RI.sugI = -1; const b = $('riSug'); b.hidden = true; b.innerHTML = ''; }
+function riSugShow() {
+  const q = $('riInput').value.trim(), b = $('riSug');
+  if (q.length < 2 || /^\d[\d\s.-]*$/.test(q) && q.replace(/\D/g, '').length >= 8) return riSugHide();   // angka barcode lengkap: tak perlu suggest
+  RI.sug = riSearch(q); RI.sugI = -1;
+  if (!RI.sug.length) { b.innerHTML = BC.loaded ? '<div class="px-3 py-2 text-xs text-slate-500">Tidak ada produk yang cocok</div>' : '<div class="px-3 py-2 text-xs text-slate-500">Memuat Source Barcode…</div>'; b.hidden = false; return; }
+  b.innerHTML = RI.sug.map((s, i) => `<button type="button" role="option" data-sug="${i}"><div class="sg-n">${riHl(s.name, q)}</div><div class="sg-m num">ID ${riHl(s.id, q)} · ${esc(s.code)}</div></button>`).join('');
+  b.hidden = false;
+}
+function riSugMove(step) {
+  if (!RI.sug.length) return;
+  RI.sugI = (RI.sugI + step + RI.sug.length) % RI.sug.length;
+  [...$('riSug').querySelectorAll('button')].forEach((x, i) => { x.classList.toggle('on', i === RI.sugI); if (i === RI.sugI) x.scrollIntoView({ block: 'nearest' }); });
+}
+function riPick(s) {
+  if (!s || !riNeedCat()) return;
+  const inp = $('riInput'); inp.value = ''; riSugHide(); scAudio();
+  const r = riAddRow({ id: s.id, name: s.name, code: s.code }, s.code); scBeep(true);
+  toast(`✓ ${r.id} — ${r.name} ditambahkan (baris #${RI.rows.length})`, 2200); inp.focus();
+}
 function riManual() {
   const inp = $('riInput'), v = inp.value.trim(); if (!v) return;
-  scAudio(); inp.value = '';
+  if (!riNeedCat()) return;
+  const hasLetter = /[A-Za-z]/.test(v);
+  if (hasLetter && !skuOf(v)) {   // teks nama produk -> pilih dari suggest (yang di-highlight, atau teratas)
+    const list = RI.sug.length ? RI.sug : riSearch(v);
+    if (!list.length) { scBeep(false); return toast(`Produk “${v.slice(0, 40)}” tidak ditemukan di Source Barcode`, 3500); }
+    return riPick(list[RI.sugI >= 0 ? RI.sugI : 0]);
+  }
+  scAudio(); inp.value = ''; riSugHide();
   riOnCode(v, 'manual').then(() => inp.focus());
 }
 
@@ -3217,13 +3294,15 @@ async function riSave() {
   const date = $('riDate').value; if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toast('Isi Tanggal Retur terlebih dahulu', 3500);
   const open = RI.rows.filter(r => !r.saved);
   if (!open.length) return toast('Semua baris sudah tersimpan', 3000);
+  const noCat = open.find(r => !RI_CATS.includes(r.cat));
+  if (noCat) { riFlash(noCat.sid); return toast('Ada baris tanpa Category — hapus barisnya lalu scan ulang dengan Category terpilih', 5500); }
   const bad = open.find(r => riQty(r) < 1);
   if (bad) { riFlash(bad.sid); return toast('Ada baris dengan Qty kosong / 0 — isi Qty minimal 1 atau hapus barisnya', 5000); }
   const btn = $('riSave'), label = btn.innerHTML; btn.disabled = true; btn.textContent = 'Menyimpan…';
   try {
     const r = await (await fetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'saveReturInbound', checkerName: name, returDate: date, savedBy: name,
-        rows: open.map(x => ({ scanId: x.sid, scannedAt: x.at, barcode: x.code, productId: x.id, productName: x.name, qty: riQty(x) })) }) })).json();
+        rows: open.map(x => ({ scanId: x.sid, scannedAt: x.at, category: x.cat || '', barcode: x.code, productId: x.id, productName: x.name, qty: riQty(x) })) }) })).json();
     if (!r.ok) throw new Error(r.error);
     const done = new Set(open.map(x => x.sid)); RI.rows.forEach(x => { if (done.has(x.sid)) x.saved = true; });
     riPersist(); riRender();
@@ -3235,8 +3314,8 @@ function riCsv() {
   if (!RI.rows.length) return toast('Belum ada data untuk diunduh', 3000);
   const name = $('riName').value, date = $('riDate').value || todayStr();
   downloadCsv(`ReturInbound_${name || 'Checker'}_${date}.csv`,
-    ['No', 'Tanggal Retur', 'Nama Checker', 'Waktu Scan', 'Barcode / Input', 'Product ID', 'Product Name', 'Qty', 'Status'],
-    RI.rows.map((r, i) => [i + 1, date, name, r.at, r.code, r.id, r.name, riQty(r), r.saved ? 'Tersimpan' : 'Belum disimpan']));
+    ['No', 'Tanggal Retur', 'Nama Checker', 'Waktu Scan', 'Category', 'Barcode / Input', 'Product ID', 'Product Name', 'Qty', 'Status'],
+    RI.rows.map((r, i) => [i + 1, date, name, r.at, r.cat || '', r.code, r.id, r.name, riQty(r), r.saved ? 'Tersimpan' : 'Belum disimpan']));
   toast(`Download CSV Retur Inbound: ${RI.rows.length} baris`, 3000);
 }
 function riClear() {
@@ -3248,7 +3327,18 @@ function riClear() {
 }
 $('riScan').onclick = riScanOpen;
 $('riAdd').onclick = riManual;
-$('riInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); riManual(); } });
+$('riInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); riManual(); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); if ($('riSug').hidden) riSugShow(); riSugMove(1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); riSugMove(-1); }
+  else if (e.key === 'Escape') riSugHide();
+});
+$('riInput').addEventListener('input', riSugShow);
+$('riInput').addEventListener('focus', () => { if ($('riInput').value.trim().length >= 2) riSugShow(); });
+$('riSug').addEventListener('mousedown', e => e.preventDefault());   // jaga fokus input saat klik suggest
+$('riSug').addEventListener('click', e => { const b = e.target.closest('[data-sug]'); if (b) riPick(RI.sug[Number(b.dataset.sug)]); });
+document.addEventListener('click', e => { if (!e.target.closest('#riInput, #riSug')) riSugHide(); });
+$('riCat').onchange = () => localStorage.setItem(RI_CAT, $('riCat').value);
 $('riName').onchange = () => localStorage.setItem(RI_NAME, $('riName').value);
 $('riSave').onclick = riSave; $('riCsv').onclick = riCsv; $('riClear').onclick = riClear;
 $('riReload').onclick = async () => { await ckLoadNames(true); riFillNames(); loadBarcodes(true); };
