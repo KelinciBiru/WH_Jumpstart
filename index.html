@@ -847,6 +847,9 @@ document.getElementById('favApple').href = FAVICON_SRC;
 const LS = { url: 'planner_gas_url', sku: 'planner_sku_cache', ovr: 'planner_overrides', role: 'planner_role', menu: 'planner_menu' };
 const GAS_URL = () => localStorage.getItem(LS.url) || DEFAULT_GAS_URL;
 const gasReady = () => /^https:\/\/script\.google\.com\/.+\/exec/.test(GAS_URL());
+/* Hak akses tampilan. Diisi halaman login setelah server mengesahkan sesi (default: tertutup).
+   Ini HANYA mempermudah pengguna; penegak aslinya adalah GAS (ACTION_ACL) yang memeriksa token di tiap permintaan. */
+const ACCESS = window.ACCESS = { full: false, menus: [] };
 
 const state = {
   sku: [], skuById: new Map(), skuByKey: new Map(), skuIdx: new Map(), skuEntries: [],
@@ -2210,7 +2213,7 @@ function applyMenu() {
   if (state.menu === 'retur') riEnter();
 }
 function switchMenu(key) {
-  if (!MENUS[key] || key === state.menu) return;
+  if (!MENUS[key] || key === state.menu || !ACCESS.menus.includes(key)) return;
   snapshotMenu();
   state.menu = key; localStorage.setItem(LS.menu, key);
   const w = WS[key] || { drivers: [], sheets: [], req: [], fileName: '', excelIds: new Map(), planDate: todayStr(), fileLabel: '', saveDisabled: true };
@@ -2237,6 +2240,7 @@ function applyRole() {
   });
 }
 document.querySelectorAll('.role-btn').forEach(b => b.onclick = () => {
+  if (!ACCESS.full) return;   // Checker / Packer tidak bisa menjadikan dirinya Admin lewat tombol ini
   state.role = b.dataset.role; localStorage.setItem(LS.role, state.role); applyRole();
 });
 $('file').onchange = e => handleFile(e.target.files[0]);
@@ -2261,8 +2265,12 @@ $('btnOBulkySheet').onclick = $('evPrintSheet').onclick = printOtherBulkySheet;
 $('btnOListSheet').onclick = $('evPrintList').onclick = printOtherListSheet;
 $('btnPrint').onclick = () => { document.querySelectorAll('.card-body').forEach(b => b.classList.remove('collapsed')); window.print(); };
 $('btnGas').onclick = () => {
-  const v = prompt('Tempel URL Web App GAS (berakhiran /exec):', GAS_URL().startsWith('http') ? GAS_URL() : '');
-  if (v !== null) { localStorage.setItem(LS.url, v.trim()); loadSku(true); }
+  if (!ACCESS.full) return toast('Hanya Manager / SPV yang boleh mengubah URL GAS.', 3200);
+  const v = prompt('Tempel URL Web App GAS (berakhiran /exec).\nPERHATIAN: token login dikirim ke alamat ini. Isi hanya dengan URL resmi dari tim IT.', GAS_URL().startsWith('http') ? GAS_URL() : '');
+  if (v === null) return;
+  const u = v.trim();
+  if (!/^https:\/\/script\.google\.com\/(?:a\/[\w.-]+\/)?macros\/s\/[\w-]+\/exec$/.test(u)) return toast('Format URL tidak valid. Contoh: https://script.google.com/macros/s/…/exec', 4200);
+  localStorage.setItem(LS.url, u); loadSku(true);
 };
 $('btnExpand').onclick = () => {
   const cards = [...document.querySelectorAll('.driver-card')], anyOpen = cards.some(c => c.dataset.open === '1');
@@ -3150,8 +3158,10 @@ $('shVClose').onclick = () => $('shViewDlg').close();
    ===================================================================== */
 const CSV_EXCEL_SEP_LINE = true;
 function csvCell(v) {
-  const s = v == null ? '' : String(v);
+  let s = v == null ? '' : String(v);
   if (/^\d{11,}$/.test(s)) return '="' + s + '"';
+  // Cegah formula injection: teks yang diawali = + - @ (bukan angka biasa) diperlakukan sebagai teks oleh Excel / Sheets
+  if (/^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+(?:[.,]\d+)?$/.test(s)) s = "'" + s;
   return /[",\r\n]/.test(s) || /^\s|\s$/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 function downloadCsv(filename, headers, rows) {
@@ -3536,6 +3546,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     f.classList.toggle('save', !!cur.s);
     f.querySelector('.c').innerHTML = ic(cur.k).replace('<svg', '<svg width="26" height="26"'); f.querySelector('span').textContent = cur.l;
     const adm = state.role === 'admin'; pill.textContent = adm ? 'Admin' : 'Packer'; pill.classList.toggle('pk', !adm);
+    pill.style.display = (window.ACCESS && ACCESS.full) ? '' : 'none';
   }
 
   /* ---- sheet ---- */
@@ -3572,9 +3583,13 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   }
   function sheetSet() {
     const adm = state.role === 'admin', dot = $$('dot'), c = dot ? getComputedStyle(dot).backgroundColor : '#98978D';
+    const full = !!(window.ACCESS && ACCESS.full), me = (window.AUTH && AUTH.user) || {};
+    const roleBlk = full
+      ? `<div class="ms-g">Peran</div><div class="ms-seg"><button data-role="admin" class="${adm ? 'on' : ''}">Admin</button><button data-role="packer" class="${adm ? '' : 'on'}">Packer</button></div>
+      <div class="ms-s" style="margin-top:.5rem">${adm ? 'Admin: import Excel, simpan, dan cetak plan.' : 'Packer: lihat & cetak plan terakhir dari Admin.'}</div>`
+      : `<div class="ms-g">Akun</div><div class="ms-s">${esc(me.nama || '-')} · ${esc(me.divisi || '-')}</div>`;
     open(`<div class="ms-h">Setelan</div><div class="ms-s">Peran dan koneksi data</div>
-      <div class="ms-g">Peran</div><div class="ms-seg"><button data-role="admin" class="${adm ? 'on' : ''}">Admin</button><button data-role="packer" class="${adm ? '' : 'on'}">Packer</button></div>
-      <div class="ms-s" style="margin-top:.5rem">${adm ? 'Admin: import Excel, simpan, dan cetak plan.' : 'Packer: lihat & cetak plan terakhir dari Admin.'}</div>
+      ${roleBlk}
       <div class="ms-g">Koneksi</div><div class="ms-st"><i style="background:${c}"></i><span>${$$('statusText').textContent}</span></div>` +
       grp('Data', item('btnReload', 'Muat ulang data SKU', 'Ambil Source SKU terbaru', 'ref'), item('btnGas', 'Atur URL GAS', 'Alamat Web App Apps Script', 'link')) +
       grp('Akun', item('btnLogout', 'Keluar', 'Masuk sebagai ' + esc((window.AUTH && AUTH.user && AUTH.user.nama) || '-'), 'out')));
@@ -3666,10 +3681,45 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   }
 
   /* ---- masuk / kunci aplikasi ---- */
+  /* ---- hak akses menu ----
+     Server mengirim user.menus. Cadangan di bawah hanya dipakai bila catatan sesi lama tidak memuatnya (mis. tersimpan sebelum pembaruan).
+     Divisi tidak dikenal => tidak ada menu => ditolak masuk. */
+  const ALL_MENUS = ['planner', 'other', 'checker', 'retur'];
+  const BY_DIVISI = { manager: ALL_MENUS, spv: ALL_MENUS, checker: ['checker'], packer: ['retur'] };
+  function accessFor(u) {
+    u = u || {};
+    let menus = Array.isArray(u.menus) ? u.menus : BY_DIVISI[String(u.divisi || '').toLowerCase().replace(/[^a-z]/g, '')] || [];
+    menus = ALL_MENUS.filter(m => menus.includes(m));
+    return { menus, full: menus.length === ALL_MENUS.length };
+  }
+  let applied = '';
+  function applyAccess() {
+    const menus = ACCESS.menus;
+    // hapus (bukan sekadar sembunyikan) tombol menu yang tidak diizinkan
+    document.querySelectorAll('[data-menu]').forEach(el => { if (!menus.includes(el.dataset.menu)) el.remove(); });
+    const dock = $g('mDock');
+    if (dock) {
+      dock.querySelectorAll('[data-d]').forEach(el => { if (ALL_MENUS.includes(el.dataset.d) && !menus.includes(el.dataset.d)) el.remove(); });
+      dock.style.gridTemplateColumns = 'repeat(' + menus.length + ', 1fr) 84px 1fr 1fr';
+    }
+    if (!menus.includes(state.menu)) { state.menu = menus[0]; try { localStorage.setItem(LS.menu, state.menu); } catch (e) { /* abaikan */ } }
+    if (!ACCESS.full) {
+      state.role = 'packer';   // hanya di memori: akun Checker / Packer tidak pernah berperan Admin
+      const tabs = document.querySelector('[aria-label="Peran"]'); if (tabs) tabs.remove();
+      const gb = $g('btnGas'); if (gb) gb.classList.add('hidden');
+    }
+  }
   function adopt(rec) {
+    const acc = accessFor(rec.user);
+    if (!acc.menus.length) { lockGate('Divisi akun ini belum diberi akses dashboard. Hubungi admin warehouse.', 'err'); return false; }
+    const key = acc.menus.join(',');
+    if (started && applied && applied !== key) { location.reload(); return false; }   // hak akses berubah saat sesi baru: muat ulang agar menu sesuai
+    ACCESS.full = acc.full; ACCESS.menus = acc.menus; applied = key;
     AUTH.token = rec.token; AUTH.user = rec.user; AUTH.exp = rec.exp; paintUser();
+    applyAccess();
     gate.classList.remove('is-checking'); document.body.classList.remove('auth-locked');
     if (!started) { started = true; startApp(); }
+    return true;
   }
   function lockGate(text, kind) {
     del(sessionStorage, K.sess); del(localStorage, K.rem);
@@ -3710,7 +3760,11 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     }
     return rawFetch(input, init).then(res => {
       const j = res.json.bind(res);
-      res.json = () => j().then(d => { if (d && d.auth === false) lockGate('Sesi berakhir. Masuk lagi untuk melanjutkan.', 'info'); return d; });
+      res.json = () => j().then(d => {
+        if (d && d.auth === false) lockGate('Sesi berakhir. Masuk lagi untuk melanjutkan.', 'info');
+        else if (d && d.forbidden === true && typeof toast === 'function') toast('Akses ditolak: divisi Anda tidak boleh memakai fitur ini.', 4000);
+        return d;
+      });
       return res;
     });
   };
@@ -3742,7 +3796,8 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
       jset(sessionStorage, K.sess, rec); location.reload(); return;
     }
     jset(sessionStorage, K.sess, rec);
-    adopt(rec); pEl.value = '';
+    if (!adopt(rec)) return;
+    pEl.value = '';
     const saved = jget(localStorage, K.rem);
     if (saved && saved.user && saved.user.nama === rec.user.nama) await remember(typed, pass, rec);   // perangkat ini sudah disetujui sebelumnya
     else if (await askRemember()) await remember(typed, pass, rec);
@@ -3761,6 +3816,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     if (r && r.ok && r.token) { try { await onLoggedIn(r, u, p); } finally { pEl.value = ''; } return; }
     pEl.value = '';
     if (r && r.locked) return invalid(null, `Terlalu banyak percobaan gagal. Coba lagi sekitar ${Math.ceil((r.retryAfter || 600) / 60)} menit lagi.`);
+    if (r && r.noAccess) return invalid(null, r.error || 'Divisi akun ini belum diberi akses dashboard.');
     if (r && /Action tidak dikenal/i.test(r.error || '')) return showMsg('Server belum diperbarui. Deploy ulang Apps Script sebagai versi baru.');
     if (r && r.error === 'Username atau password tidak cocok.') return invalid(pEl, 'Username atau password tidak cocok. Periksa lagi, termasuk huruf besar dan kecil.');
     console.warn('Login gagal:', r && r.error);
