@@ -271,7 +271,7 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
 .sh-share { display: inline-flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .sh-stat { font-size: .72rem; font-weight: 600; color: #166534; }
 @media (max-width: 767.98px) {
-  #mDock { grid-template-columns: 1fr 1fr 1fr 1fr 84px 1fr 1fr; }   /* 4 menu (Planner, Request, Checker, Retur) + tombol tengah + Aksi + Setelan */
+  #mDock { grid-template-columns: 1fr 1fr 1fr 1fr 1fr 84px 1fr 1fr; }   /* 5 menu (Planner, Request, Checker, Retur, Reject) + tombol tengah + Aksi + Setelan */
   .dk { font-size: 9.5px; }
   #shViewDlg[open] { margin: auto 0 0 !important; width: 100vw !important; max-width: 100vw !important; border-radius: 1.25rem 1.25rem 0 0 !important; }
   #ckScanDlg[open] { margin: auto 0 0 !important; width: 100vw !important; max-width: 100vw !important; border-radius: 1.25rem 1.25rem 0 0 !important; }
@@ -296,6 +296,29 @@ body.ri-mode #driverTotals, body.ri-mode #result, body.ri-mode #empty { display:
 #riSug mark { background: #FBB315; color: #141414; border-radius: 2px; padding: 0 1px; }
 #riTable .ri-tag { display: inline-block; border-radius: 9999px; background: #dcfce7; color: #166534; font-size: 10px; font-weight: 700; padding: 1px 8px; }
 #scInfo .ck-step input { width: 84px; }
+</style>
+<style id="rj-css">
+/* ===== MENU REJECT / SCRAP (additif) ===== */
+#rjInput, #rjName, #rjDate { font-size: 16px; }
+#rjDate { background: #F4F4F1; color: #3d3c37; cursor: default; }
+#rjTable tr.saved { background: #F1FBF4; }
+#rjSug { position: absolute; left: 0; right: 0; top: 100%; z-index: 40; margin-top: 2px; max-height: 280px; overflow-y: auto; background: #fff; border: 1px solid var(--line); border-radius: .6rem; box-shadow: 0 8px 24px rgba(0,0,0,.14); }
+#rjSug[hidden] { display: none; }
+#rjSug button { display: block; width: 100%; text-align: left; padding: .5rem .75rem; border-bottom: 1px solid #f1f1ee; font-weight: 500; }
+#rjSug button:last-child { border-bottom: 0; }
+#rjSug button.on, #rjSug button:hover { background: #FFF4D6; }
+#rjSug .sg-n { font-size: .8rem; font-weight: 600; color: #141414; line-height: 1.25; }
+#rjSug .sg-m { font-size: .7rem; color: #6b6a63; }
+#rjSug mark { background: #FBB315; color: #141414; border-radius: 2px; padding: 0 1px; }
+#rjTable .ri-tag { display: inline-block; border-radius: 9999px; background: #dcfce7; color: #166534; font-size: 10px; font-weight: 700; padding: 1px 8px; }
+#rjTable .rj-ph { min-width: 190px; }
+#rjTable .rj-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+#rjTable .rj-th { position: relative; display: inline-block; width: 44px; height: 44px; border-radius: .5rem; overflow: hidden; box-shadow: 0 0 0 1px var(--line); background: #eee; }
+#rjTable .rj-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#rjTable .rj-th button { position: absolute; top: 0; right: 0; width: 20px; height: 20px; line-height: 18px; text-align: center; font-size: 11px; font-weight: 700; color: #fff; background: rgba(20,20,20,.72); border-bottom-left-radius: .45rem; }
+#rjTable .rj-add { padding: .35rem .6rem; font-size: .75rem; white-space: nowrap; }
+#rjTable .rj-add b { margin-left: .25rem; color: #6b6a63; font-weight: 600; }
+#rjTable .rj-busy { font-size: .72rem; color: #6b6a63; }
 </style>
 <style id="login-css">
 /* ===== HALAMAN LOGIN ===== */
@@ -449,6 +472,10 @@ body:not(.auth-locked) #loginGate { display: none; }
         <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11"/></svg>
         Retur Inbound
       </a>
+      <a href="#" data-menu="reject" class="nav-item mt-1">
+        <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 21a9 9 0 100-18 9 9 0 000 18zM5.6 5.6l12.8 12.8"/></svg>
+        Reject/Scrap
+      </a>
     </nav>
     <div class="space-y-2.5 border-t border-slate-200 px-6 py-5 text-xs text-slate-500">
       <div class="flex items-center gap-2"><span id="dot" class="h-2 w-2 rounded-full bg-slate-500"></span><span id="statusText">Menghubungkan…</span></div>
@@ -486,6 +513,7 @@ body:not(.auth-locked) #loginGate { display: none; }
         <button type="button" data-menu="other" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Other Request</button>
         <button type="button" data-menu="checker" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Checker</button>
         <button type="button" data-menu="retur" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Retur</button>
+        <button type="button" data-menu="reject" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Reject</button>
       </nav>
 
       <!-- TAB OTHER REQUEST: Import Request | Event -->
@@ -633,6 +661,38 @@ body:not(.auth-locked) #loginGate { display: none; }
           </div>
         </div>
         <p class="text-xs text-slate-500">Nama Checker diambil dari sheet “Source”, barcode dari sheet “Source Barcode”. Setiap scan menjadi <b>baris baru</b> (produk yang sama di-scan lagi tidak menimpa) dan Qty bisa diubah. Baris yang sudah tersimpan ke sheet “Retur Inbound” ditandai ✓ dan tidak dikirim ulang.</p>
+      </section>
+
+      <!-- REJECT / SCRAP -->
+      <section id="rejectPanel" class="no-print hidden panel space-y-4 p-4 md:p-5">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="field">Nama Checker<select id="rjName"><option value="">Memuat…</option></select></label>
+          <label class="field">Tanggal (otomatis)<input id="rjDate" type="text" readonly tabindex="-1" aria-readonly="true"></label>
+        </div>
+        <div class="flex flex-wrap items-end gap-2">
+          <button id="rjScan" type="button" class="btn btn-accent">
+            <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10"/></svg>
+            Scan Barcode / QR / Angka
+          </button>
+          <label class="field relative min-w-[220px] flex-1">Atau ketik nama / ID / tembak barcode (Enter)
+            <input id="rjInput" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="mis. 8997204670332 atau ketik nama produk">
+            <div id="rjSug" hidden role="listbox"></div>
+          </label>
+          <button id="rjAdd" type="button" class="btn btn-dark">Tambah</button>
+        </div>
+        <p id="rjHint" class="text-xs text-slate-500"></p>
+        <div id="rjStats" class="grid grid-cols-2 gap-2 sm:grid-cols-4"></div>
+        <div id="rjTable"></div>
+        <input id="rjFile" type="file" accept="image/*" multiple hidden>
+        <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
+          <button id="rjClear" type="button" class="btn btn-ghost">Bersihkan layar</button>
+          <button id="rjReload" type="button" class="btn btn-ghost">Muat ulang nama &amp; barcode</button>
+          <div class="ml-auto flex flex-wrap gap-2">
+            <button id="rjCsv" type="button" class="btn btn-ghost">Download CSV</button>
+            <button id="rjSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500">Nama Checker diambil dari sheet “Source” kolom C, barcode dari sheet “Source Barcode”. Setiap scan menjadi <b>baris baru</b> (tidak menimpa data yang sudah ada) dan Qty bisa diubah. Tiap produk bisa diberi <b>sampai 5 foto bukti</b> (kolom Foto). Foto masuk ke sheet “Reject Scrap” sebagai gambar di dalam sel, bukan link. File CSV hanya memuat jumlah foto (CSV tidak bisa membawa gambar).</p>
       </section>
 
       <!-- IMPORT (Admin) -->
@@ -856,7 +916,7 @@ const state = {
   excelIds: new Map(),            // normName -> ID dari baris "Need Refill 2" di Excel (cadangan)
   overrides: JSON.parse(localStorage.getItem(LS.ovr) || '{}'),
   drivers: [], sheets: [], req: [], fileName: '', cache: new Map(), role: localStorage.getItem(LS.role) || 'admin',
-  menu: ['other', 'checker', 'retur'].includes(localStorage.getItem(LS.menu)) ? localStorage.getItem(LS.menu) : 'planner'
+  menu: ['other', 'checker', 'retur', 'reject'].includes(localStorage.getItem(LS.menu)) ? localStorage.getItem(LS.menu) : 'planner'
 };
 const SRC = { planner: null, other: null };   // file Excel asli hasil import (untuk Share ke Checker)
 const $ = id => document.getElementById(id);
@@ -1237,6 +1297,7 @@ function stats() {
 }
 function render() {
   if (state.menu === 'retur') return riRender();
+  if (state.menu === 'reject') return rjRender();
   if (state.menu === 'checker') return ckRender();
   if (state.menu === 'other') return renderOther();
   const has = state.drivers.length > 0;
@@ -2169,6 +2230,12 @@ const MENUS = {
     saveAction: 'saveReturInbound', loadAction: '', noun: 'Retur Inbound', loadTitle: 'Retur Inbound', fp: 'ReturInbound_',
     xlsLabel: 'Retur Inbound', xlsSheet: 'Retur Inbound', xlsFile: 'ReturInbound',
     packer: '', loadBtn: 'Muat data', empty: 'Belum ada data'
+  },
+  reject: {
+    nav: 'Reject/Scrap', title: 'Reject/Scrap', sub: 'Catat produk reject / scrap dengan scan barcode dan foto bukti · untuk Checker Warehouse', side: 'Reject/Scrap · Warehouse PG',
+    saveAction: 'saveRejectScrap', loadAction: '', noun: 'Reject/Scrap', loadTitle: 'Reject/Scrap', fp: 'RejectScrap_',
+    xlsLabel: 'Reject/Scrap', xlsSheet: 'Reject Scrap', xlsFile: 'RejectScrap',
+    packer: '', loadBtn: 'Muat data', empty: 'Belum ada data'
   }
 };
 const L = () => MENUS[state.menu];
@@ -2183,8 +2250,9 @@ function snapshotMenu() {
 function applyMenu() {
   const m = L();
   document.body.classList.toggle('ck-mode', state.menu === 'checker');
-  document.body.classList.toggle('ri-mode', state.menu === 'retur');
+  document.body.classList.toggle('ri-mode', state.menu === 'retur' || state.menu === 'reject');   // Reject/Scrap memakai aturan sembunyi elemen Planner yang sama dengan Retur
   $('returPanel').classList.toggle('hidden', state.menu !== 'retur');
+  $('rejectPanel').classList.toggle('hidden', state.menu !== 'reject');
   document.querySelectorAll('.nav-item[data-menu]').forEach(a => {
     const on = a.dataset.menu === state.menu;
     a.classList.toggle('nav-on', on);
@@ -2211,6 +2279,7 @@ function applyMenu() {
   $('search').placeholder = other ? 'Cari sheet, lantai, produk, ID…' : 'Cari lokasi, produk, ID, driver, plat…';
   if (state.menu === 'checker') ckEnter();
   if (state.menu === 'retur') riEnter();
+  if (state.menu === 'reject') rjEnter();
 }
 function switchMenu(key) {
   if (!MENUS[key] || key === state.menu || !ACCESS.menus.includes(key)) return;
@@ -2590,6 +2659,7 @@ function bcNear(digits) {       // saran: barcode terdaftar yang hanya beda 1 di
 function ckQ(q) { const t = String(q || '').trim(); if (/^\d[\d\s.-]{5,}$/.test(t)) { const e = bcLookup(t); if (e) return e.id; } return t; }   // angka barcode -> Product ID
 function ckShowBc() {
   if (typeof riShowBc === 'function') riShowBc();
+  if (typeof rjShowBc === 'function') rjShowBc();
   const el = $('ckBcHit'); if (!el) return;
   const q = $('ckSearch').value.trim(), d = q.replace(/\D/g, '');
   let h = '';
@@ -2657,6 +2727,7 @@ const scNearHtml = near => near.length ? '<div class="mt-2 text-xs font-semibold
 async function scOnCode(raw, src) {
   raw = String(raw || '').trim(); if (!raw) return;
   if (SC.target === 'ri') return riOnCode(raw, src);   // scanner dipakai menu Retur Inbound
+  if (SC.target === 'rj') return rjOnCode(raw, src);   // scanner dipakai menu Reject/Scrap
   const now = Date.now(); if (src !== 'manual' && raw === SC.last && now - SC.lastT < 2000) return;
   SC.last = raw; SC.lastT = now;
   let e = bcLookup(raw);
@@ -3484,6 +3555,304 @@ $('riName').onchange = () => localStorage.setItem(RI_NAME, $('riName').value);
 $('riSave').onclick = riSave; $('riCsv').onclick = riCsv; $('riClear').onclick = riClear;
 $('riReload').onclick = async () => { await ckLoadNames(true); riFillNames(); loadBarcodes(true); };
 
+/* =====================================================================
+   REJECT / SCRAP — catat produk reject / scrap (Role Checker)
+   Nama Checker : sheet "Source" kolom C (action getCheckers — sama dengan menu Checker & Retur Inbound)
+   Barcode      : sheet "Source Barcode" (action getBarcodes) -> Product ID + Product Name (pencarian & scan memakai fungsi Retur Inbound)
+   Tiap scan = BARIS BARU (tidak menimpa); Qty bisa diubah; tiap baris boleh 5 foto bukti.
+   Simpan       : sheet baru "Reject Scrap" lewat action saveRejectScrap. Foto dikompres di browser (JPEG ± 40-80 KB) lalu
+                  dimasukkan GAS sebagai gambar di dalam sel. Pengiriman dipecah per kelompok baris agar tidak terlalu besar.
+   ===================================================================== */
+const RJ = { rows: [], cur: '', lastRaw: '', lastSeen: 0, sug: [], sugI: -1, photoSid: '', rid: '', warned: false };   // row: { sid, at, code, id, name, qty, photos:[dataURI], pc, saved }
+const RJ_KEY = 'planner_rj_rows', RJ_NAME = 'planner_rj_name', RJ_MAX_PHOTO = 5;
+const rjInDlg = () => $('ckScanDlg').open && SC.target === 'rj';
+const rjPc = r => r.saved ? (r.pc || 0) : r.photos.length;
+function rjPersist() {
+  try { localStorage.setItem(RJ_KEY, JSON.stringify(RJ.rows)); RJ.warned = false; return; } catch (e) { /* penyimpanan penuh: coba tanpa foto */ }
+  try { localStorage.setItem(RJ_KEY, JSON.stringify(RJ.rows.map(r => ({ ...r, photos: [] })))); } catch (e) { /* abaikan */ }
+  if (!RJ.warned && RJ.rows.some(r => r.photos.length)) { RJ.warned = true; toast('Penyimpanan perangkat penuh — foto belum ikut tersimpan di perangkat. Simpan ke spreadsheet sebelum menutup halaman.', 6500); }
+}
+(function rjRestore() {
+  try {
+    const r = JSON.parse(localStorage.getItem(RJ_KEY) || '[]');
+    if (Array.isArray(r)) RJ.rows = r.filter(x => x && x.sid && (x.id || x.name)).map(x => ({ ...x, pc: Number(x.pc) || 0,
+      photos: Array.isArray(x.photos) ? x.photos.filter(p => typeof p === 'string' && p.startsWith('data:image/')).slice(0, RJ_MAX_PHOTO) : [] }));
+  } catch (e) { RJ.rows = []; }
+})();
+
+function rjFillNames() {
+  const sel = $('rjName'), keep = sel.value || localStorage.getItem(RJ_NAME) || '';
+  sel.innerHTML = '<option value="">— Pilih nama checker —</option>' + CK.names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  if (CK.names.includes(keep)) sel.value = keep;
+}
+function rjShowBc() {
+  const el = $('rjHint'); if (!el) return;
+  el.innerHTML = BC.loading ? 'Memuat Source Barcode…' : BC.err ? `<span class="text-red-600">Source Barcode: ${esc(BC.err)}</span>`
+    : BC.loaded ? `Source Barcode: ${fmt(BC.n)} kode · scan atau ketik angka barcode — setiap scan menjadi baris baru` : '';
+}
+async function rjEnter() {
+  $('rjDate').value = todayStr();
+  rjFillNames(); rjRender(); rjShowBc();
+  loadBarcodes();
+  if (!CK.names.length) { await ckLoadNames(); rjFillNames(); }
+}
+
+const rjTotals = () => ({ n: RJ.rows.length, qty: RJ.rows.reduce((a, r) => a + riQty(r), 0), photos: RJ.rows.reduce((a, r) => a + rjPc(r), 0), open: RJ.rows.filter(r => !r.saved).length });
+function rjStats() {
+  const t = rjTotals(), box = (v, l, c) => `<div class="stat" style="${c ? 'border-left-color:' + c : ''}"><div class="v num">${fmt(v)}</div><div class="text-xs text-slate-500">${l}</div></div>`;
+  $('rjStats').innerHTML = box(t.n, 'Baris scan') + box(t.qty, 'Total Qty') + box(t.photos, 'Total foto', '#FBB315') + box(t.n - t.open, 'Tersimpan ✓', '#16a34a');
+  $('rjSave').disabled = !t.open; $('rjCsv').disabled = !t.n; $('rjClear').disabled = !t.n;
+}
+function rjFlash(sid) {
+  const tr = [...$('rjTable').querySelectorAll('tr[data-sid]')].find(x => x.dataset.sid === sid); if (!tr) return;
+  tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
+  if (!$('ckScanDlg').open) tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+function rjPhotoCell(r) {
+  if (r.saved) return r.pc ? `<span class="ri-tag">${r.pc} foto ✓</span>` : '<span class="text-xs text-slate-400">tanpa foto</span>';
+  const th = r.photos.map((p, i) => `<span class="rj-th"><img src="${p}" alt="Foto bukti ${i + 1}"><button type="button" data-rjb="rmph" data-sid="${esc(r.sid)}" data-i="${i}" aria-label="Hapus foto ${i + 1}">✕</button></span>`).join('');
+  const add = r.photos.length < RJ_MAX_PHOTO ? `<button type="button" class="btn btn-ghost rj-add" data-rjb="addph" data-sid="${esc(r.sid)}" aria-label="Tambah foto bukti">＋ Foto<b>${r.photos.length}/${RJ_MAX_PHOTO}</b></button>` : '';
+  return `<div class="rj-wrap">${th}${add}</div>`;
+}
+function rjRender(flashSid) {
+  const box = $('rjTable'); if (!box) return;
+  if (!RJ.rows.length) {
+    box.innerHTML = '<div class="rounded-xl border-2 border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">Belum ada data. Klik <b>Scan Barcode / QR / Angka</b> atau ketik nama produk — setiap scan muncul sebagai baris baru, lalu tambahkan foto bukti di kolom Foto.</div>';
+    return rjStats();
+  }
+  box.innerHTML = `<div class="ck-wrap"><table class="ck-tbl" style="min-width:860px">
+    <thead><tr><th style="width:44px">No</th><th>Waktu Scan</th><th>Barcode / Input</th><th>ID Produk</th><th>Product Name</th><th>Qty</th><th>Foto Bukti (maks ${RJ_MAX_PHOTO})</th><th></th></tr></thead>
+    <tbody>${RJ.rows.map((r, i) => `<tr data-sid="${esc(r.sid)}" class="${r.saved ? 'saved' : ''}">
+      <td class="num">${i + 1}</td>
+      <td class="num whitespace-nowrap text-xs text-slate-600">${esc(String(r.at || '').slice(11))}</td>
+      <td class="num whitespace-nowrap text-xs">${esc(r.code || '—')}</td>
+      <td class="num whitespace-nowrap font-mono font-semibold">${esc(r.id)}</td>
+      <td>${esc(r.name)}</td>
+      <td>${r.saved ? `<b class="num">${fmt(riQty(r))}</b>` : `<div class="ck-step"><button type="button" data-rjb="dec" data-sid="${esc(r.sid)}" aria-label="Kurangi Qty">−</button><input data-rjq="${esc(r.sid)}" type="number" min="1" step="1" inputmode="numeric" value="${esc(r.qty)}" aria-label="Qty"><button type="button" data-rjb="inc" data-sid="${esc(r.sid)}" aria-label="Tambah Qty">+</button></div>`}</td>
+      <td class="rj-ph">${rjPhotoCell(r)}</td>
+      <td class="whitespace-nowrap">${r.saved ? '<span class="ri-tag">Tersimpan ✓</span>' : `<button type="button" data-rjb="del" data-sid="${esc(r.sid)}" class="rounded p-2 text-slate-400 hover:text-red-600" aria-label="Hapus baris" title="Hapus baris">✕</button>`}</td>
+    </tr>`).join('')}</tbody>
+    <tfoot><tr class="bg-slate-50 font-bold"><td colspan="5" style="text-align:right">TOTAL (${fmt(RJ.rows.length)} baris)</td><td class="num" id="rjTotQty"></td><td class="num" id="rjTotPh"></td><td></td></tr></tfoot></table></div>`;
+  rjTotFoot();
+  rjStats();
+  if (flashSid) rjFlash(flashSid);
+}
+function rjTotFoot() { const t = rjTotals(), a = $('rjTotQty'), b = $('rjTotPh'); if (a) a.textContent = fmt(t.qty); if (b) b.textContent = fmt(t.photos) + ' foto'; }
+
+/* ---- scan / input (pencarian barcode memakai fungsi yang sama dengan Retur Inbound) ---- */
+function rjAddRow(hit, raw) {
+  $('rjDate').value = todayStr();   // tanggal berjalan otomatis (ikut berganti bila lewat tengah malam)
+  const r = { sid: riSid(), at: riNow(), code: String(hit.code || raw), id: String(hit.id || ''), name: hit.name || '', qty: 1, photos: [], pc: 0, saved: false };
+  RJ.rows.push(r); RJ.cur = r.sid; rjPersist(); rjRender(r.sid);
+  return r;
+}
+function rjCard(r) {
+  const t = rjTotals();
+  scInfo(`<div class="sc-card" style="background:#FFF3F2">
+    <div class="num text-xs font-bold text-slate-500">${r.code ? 'Barcode ' + esc(r.code) + ' · ' : ''}baris #${RJ.rows.indexOf(r) + 1}</div>
+    <div class="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">ID Produk</div><div class="num text-xl font-extrabold">${esc(r.id)}</div>
+    <div class="text-sm font-bold leading-snug">${esc(r.name)}</div>
+    <div class="mt-2 flex items-center justify-between gap-2">
+      <div class="ck-step"><button type="button" data-rj="dec" aria-label="Kurangi Qty">−</button><input data-rj="qty" type="number" min="1" step="1" inputmode="numeric" value="${riQty(r)}" aria-label="Qty"><button type="button" data-rj="inc" aria-label="Tambah Qty">+</button></div>
+      <button type="button" class="btn btn-ghost" data-rj="undo">Batalkan</button>
+    </div>
+    <div class="mt-2 text-xs font-semibold text-emerald-700">&#10003; Masuk daftar · total ${fmt(t.n)} baris · ${fmt(t.qty)} qty — scan produk berikutnya. Foto bukti ditambahkan di kolom Foto pada tabel.</div></div>`);
+}
+async function rjOnCode(raw, src) {
+  raw = String(raw || '').trim(); if (!raw) return;
+  if (src !== 'manual') {   // kamera / OCR: kode yang sama terus terbaca selama masih diarahkan -> dihitung 1 scan; angkat kamera sejenak untuk scan ulang
+    const now = Date.now(), same = raw === RJ.lastRaw && now - RJ.lastSeen < 1800;
+    RJ.lastRaw = raw; RJ.lastSeen = now;
+    if (same) return;
+  }
+  const hit = await riResolve(raw);
+  if (!hit) {
+    scBeep(false); RJ.cur = '';
+    const d = raw.replace(/\D/g, '');
+    if (!rjInDlg()) return toast(`Kode “${raw.slice(0, 40)}” tidak ditemukan di Source Barcode`, 4000);
+    return scInfo(`<div class="sc-card" style="background:#FFF3F2;color:#991b1b"><b>Kode “${esc(raw.slice(0, 40))}” tidak ditemukan di Source Barcode</b><div class="mt-1 text-xs">Tidak ditambahkan ke daftar.</div>${d.length >= 8 ? scNearHtml(bcNear(d)) : ''}</div>`);
+  }
+  const r = rjAddRow(hit, raw);
+  scBeep(true);
+  if (rjInDlg()) rjCard(r); else toast(`✓ ${r.id} — ${r.name} ditambahkan (baris #${RJ.rows.length})`, 2200);
+}
+async function rjScanOpen() {
+  SC.target = 'rj'; $('scTitle').textContent = 'Scan Reject/Scrap';
+  scAudio(); SC.cur = null; SC.last = ''; SC.shown = ''; RJ.lastRaw = ''; $('scNum').value = ''; scLive(''); scIdle(); scModeUi();
+  const dlg = $('ckScanDlg'); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  loadBarcodes();
+  await scStartMode();
+}
+/* ---- suggest: ketik huruf / angka -> cari di Source Barcode (nama, ID produk, barcode) ---- */
+function rjSugHide() { RJ.sug = []; RJ.sugI = -1; const b = $('rjSug'); b.hidden = true; b.innerHTML = ''; }
+function rjSugShow() {
+  const q = $('rjInput').value.trim(), b = $('rjSug');
+  if (q.length < 2 || /^\d[\d\s.-]*$/.test(q) && q.replace(/\D/g, '').length >= 8) return rjSugHide();   // angka barcode lengkap: tak perlu suggest
+  RJ.sug = riSearch(q); RJ.sugI = -1;
+  if (!RJ.sug.length) { b.innerHTML = BC.loaded ? '<div class="px-3 py-2 text-xs text-slate-500">Tidak ada produk yang cocok</div>' : '<div class="px-3 py-2 text-xs text-slate-500">Memuat Source Barcode…</div>'; b.hidden = false; return; }
+  b.innerHTML = RJ.sug.map((s, i) => `<button type="button" role="option" data-sug="${i}"><div class="sg-n">${riHl(s.name, q)}</div><div class="sg-m num">ID ${riHl(s.id, q)} · ${s.code ? esc(s.code) : 'tanpa barcode'}</div></button>`).join('');
+  b.hidden = false;
+}
+function rjSugMove(step) {
+  if (!RJ.sug.length) return;
+  RJ.sugI = (RJ.sugI + step + RJ.sug.length) % RJ.sug.length;
+  [...$('rjSug').querySelectorAll('button')].forEach((x, i) => { x.classList.toggle('on', i === RJ.sugI); if (i === RJ.sugI) x.scrollIntoView({ block: 'nearest' }); });
+}
+function rjPick(s) {
+  if (!s) return;
+  const inp = $('rjInput'); inp.value = ''; rjSugHide(); scAudio();
+  const r = rjAddRow({ id: s.id, name: s.name, code: s.code }, s.code); scBeep(true);
+  toast(`✓ ${r.id} — ${r.name} ditambahkan (baris #${RJ.rows.length})`, 2200); inp.focus();
+}
+function rjManual() {
+  const inp = $('rjInput'), v = inp.value.trim(); if (!v) return;
+  const hasLetter = /[A-Za-z]/.test(v);
+  if (hasLetter && !skuOf(v)) {   // teks nama produk -> pilih dari suggest (yang di-highlight, atau teratas)
+    const list = RJ.sug.length ? RJ.sug : riSearch(v);
+    if (!list.length) { scBeep(false); return toast(`Produk “${v.slice(0, 40)}” tidak ditemukan di Source Barcode`, 3500); }
+    return rjPick(list[RJ.sugI >= 0 ? RJ.sugI : 0]);
+  }
+  scAudio(); inp.value = ''; rjSugHide();
+  rjOnCode(v, 'manual').then(() => inp.focus());
+}
+
+/* ---- kartu hasil scan di dialog: ubah Qty / batalkan ---- */
+$('scInfo').addEventListener('click', e => {
+  const b = e.target.closest('[data-rj]'); if (!b || SC.target !== 'rj') return;
+  const r = RJ.rows.find(x => x.sid === RJ.cur), a = b.dataset.rj; if (!r) return;
+  if (a === 'undo') {
+    if (r.saved) return;
+    RJ.rows = RJ.rows.filter(x => x !== r); RJ.cur = ''; rjPersist(); rjRender();
+    return scInfo('<div class="sc-card" style="background:#FFF8E1"><b>Scan terakhir dibatalkan</b> — scan produk berikutnya</div>');
+  }
+  if (r.saved) return;
+  if (a === 'dec') r.qty = Math.max(1, riQty(r) - 1); else if (a === 'inc') r.qty = riQty(r) + 1; else return;
+  const i = $('scInfo').querySelector('input[data-rj="qty"]'); if (i) i.value = r.qty;
+  rjPersist(); rjRender();
+});
+$('scInfo').addEventListener('input', e => {
+  if (SC.target !== 'rj' || e.target.dataset.rj !== 'qty') return;
+  const r = RJ.rows.find(x => x.sid === RJ.cur); if (!r || r.saved) return;
+  r.qty = e.target.value === '' ? '' : Math.max(0, Math.floor(Number(e.target.value) || 0));
+  rjPersist(); rjRender();
+});
+
+/* ---- foto bukti: kompres di browser (sisi terpanjang 800 px, JPEG) agar kiriman ringan ---- */
+function rjCompress(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const k = Math.min(1, 800 / Math.max(img.naturalWidth, img.naturalHeight, 1));
+      const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', 0.65));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Gambar tidak bisa dibaca')); };
+    img.src = url;
+  });
+}
+$('rjFile').addEventListener('change', async e => {
+  const all = [...e.target.files], r = RJ.rows.find(x => x.sid === RJ.photoSid); e.target.value = '';
+  if (!r || r.saved || !all.length) return;
+  const room = RJ_MAX_PHOTO - r.photos.length;
+  if (room <= 0) return toast(`Maksimal ${RJ_MAX_PHOTO} foto per produk`, 3000);
+  const imgs = all.filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+  if (!imgs.length) return toast('Pilih file gambar (JPG / PNG)', 3000);
+  if (imgs.length > room) toast(`Maksimal ${RJ_MAX_PHOTO} foto per produk — ${room} foto pertama dipakai`, 3500);
+  const row = $('rjTable').querySelector(`tr[data-sid="${CSS.escape(r.sid)}"] .rj-ph`); if (row) row.insertAdjacentHTML('beforeend', '<span class="rj-busy">Memproses foto…</span>');
+  let ok = 0;
+  for (const f of imgs.slice(0, room)) { try { r.photos.push(await rjCompress(f)); ok++; } catch (err) { toast(`Foto “${f.name.slice(0, 30)}” tidak bisa dibaca (coba format JPG / PNG)`, 4000); } }
+  if (ok) rjPersist();
+  rjRender(ok ? r.sid : '');
+});
+
+/* ---- tabel: ubah Qty / hapus baris / tambah & hapus foto ---- */
+$('rjTable').addEventListener('click', e => {
+  const b = e.target.closest('[data-rjb]'); if (!b) return;
+  const r = RJ.rows.find(x => x.sid === b.dataset.sid); if (!r || r.saved) return;
+  const a = b.dataset.rjb;
+  if (a === 'addph') { RJ.photoSid = r.sid; $('rjFile').click(); return; }
+  if (a === 'rmph') { r.photos.splice(Number(b.dataset.i), 1); }
+  else if (a === 'dec') r.qty = Math.max(1, riQty(r) - 1);
+  else if (a === 'inc') r.qty = riQty(r) + 1;
+  else if (a === 'del') { if (r.photos.length && !confirm(`Hapus baris ini beserta ${r.photos.length} foto?`)) return; RJ.rows = RJ.rows.filter(x => x !== r); }
+  rjPersist(); rjRender();
+});
+$('rjTable').addEventListener('input', e => {
+  const sid = e.target.dataset.rjq; if (!sid) return;
+  const r = RJ.rows.find(x => x.sid === sid); if (!r || r.saved) return;
+  r.qty = e.target.value === '' ? '' : Math.max(0, Math.floor(Number(e.target.value) || 0));
+  rjPersist(); rjStats(); rjTotFoot();
+});
+
+/* ---- simpan / CSV / bersihkan layar ---- */
+async function rjSave() {
+  if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
+  const name = $('rjName').value; if (!name) { $('rjName').focus(); return toast('Pilih Nama Checker terlebih dahulu', 3500); }
+  const date = todayStr(); $('rjDate').value = date;
+  const open = RJ.rows.filter(r => !r.saved);
+  if (!open.length) return toast('Semua baris sudah tersimpan', 3000);
+  const bad = open.find(r => riQty(r) < 1);
+  if (bad) { rjFlash(bad.sid); return toast('Ada baris dengan Qty kosong / 0 — isi Qty minimal 1 atau hapus barisnya', 5000); }
+  if (!RJ.rid) RJ.rid = 'RJT-' + riNow().replace(/\D/g, '').replace(/^(\d{8})(\d{6})$/, '$1-$2');
+  const batches = []; let cur = [], ph = 0;   // kelompok: maks 20 baris / 12 foto per kiriman
+  open.forEach(r => { if (cur.length && (cur.length >= 20 || ph + r.photos.length > 12)) { batches.push(cur); cur = []; ph = 0; } cur.push(r); ph += r.photos.length; });
+  if (cur.length) batches.push(cur);
+  const btn = $('rjSave'), label = btn.innerHTML; btn.disabled = true;
+  let saved = 0, skipped = 0, fail = 0, sheet = 'Reject Scrap', done = 0;
+  try {
+    for (let b = 0; b < batches.length; b++) {
+      btn.textContent = batches.length > 1 ? `Menyimpan ${b + 1}/${batches.length}…` : 'Menyimpan…';
+      const rows = batches[b];
+      const r = await (await fetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'saveRejectScrap', checkerName: name, rejectDate: date, rejectId: RJ.rid, savedBy: name,
+          rows: rows.map(x => ({ scanId: x.sid, no: RJ.rows.indexOf(x) + 1, scannedAt: x.at, barcode: x.code, productId: x.id, productName: x.name, qty: riQty(x), photos: x.photos })) }) })).json();
+      if (!r.ok) throw new Error(r.error);
+      saved += r.saved; skipped += r.skipped; fail += r.photoFail || 0; sheet = r.sheet || sheet; done += rows.length;
+      rows.forEach(x => { x.pc = x.photos.length; x.photos = []; x.saved = true; });   // foto sudah di spreadsheet: lepas dari memori & penyimpanan perangkat
+      rjPersist(); rjRender();
+    }
+    RJ.rid = '';
+    toast(`Tercatat ${saved} baris ke sheet “${sheet}”` + (skipped ? ` · ${skipped} baris sudah ada, dilewati` : '') + (fail ? ` · ${fail} foto gagal dimasukkan` : ''), fail ? 8000 : 5000);
+  } catch (e) {
+    toast(`Gagal menyimpan: ${e.message}${ckDeployHint(e)}` + (done ? ` · ${done} baris sebelumnya sudah tersimpan, klik Simpan lagi untuk sisanya` : ''), ckDeployHint(e) ? 9000 : 6000);
+  }
+  btn.innerHTML = label; rjStats();
+}
+function rjCsv() {
+  if (!RJ.rows.length) return toast('Belum ada data untuk diunduh', 3000);
+  const name = $('rjName').value, date = todayStr();
+  downloadCsv(`RejectScrap_${name || 'Checker'}_${date}.csv`,
+    ['No', 'Tanggal', 'Nama Checker', 'Waktu Scan', 'Barcode / Input', 'Product ID', 'Product Name', 'Qty', 'Jumlah Foto', 'Status'],
+    RJ.rows.map((r, i) => [i + 1, date, name, r.at, r.code, r.id, r.name, riQty(r), rjPc(r), r.saved ? 'Tersimpan' : 'Belum disimpan']));
+  toast(`Download CSV Reject/Scrap: ${RJ.rows.length} baris (foto hanya ada di spreadsheet)`, 3500);
+}
+function rjClear() {
+  const t = rjTotals();
+  if (!t.n) return toast('Layar sudah kosong', 2000);
+  if (t.open && !confirm(`${t.open} baris belum disimpan ke spreadsheet dan akan hilang dari layar (termasuk fotonya).\nBersihkan layar?`)) return;
+  RJ.rows = []; RJ.cur = ''; RJ.lastRaw = ''; RJ.rid = ''; $('rjInput').value = ''; rjSugHide(); rjPersist(); rjRender();
+  toast('Layar dibersihkan', 2000);
+}
+$('rjScan').onclick = rjScanOpen;
+$('rjAdd').onclick = rjManual;
+$('rjInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); rjManual(); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); if ($('rjSug').hidden) rjSugShow(); rjSugMove(1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); rjSugMove(-1); }
+  else if (e.key === 'Escape') rjSugHide();
+});
+$('rjInput').addEventListener('input', rjSugShow);
+$('rjInput').addEventListener('focus', () => { if ($('rjInput').value.trim().length >= 2) rjSugShow(); });
+$('rjSug').addEventListener('mousedown', e => e.preventDefault());   // jaga fokus input saat klik suggest
+$('rjSug').addEventListener('click', e => { const b = e.target.closest('[data-sug]'); if (b) rjPick(RJ.sug[Number(b.dataset.sug)]); });
+document.addEventListener('click', e => { if (!e.target.closest('#rjInput, #rjSug')) rjSugHide(); });
+$('rjName').onchange = () => localStorage.setItem(RJ_NAME, $('rjName').value);
+$('rjSave').onclick = rjSave; $('rjCsv').onclick = rjCsv; $('rjClear').onclick = rjClear;
+$('rjReload').onclick = async () => { await ckLoadNames(true); rjFillNames(); loadBarcodes(true); };
+
 $('planDate').value = todayStr();
 /* Dijalankan oleh halaman login SETELAH sesi sah, supaya tidak ada permintaan data sebelum login. */
 function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
@@ -3503,11 +3872,11 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     print:'M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z',
     xls:'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
     ref:'M4 4v6h6M20 20v-6h-6M20 9a8 8 0 00-14-3L4 10m16 4l-2 4a8 8 0 01-14-3',
-    ret:'M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11', out:'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9', plus:'M12 5v14M5 12h14', chk:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', scan:'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10', link:'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.700-5.700l-1 1M14 10a4 4 0 00-5.700 0l-3 3a4 4 0 005.700 5.700l1-1', trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'
+    ret:'M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11', rej:'M12 21a9 9 0 100-18 9 9 0 000 18zM5.6 5.6l12.8 12.8', out:'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9', plus:'M12 5v14M5 12h14', chk:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', scan:'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10', link:'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.700-5.700l-1 1M14 10a4 4 0 00-5.700 0l-3 3a4 4 0 005.700 5.700l1-1', trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'
   };
   const ic = k => `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="${I[k]}"/></svg>`;
   const $$ = id => document.getElementById(id);
-  const mode = () => state.menu === 'retur' ? 'retur' : state.menu === 'checker' ? 'checker' : fmMode() ? 'form' : evMode() ? 'event' : (state.menu === 'other' ? 'req' : 'planner');
+  const mode = () => state.menu === 'reject' ? 'reject' : state.menu === 'retur' ? 'retur' : state.menu === 'checker' ? 'checker' : fmMode() ? 'form' : evMode() ? 'event' : (state.menu === 'other' ? 'req' : 'planner');
   const hasData = () => (state.drivers && state.drivers.length) || (state.req && state.req.length);
 
   /* ---- elemen ---- */
@@ -3518,6 +3887,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     <button class="dk" data-d="other">${ic('req')}<span>Request</span></button>
     <button class="dk" data-d="checker">${ic('chk')}<span>Checker</span></button>
     <button class="dk" data-d="retur">${ic('ret')}<span>Retur</span></button>
+    <button class="dk" data-d="reject">${ic('rej')}<span>Reject</span></button>
     <button class="dk dk-fab" data-d="fab"><i class="c"></i><span></span></button>
     <button class="dk" data-d="act">${ic('act')}<span>Aksi</span></button>
     <button class="dk" data-d="set">${ic('set')}<span>Setelan</span></button>`;
@@ -3532,6 +3902,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   function fab() {
     const m = mode(), admin = state.role === 'admin';
     if (m === 'retur') return { l: 'Scan', k: 'scan', go: () => $$('riScan').click() };
+    if (m === 'reject') return { l: 'Scan', k: 'scan', go: () => $$('rjScan').click() };
     if (m === 'checker') return { l: 'Scan', k: 'scan', go: () => $$('ckScan').click() };
     if (m === 'form') return { l: 'Tambah', k: 'plus', go: () => { const a = $$('fmAdd'); a.scrollIntoView({ block: 'center' }); a.focus(); } };
     if (m === 'event') return !$$('evSave').disabled ? { l: 'Simpan', k: 'save', s: 1, go: () => $$('evSave').click() } : { l: 'Import', k: 'up', go: () => $$('evFile').click() };
@@ -3541,7 +3912,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   let cur;
   function sync() {
     if (!mq.matches) return;
-    dock.querySelectorAll('[data-d=planner],[data-d=other],[data-d=checker],[data-d=retur]').forEach(b => b.classList.toggle('on', b.dataset.d === state.menu));
+    dock.querySelectorAll('[data-d=planner],[data-d=other],[data-d=checker],[data-d=retur],[data-d=reject]').forEach(b => b.classList.toggle('on', b.dataset.d === state.menu));
     cur = fab(); const f = dock.querySelector('.dk-fab');
     f.classList.toggle('save', !!cur.s);
     f.querySelector('.c').innerHTML = ic(cur.k).replace('<svg', '<svg width="26" height="26"'); f.querySelector('span').textContent = cur.l;
@@ -3556,7 +3927,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     const el = sel ? document.querySelector(sel) : $$(id);
     if (!el || el.classList.contains('hidden')) return '';
     const off = el.disabled || (el.parentElement && el.parentElement.closest('.hidden'));
-    return `<button class="ms-i${pri ? ' pri' : ''}" data-go="${(sel || '#' + id).replace(/"/g, '&quot;')}"${off ? ' disabled' : ''}><span class="ic">${ic(k)}</span><span><b>${label}</b><small>${off ? (/^ri[A-Z]/.test(id) ? 'Scan data dulu' : 'Import / muat data dulu') : desc}</small></span></button>`;
+    return `<button class="ms-i${pri ? ' pri' : ''}" data-go="${(sel || '#' + id).replace(/"/g, '&quot;')}"${off ? ' disabled' : ''}><span class="ic">${ic(k)}</span><span><b>${label}</b><small>${off ? (/^r[ij][A-Z]/.test(id) ? 'Scan data dulu' : 'Import / muat data dulu') : desc}</small></span></button>`;
   };
   const grp = (t, ...xs) => { const h = xs.join(''); return h ? `<div class="ms-g">${t}</div>${h}` : ''; };
   function sheetAksi() {
@@ -3576,6 +3947,9 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     if (m === 'retur') h += grp('Simpan', item('riSave', 'Simpan ke Spreadsheet', 'Catat ke sheet Retur Inbound', 'save', 1)) +
       grp('Download', item('riCsv', 'Download CSV', 'Semua baris di layar (.csv)', 'xls')) +
       grp('Lainnya', item('riReload', 'Muat ulang nama & barcode', 'Ambil data Source & Source Barcode terbaru', 'ref'), item('riClear', 'Bersihkan layar', 'Kosongkan daftar scan', 'trash'));
+    if (m === 'reject') h += grp('Simpan', item('rjSave', 'Simpan ke Spreadsheet', 'Catat ke sheet Reject Scrap (beserta foto)', 'save', 1)) +
+      grp('Download', item('rjCsv', 'Download CSV', 'Semua baris di layar (.csv)', 'xls')) +
+      grp('Lainnya', item('rjReload', 'Muat ulang nama & barcode', 'Ambil data Source & Source Barcode terbaru', 'ref'), item('rjClear', 'Bersihkan layar', 'Kosongkan daftar scan & foto', 'trash'));
     if (m === 'checker') h += grp('Simpan', item('ckSave', 'Simpan ke Spreadsheet', 'Catat hasil ke sheet Checker Result', 'save', 1)) +
       grp('Cetak / PDF', item('ckPrint', 'Hasil Adjustment', 'Produk yang sudah dicek', 'print')) +
       grp('Lainnya', item('ckLoad', 'Muat ulang file', 'Ambil nama checker & file dari Admin', 'ref'), item('shRefresh', 'Muat file dari Admin', 'File plan yang dibagikan hari ini', 'ref'), item('ckReset', 'Reset pengecekan', 'Kosongkan tanda ✓ / ✗ tampilan ini', 'trash'));
@@ -3598,7 +3972,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   /* ---- event ---- */
   dock.addEventListener('click', e => {
     const b = e.target.closest('[data-d]'); if (!b) return; const d = b.dataset.d;
-    if (d === 'planner' || d === 'other' || d === 'checker' || d === 'retur') { if (state.menu === d) window.scrollTo({ top: 0, behavior: 'smooth' }); else switchMenu(d); sync(); }
+    if (d === 'planner' || d === 'other' || d === 'checker' || d === 'retur' || d === 'reject') { if (state.menu === d) window.scrollTo({ top: 0, behavior: 'smooth' }); else switchMenu(d); sync(); }
     else if (d === 'fab') cur.go();
     else if (d === 'act') sheetAksi(); else sheetSet();
   });
@@ -3619,8 +3993,8 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   ['applyMenu', 'applyRole', 'applyOtherTab'].forEach(n => { const o = window[n]; if (typeof o === 'function') window[n] = function () { const r = o.apply(this, arguments); sync(); return r; }; });
   let raf; const q = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(sync); };
   const mo = new MutationObserver(q);
-  ['btnSave', 'evSave', 'riSave'].forEach(i => mo.observe($$(i), { attributes: true, attributeFilter: ['disabled'] }));
-  ['stats', 'result', 'evTable', 'ckTable', 'riTable'].forEach(i => mo.observe($$(i), { childList: true }));
+  ['btnSave', 'evSave', 'riSave', 'rjSave'].forEach(i => mo.observe($$(i), { attributes: true, attributeFilter: ['disabled'] }));
+  ['stats', 'result', 'evTable', 'ckTable', 'riTable', 'rjTable'].forEach(i => mo.observe($$(i), { childList: true }));
   mq.addEventListener('change', () => { close(); sync(); });
   sync();
 })();
@@ -3684,8 +4058,8 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   /* ---- hak akses menu ----
      Server mengirim user.menus. Cadangan di bawah hanya dipakai bila catatan sesi lama tidak memuatnya (mis. tersimpan sebelum pembaruan).
      Divisi tidak dikenal => tidak ada menu => ditolak masuk. */
-  const ALL_MENUS = ['planner', 'other', 'checker', 'retur'];
-  const BY_DIVISI = { manager: ALL_MENUS, spv: ALL_MENUS, admin: ['planner', 'other'], checker: ['checker'], packer: ['retur'] };
+  const ALL_MENUS = ['planner', 'other', 'checker', 'retur', 'reject'];
+  const BY_DIVISI = { manager: ALL_MENUS, spv: ALL_MENUS, admin: ['planner', 'other'], checker: ['checker', 'reject'], packer: ['retur'] };
   function accessFor(u) {
     u = u || {};
     let menus = Array.isArray(u.menus) ? u.menus : BY_DIVISI[String(u.divisi || '').toLowerCase().replace(/[^a-z]/g, '')] || [];
