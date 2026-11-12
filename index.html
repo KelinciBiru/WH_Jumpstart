@@ -849,7 +849,7 @@ const GAS_URL = () => localStorage.getItem(LS.url) || DEFAULT_GAS_URL;
 const gasReady = () => /^https:\/\/script\.google\.com\/.+\/exec/.test(GAS_URL());
 /* Hak akses tampilan. Diisi halaman login setelah server mengesahkan sesi (default: tertutup).
    Ini HANYA mempermudah pengguna; penegak aslinya adalah GAS (ACTION_ACL) yang memeriksa token di tiap permintaan. */
-const ACCESS = window.ACCESS = { full: false, menus: [] };
+const ACCESS = window.ACCESS = { full: false, admin: false, menus: [] };
 
 const state = {
   sku: [], skuById: new Map(), skuByKey: new Map(), skuIdx: new Map(), skuEntries: [],
@@ -3685,12 +3685,13 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
      Server mengirim user.menus. Cadangan di bawah hanya dipakai bila catatan sesi lama tidak memuatnya (mis. tersimpan sebelum pembaruan).
      Divisi tidak dikenal => tidak ada menu => ditolak masuk. */
   const ALL_MENUS = ['planner', 'other', 'checker', 'retur'];
-  const BY_DIVISI = { manager: ALL_MENUS, spv: ALL_MENUS, checker: ['checker'], packer: ['retur'] };
+  const BY_DIVISI = { manager: ALL_MENUS, spv: ALL_MENUS, admin: ['planner', 'other'], checker: ['checker'], packer: ['retur'] };
   function accessFor(u) {
     u = u || {};
     let menus = Array.isArray(u.menus) ? u.menus : BY_DIVISI[String(u.divisi || '').toLowerCase().replace(/[^a-z]/g, '')] || [];
     menus = ALL_MENUS.filter(m => menus.includes(m));
-    return { menus, full: menus.length === ALL_MENUS.length };
+    // admin = boleh bekerja sebagai Admin (import Excel, simpan, share) di menu Planner / Other Request, tetapi tanpa tombol pindah peran
+    return { menus, full: menus.length === ALL_MENUS.length, admin: menus.includes('planner') || menus.includes('other') };
   }
   let applied = '';
   function applyAccess() {
@@ -3704,7 +3705,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     }
     if (!menus.includes(state.menu)) { state.menu = menus[0]; try { localStorage.setItem(LS.menu, state.menu); } catch (e) { /* abaikan */ } }
     if (!ACCESS.full) {
-      state.role = 'packer';   // hanya di memori: akun Checker / Packer tidak pernah berperan Admin
+      state.role = ACCESS.admin ? 'admin' : 'packer';   // hanya di memori: divisi Admin selalu berperan Admin; Checker / Packer tidak pernah berperan Admin
       const tabs = document.querySelector('[aria-label="Peran"]'); if (tabs) tabs.remove();
       const gb = $g('btnGas'); if (gb) gb.classList.add('hidden');
     }
@@ -3714,7 +3715,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     if (!acc.menus.length) { lockGate('Divisi akun ini belum diberi akses dashboard. Hubungi admin warehouse.', 'err'); return false; }
     const key = acc.menus.join(',');
     if (started && applied && applied !== key) { location.reload(); return false; }   // hak akses berubah saat sesi baru: muat ulang agar menu sesuai
-    ACCESS.full = acc.full; ACCESS.menus = acc.menus; applied = key;
+    ACCESS.full = acc.full; ACCESS.admin = acc.admin; ACCESS.menus = acc.menus; applied = key;
     AUTH.token = rec.token; AUTH.user = rec.user; AUTH.exp = rec.exp; paintUser();
     applyAccess();
     gate.classList.remove('is-checking'); document.body.classList.remove('auth-locked');
