@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
+<meta name="robots" content="noindex,nofollow">
 <title>Warehouse Jumpstart Indonesia — Planner</title>
 <link rel="icon" id="fav" type="image/png" sizes="64x64">
 <link rel="apple-touch-icon" id="favApple">
@@ -296,8 +297,130 @@ body.ri-mode #driverTotals, body.ri-mode #result, body.ri-mode #empty { display:
 #riTable .ri-tag { display: inline-block; border-radius: 9999px; background: #dcfce7; color: #166534; font-size: 10px; font-weight: 700; padding: 1px 8px; }
 #scInfo .ck-step input { width: 84px; }
 </style>
+<style id="login-css">
+/* ===== HALAMAN LOGIN ===== */
+body.auth-locked #app, body.auth-locked #mDock, body.auth-locked #mSheet, body.auth-locked #mSheetBg { display: none !important; }
+body:not(.auth-locked) #loginGate { display: none; }
+#loginGate { position: fixed; inset: 0; z-index: 100; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); background: #fff; color: var(--ink); overflow: auto; }
+.lg-form { display: flex; flex-direction: column; padding: 2.5rem 2rem 1.5rem; min-height: 100%; }
+.lg-main, .lg-check { width: 100%; max-width: 380px; margin: auto; }
+.lg-logo { display: block; width: 176px; height: auto; margin-bottom: 2.25rem; }
+.lg-title { font-size: 1.85rem; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; }
+.lg-sub { margin-top: .5rem; font-size: .9rem; line-height: 1.5; color: #52514B; }
+.lg-msg { margin-top: 1.25rem; padding: .7rem .9rem; border-radius: .6rem; font-size: .85rem; line-height: 1.45; font-weight: 600; border-left: 4px solid; }
+.lg-msg[hidden] { display: none; }
+.lg-msg.err { background: #FEF3F2; color: #912018; border-color: #D92D20; }
+.lg-msg.info { background: #FFF8E1; color: #5c3b00; border-color: var(--amber); }
+#lgForm { margin-top: 1.5rem; }
+#lgForm label { display: block; margin: 1.1rem 0 .4rem; font-size: .8rem; font-weight: 700; color: var(--ink); }
+#lgForm label:first-of-type { margin-top: 0; }
+.lg-in { width: 100%; height: 48px; padding: 0 .9rem; border: 1.5px solid #CDCCC4; border-radius: .6rem; background: #fff; color: var(--ink); font-size: 16px; transition: border-color .15s, box-shadow .15s; }
+.lg-in:hover { border-color: #98978D; }
+.lg-in:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 4px rgba(251, 179, 21, .5); }
+.lg-in[aria-invalid="true"] { border-color: #D92D20; }
+.lg-in[readonly] { background: #F8F8F6; }
+.lg-pw { position: relative; }
+.lg-pw .lg-in { padding-right: 3.2rem; }
+.lg-eye { position: absolute; top: 0; right: 0; width: 48px; height: 48px; display: grid; place-items: center; color: #52514B; border-radius: 0 .6rem .6rem 0; }
+.lg-eye:hover { color: var(--ink); }
+.lg-eye svg { width: 20px; height: 20px; }
+.lg-btn { width: 100%; height: 50px; margin-top: 1.5rem; font-size: 1rem; }
+.lg-btn .sp { display: none; width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid rgba(20, 20, 20, .25); border-top-color: var(--ink); animation: lgspin .8s linear infinite; }
+.lg-btn.is-busy .sp { display: inline-block; }
+.lg-btn:disabled.is-busy { opacity: 1; cursor: progress; }
+.lg-foot { width: 100%; max-width: 380px; margin: auto auto 0; padding-top: 2rem; font-size: .72rem; line-height: 1.5; color: #686760; text-wrap: balance; }
+.lg-check { text-align: left; }
+.lg-check p { margin-top: 1rem; font-size: .9rem; color: #52514B; }
+.lg-bar { margin-top: 1rem; height: 4px; border-radius: 2px; background: #F0F0ED; overflow: hidden; }
+.lg-bar i { display: block; height: 100%; width: 40%; background: var(--amber); animation: lgbar 1.1s ease-in-out infinite; }
+.lg-check { display: none; }
+#loginGate.is-checking .lg-main { display: none; }
+#loginGate.is-checking .lg-check { display: block; }
+
+.lg-art { position: relative; overflow: hidden; background: #141414; display: flex; align-items: flex-start; padding: 3.5rem 3rem; }
+.lg-slash { position: absolute; left: 74%; top: -30%; width: clamp(44px, 6.5vw, 84px); height: 160%; background: var(--amber); transform: translateX(-50%) rotate(45deg); animation: lgslash .9s cubic-bezier(.2, .8, .2, 1) both; }
+.lg-word { position: relative; font-size: clamp(1.8rem, 3.4vw, 3rem); line-height: 1.06; font-weight: 700; letter-spacing: -.03em; color: #fff; white-space: nowrap; }
+
+#lgRemember { width: min(92vw, 420px); border: 0; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 20px 50px rgba(0, 0, 0, .3); color: var(--ink); }
+#lgRemember h2 { font-size: 1.15rem; font-weight: 700; line-height: 1.25; }
+#lgRemember p { margin-top: .6rem; font-size: .875rem; line-height: 1.5; color: #52514B; }
+#lgRemember .acts { display: flex; gap: .6rem; margin-top: 1.25rem; }
+#lgRemember .acts .btn { flex: 1; min-height: 46px; }
+
+/* chip pengguna di topbar (desktop) */
+.uc { display: none; align-items: center; gap: .6rem; }
+.uc .av { width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: var(--amber); display: grid; place-items: center; font-size: .8rem; font-weight: 700; }
+.uc .nm { display: block; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; font-weight: 700; line-height: 1.15; }
+.uc .dv { display: block; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .68rem; color: #686760; }
+@media (min-width: 768px) { .uc { display: flex; } }
+
+@keyframes lgspin { to { transform: rotate(360deg); } }
+@keyframes lgbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+@keyframes lgslash { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+@media (max-width: 767.98px) {
+  #loginGate { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .lg-art { order: -1; height: 104px; padding: 0; }
+  .lg-slash { left: 82%; width: 34px; }
+  .lg-word { display: none; }
+  .lg-form { padding: 1.75rem 1.25rem 1.25rem; }
+  .lg-main, .lg-check { margin: 0 auto; }
+  .lg-logo { width: 150px; margin-bottom: 1.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lg-slash, .lg-btn .sp, .lg-bar i { animation: none; }
+  .lg-bar i { width: 100%; }
+}
+@media print { #loginGate { display: none !important; } }
+</style>
 </head>
-<body>
+<body class="auth-locked">
+
+<!-- HALAMAN LOGIN: kredensial dicek di server (GAS), daftar Code tidak pernah dikirim ke browser -->
+<div id="loginGate" class="is-checking" role="dialog" aria-modal="true" aria-labelledby="lgTitle">
+  <section class="lg-form">
+    <div class="lg-check" aria-live="polite">
+      <img data-logo alt="Jumpstart" class="lg-logo">
+      <div class="lg-bar" aria-hidden="true"><i></i></div>
+      <p>Memeriksa sesi…</p>
+    </div>
+    <div class="lg-main">
+      <img data-logo alt="Jumpstart" class="lg-logo">
+      <h1 id="lgTitle" class="lg-title">Masuk</h1>
+      <p class="lg-sub">Gunakan username dan password dari tim Warehouse.</p>
+      <div id="lgMsg" class="lg-msg err" role="alert" aria-live="assertive" hidden></div>
+      <form id="lgForm" novalidate autocomplete="on">
+        <label for="lgUser">Username</label>
+        <input id="lgUser" name="username" class="lg-in" type="text" inputmode="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="80" aria-describedby="lgMsg" required>
+        <label for="lgPass">Password</label>
+        <div class="lg-pw">
+          <input id="lgPass" name="password" class="lg-in" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="80" aria-describedby="lgMsg" required>
+          <button type="button" id="lgEye" class="lg-eye" aria-label="Tampilkan password" aria-pressed="false">
+            <svg id="lgEyeOn" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="lgEyeOff" class="hidden" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17.94 17.94A10.9 10.9 0 0112 19c-7 0-11-7-11-7a19.8 19.8 0 015.06-5.94M9.9 4.24A10.9 10.9 0 0112 4c7 0 11 7 11 7a19.9 19.9 0 01-3.17 4.19M14.12 14.12a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
+          </button>
+        </div>
+        <button id="lgBtn" class="btn btn-accent lg-btn" type="submit"><span class="sp" aria-hidden="true"></span><span id="lgBtnTxt">Masuk</span></button>
+      </form>
+    </div>
+    <p class="lg-foot">Developed By kelincibulubiru. © Jumpstart - Warehouse Internal System 2026</p>
+  </section>
+  <aside class="lg-art" aria-hidden="true">
+    <div class="lg-slash"></div>
+    <div class="lg-word">Warehouse<br>Internal System</div>
+  </aside>
+</div>
+
+<dialog id="lgRemember" aria-labelledby="lgRemTitle">
+  <form method="dialog">
+    <h2 id="lgRemTitle">Simpan akun di perangkat ini?</h2>
+    <p>Username dan password disimpan di perangkat ini agar login berikutnya langsung terisi. Jangan pilih Simpan di perangkat yang dipakai bersama.</p>
+    <div class="acts">
+      <button class="btn btn-ghost" value="no">Jangan simpan</button>
+      <button class="btn btn-accent" value="yes" autofocus>Simpan</button>
+    </div>
+  </form>
+</dialog>
 
 <div id="app" class="flex min-h-screen">
 
@@ -345,6 +468,8 @@ body.ri-mode #driverTotals, body.ri-mode #result, body.ri-mode #empty { display:
         </div>
       </div>
       <div class="flex items-center gap-3">
+        <div class="uc" id="userChip"><span class="av" id="userAv" aria-hidden="true"></span><span><span class="nm" id="userName"></span><span class="dv" id="userDiv"></span></span></div>
+        <button id="btnLogout" type="button" class="btn btn-ghost uc" style="padding:.4rem .8rem;font-size:.8rem" aria-label="Keluar dari akun">Keluar</button>
         <span class="md:hidden flex items-center gap-1 text-xs text-slate-500"><span id="dotM" class="h-2 w-2 rounded-full bg-slate-400"></span></span>
         <div class="inline-flex rounded-lg bg-slate-100 p-1 text-sm" role="tablist" aria-label="Peran">
           <button data-role="admin"  class="role-btn rounded-md px-4 py-1.5 font-medium">Admin</button>
@@ -3350,7 +3475,8 @@ $('riSave').onclick = riSave; $('riCsv').onclick = riCsv; $('riClear').onclick =
 $('riReload').onclick = async () => { await ckLoadNames(true); riFillNames(); loadBarcodes(true); };
 
 $('planDate').value = todayStr();
-applyMenu(); applyRole(); loadSku(); render();
+/* Dijalankan oleh halaman login SETELAH sesi sah, supaya tidak ada permintaan data sebelum login. */
+function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
 </script>
 <script id="m-ux-js">
 /* Lapisan UX mobile: dock + sheet. Hanya memanggil handler yang sudah ada (tidak mengubah logika). */
@@ -3367,7 +3493,7 @@ applyMenu(); applyRole(); loadSku(); render();
     print:'M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z',
     xls:'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14',
     ref:'M4 4v6h6M20 20v-6h-6M20 9a8 8 0 00-14-3L4 10m16 4l-2 4a8 8 0 01-14-3',
-    ret:'M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11', plus:'M12 5v14M5 12h14', chk:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', scan:'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10', link:'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.700-5.700l-1 1M14 10a4 4 0 00-5.700 0l-3 3a4 4 0 005.700 5.700l1-1', trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'
+    ret:'M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11', out:'M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9', plus:'M12 5v14M5 12h14', chk:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', scan:'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10', link:'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.700-5.700l-1 1M14 10a4 4 0 00-5.700 0l-3 3a4 4 0 005.700 5.700l1-1', trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3'
   };
   const ic = k => `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="${I[k]}"/></svg>`;
   const $$ = id => document.getElementById(id);
@@ -3450,7 +3576,8 @@ applyMenu(); applyRole(); loadSku(); render();
       <div class="ms-g">Peran</div><div class="ms-seg"><button data-role="admin" class="${adm ? 'on' : ''}">Admin</button><button data-role="packer" class="${adm ? '' : 'on'}">Packer</button></div>
       <div class="ms-s" style="margin-top:.5rem">${adm ? 'Admin: import Excel, simpan, dan cetak plan.' : 'Packer: lihat & cetak plan terakhir dari Admin.'}</div>
       <div class="ms-g">Koneksi</div><div class="ms-st"><i style="background:${c}"></i><span>${$$('statusText').textContent}</span></div>` +
-      grp('Data', item('btnReload', 'Muat ulang data SKU', 'Ambil Source SKU terbaru', 'ref'), item('btnGas', 'Atur URL GAS', 'Alamat Web App Apps Script', 'link')));
+      grp('Data', item('btnReload', 'Muat ulang data SKU', 'Ambil Source SKU terbaru', 'ref'), item('btnGas', 'Atur URL GAS', 'Alamat Web App Apps Script', 'link')) +
+      grp('Akun', item('btnLogout', 'Keluar', 'Masuk sebagai ' + esc((window.AUTH && AUTH.user && AUTH.user.nama) || '-'), 'out')));
   }
 
   /* ---- event ---- */
@@ -3481,6 +3608,181 @@ applyMenu(); applyRole(); loadSku(); render();
   ['stats', 'result', 'evTable', 'ckTable', 'riTable'].forEach(i => mo.observe($$(i), { childList: true }));
   mq.addEventListener('change', () => { close(); sync(); });
   sync();
+})();
+</script>
+
+<script id="login-js">
+/* =====================================================================
+   LOGIN
+   - Username & password dikirim ke GAS (POST, HTTPS); pencocokan ke sheet "Login Pass" terjadi di server.
+   - Server membalas token bertanda tangan. Token disertakan otomatis di SEMUA permintaan ke GAS (lihat pembungkus fetch).
+   - Tanpa izin pengguna: token hanya di sessionStorage (hilang saat tab ditutup).
+   - Dengan izin "Simpan akun": token 30 hari + username di localStorage, dan password diserahkan ke penyimpan
+     password bawaan browser (Credential Management API). Password TIDAK pernah ditulis ke localStorage.
+   ===================================================================== */
+(() => {
+  'use strict';
+  const K = { sess: 'jsp_session', rem: 'jsp_remember', last: 'jsp_last_user', notice: 'jsp_notice' };
+  const rawFetch = window.fetch.bind(window);
+  const $g = id => document.getElementById(id);
+  const gate = $g('loginGate'), form = $g('lgForm'), uEl = $g('lgUser'), pEl = $g('lgPass'), btn = $g('lgBtn'), msg = $g('lgMsg');
+  const AUTH = window.AUTH = { token: '', user: null, exp: 0 };
+  let started = false, busy = false;
+
+  const jget = (st, k) => { try { return JSON.parse(st.getItem(k) || 'null'); } catch (e) { return null; } };
+  const jset = (st, k, v) => { try { st.setItem(k, JSON.stringify(v)); } catch (e) { /* penyimpanan penuh / diblokir */ } };
+  const del = (st, k) => { try { st.removeItem(k); } catch (e) { /* abaikan */ } };
+  const put = (st, k, v) => { try { st.setItem(k, v); } catch (e) { /* abaikan */ } };
+
+  /* ---- pesan & status tombol ---- */
+  function showMsg(text, kind) { msg.textContent = text || ''; msg.className = 'lg-msg ' + (kind || 'err'); msg.hidden = !text; }
+  function setBusy(b) {
+    busy = b; btn.disabled = b; btn.classList.toggle('is-busy', b); btn.setAttribute('aria-busy', b ? 'true' : 'false');
+    $g('lgBtnTxt').textContent = b ? 'Memeriksa…' : 'Masuk'; uEl.readOnly = pEl.readOnly = b;
+  }
+  function invalid(el, text) { showMsg(text); [uEl, pEl].forEach(x => x.removeAttribute('aria-invalid')); if (el) { el.setAttribute('aria-invalid', 'true'); el.focus(); } }
+
+  /* ---- panggilan ke GAS ---- */
+  async function callPost(payload, ms) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms || 20000);
+    try {
+      const r = await rawFetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), signal: ctl.signal });
+      return await r.json();
+    } finally { clearTimeout(t); }
+  }
+  async function callSession(token) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 12000);
+    try {
+      const r = await rawFetch(`${GAS_URL()}?action=session&token=${encodeURIComponent(token)}`, { signal: ctl.signal });
+      return await r.json();
+    } finally { clearTimeout(t); }
+  }
+
+  /* ---- chip pengguna ---- */
+  function paintUser() {
+    const u = AUTH.user || {}, n = String(u.nama || '');
+    $g('userName').textContent = n; $g('userDiv').textContent = u.divisi || '';
+    $g('userAv').textContent = (n.trim()[0] || '?').toUpperCase();
+  }
+
+  /* ---- masuk / kunci aplikasi ---- */
+  function adopt(rec) {
+    AUTH.token = rec.token; AUTH.user = rec.user; AUTH.exp = rec.exp; paintUser();
+    gate.classList.remove('is-checking'); document.body.classList.remove('auth-locked');
+    if (!started) { started = true; startApp(); }
+  }
+  function lockGate(text, kind) {
+    del(sessionStorage, K.sess); del(localStorage, K.rem);
+    AUTH.token = ''; pEl.value = ''; setBusy(false);
+    gate.classList.remove('is-checking'); document.body.classList.add('auth-locked');
+    showMsg(text, kind || 'info');
+    (uEl.value ? pEl : uEl).focus();
+  }
+  function showForm(text, kind) { gate.classList.remove('is-checking'); document.body.classList.add('auth-locked'); showMsg(text, kind); (uEl.value ? pEl : uEl).focus(); }
+
+  /* ---- boot: pakai sesi tersimpan bila masih sah ---- */
+  async function boot() {
+    const last = localStorage.getItem(K.last); if (last) uEl.value = last;
+    const rec = [jget(sessionStorage, K.sess), jget(localStorage, K.rem)].find(r => r && r.token && r.exp > Date.now());
+    if (!rec) { del(sessionStorage, K.sess); del(localStorage, K.rem); return showForm(); }
+    try {
+      const r = await callSession(rec.token);
+      if (r && r.ok) return adopt({ token: rec.token, user: r.user, exp: r.exp || rec.exp });
+      if (r && r.auth === false) { del(sessionStorage, K.sess); del(localStorage, K.rem); return showForm('Sesi berakhir. Masuk lagi untuk melanjutkan.', 'info'); }
+      showForm('Server belum siap. Coba lagi sebentar lagi.');
+    } catch (e) {
+      /* tidak ada sinyal: token masih berlaku secara lokal, server tetap memeriksanya di setiap permintaan data */
+      adopt(rec);
+    }
+  }
+
+  /* ---- sisipkan token di setiap permintaan ke GAS; deteksi sesi berakhir ---- */
+  window.fetch = function (input, init) {
+    let url = typeof input === 'string' ? input : (input && input.url) || '';
+    let gas = false; try { gas = url.indexOf(GAS_URL()) === 0; } catch (e) { /* GAS_URL belum ada */ }
+    if (!gas || !AUTH.token) return rawFetch(input, init);
+    const method = String((init && init.method) || 'GET').toUpperCase();
+    if (method === 'GET') {
+      if (!/[?&]token=/.test(url)) url += (url.indexOf('?') < 0 ? '?' : '&') + 'token=' + encodeURIComponent(AUTH.token);
+      input = url;
+    } else if (init && typeof init.body === 'string') {
+      try { const b = JSON.parse(init.body); b.token = AUTH.token; init = Object.assign({}, init, { body: JSON.stringify(b) }); } catch (e) { /* bukan JSON: biarkan */ }
+    }
+    return rawFetch(input, init).then(res => {
+      const j = res.json.bind(res);
+      res.json = () => j().then(d => { if (d && d.auth === false) lockGate('Sesi berakhir. Masuk lagi untuk melanjutkan.', 'info'); return d; });
+      return res;
+    });
+  };
+
+  /* ---- izin menyimpan akun di perangkat ---- */
+  function askRemember() {
+    const dlg = $g('lgRemember');
+    return new Promise(res => {
+      if (typeof dlg.showModal !== 'function') return res(false);
+      dlg.addEventListener('close', () => res(dlg.returnValue === 'yes'), { once: true });
+      dlg.returnValue = 'no'; dlg.showModal();
+    });
+  }
+  async function remember(typed, pass, rec) {
+    let tok = rec;
+    try {
+      const x = await callPost({ action: 'refreshSession', token: rec.token, remember: true });
+      if (x && x.ok && x.token) tok = { token: x.token, user: x.user, exp: x.exp };
+    } catch (e) { /* tetap pakai token sesi biasa */ }
+    jset(localStorage, K.rem, tok); put(localStorage, K.last, typed); del(sessionStorage, K.sess);
+    AUTH.token = tok.token; AUTH.exp = tok.exp;
+    try { if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) await navigator.credentials.store(new PasswordCredential({ id: typed, password: pass, name: tok.user.nama })); } catch (e) { /* browser menolak: abaikan */ }
+    if (typeof toast === 'function') toast('Akun disimpan di perangkat ini.');
+  }
+
+  async function onLoggedIn(r, typed, pass) {
+    const rec = { token: r.token, user: r.user, exp: r.exp };
+    if (started && AUTH.user && AUTH.user.nama !== rec.user.nama) {   // orang lain masuk setelah sesi habis: bersihkan data di layar
+      jset(sessionStorage, K.sess, rec); location.reload(); return;
+    }
+    jset(sessionStorage, K.sess, rec);
+    adopt(rec); pEl.value = '';
+    const saved = jget(localStorage, K.rem);
+    if (saved && saved.user && saved.user.nama === rec.user.nama) await remember(typed, pass, rec);   // perangkat ini sudah disetujui sebelumnya
+    else if (await askRemember()) await remember(typed, pass, rec);
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault(); if (busy) return;
+    const u = uEl.value.trim(), p = pEl.value.trim();
+    if (!u) return invalid(uEl, 'Isi username dulu.');
+    if (!p) return invalid(pEl, 'Isi password dulu.');
+    showMsg(''); [uEl, pEl].forEach(x => x.removeAttribute('aria-invalid')); setBusy(true);
+    let r;
+    try { r = await callPost({ action: 'login', username: u, password: p }); }
+    catch (err) { setBusy(false); return showMsg('Tidak bisa terhubung ke server. Periksa internet, lalu coba lagi.'); }
+    setBusy(false);
+    if (r && r.ok && r.token) { try { await onLoggedIn(r, u, p); } finally { pEl.value = ''; } return; }
+    pEl.value = '';
+    if (r && r.locked) return invalid(null, `Terlalu banyak percobaan gagal. Coba lagi sekitar ${Math.ceil((r.retryAfter || 600) / 60)} menit lagi.`);
+    if (r && /Action tidak dikenal/i.test(r.error || '')) return showMsg('Server belum diperbarui. Deploy ulang Apps Script sebagai versi baru.');
+    if (r && r.error === 'Username atau password tidak cocok.') return invalid(pEl, 'Username atau password tidak cocok. Periksa lagi, termasuk huruf besar dan kecil.');
+    console.warn('Login gagal:', r && r.error);
+    showMsg('Server sedang bermasalah. Hubungi admin warehouse.');
+  });
+
+  /* ---- tampilkan / sembunyikan password ---- */
+  $g('lgEye').addEventListener('click', () => {
+    const show = pEl.type === 'password'; pEl.type = show ? 'text' : 'password';
+    $g('lgEye').setAttribute('aria-pressed', show ? 'true' : 'false'); $g('lgEye').setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
+    $g('lgEyeOn').classList.toggle('hidden', show); $g('lgEyeOff').classList.toggle('hidden', !show); pEl.focus();
+  });
+
+  /* ---- keluar ---- */
+  $g('btnLogout').addEventListener('click', () => {
+    const n = (AUTH.user && AUTH.user.nama) || 'akun ini';
+    if (!confirm(`Keluar dari ${n}? Data yang belum disimpan ke spreadsheet akan hilang.`)) return;
+    del(sessionStorage, K.sess); del(localStorage, K.rem); AUTH.token = '';
+    location.reload();
+  });
+
+  boot();
 })();
 </script>
 
