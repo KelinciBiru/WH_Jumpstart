@@ -319,6 +319,10 @@ body.ri-mode #driverTotals, body.ri-mode #result, body.ri-mode #empty { display:
 #rjTable .rj-add { padding: .35rem .6rem; font-size: .75rem; white-space: nowrap; }
 #rjTable .rj-add b { margin-left: .25rem; color: #6b6a63; font-weight: 600; }
 #rjTable .rj-busy { font-size: .72rem; color: #6b6a63; }
+#rjWh { font-size: 16px; }
+#rjTable .rj-cam { background: #FBB315; color: #141414; border-color: #FBB315; font-weight: 700; }
+#rjTable .rj-btns { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+#rjTable .rj-cnt { font-size: .72rem; font-weight: 600; color: #6b6a63; }
 </style>
 <style id="login-css">
 /* ===== HALAMAN LOGIN ===== */
@@ -665,9 +669,10 @@ body:not(.auth-locked) #loginGate { display: none; }
 
       <!-- REJECT / SCRAP -->
       <section id="rejectPanel" class="no-print hidden panel space-y-4 p-4 md:p-5">
-        <div class="grid gap-3 sm:grid-cols-2">
+        <div class="grid gap-3 sm:grid-cols-3">
           <label class="field">Nama Checker<select id="rjName"><option value="">Memuat…</option></select></label>
           <label class="field">Tanggal (otomatis)<input id="rjDate" type="text" readonly tabindex="-1" aria-readonly="true"></label>
+          <label class="field">Lokasi WH (tercetak di foto)<input id="rjWh" type="text" maxlength="40" autocomplete="off" placeholder="WH Pulogadung"></label>
         </div>
         <div class="flex flex-wrap items-end gap-2">
           <button id="rjScan" type="button" class="btn btn-accent">
@@ -684,6 +689,7 @@ body:not(.auth-locked) #loginGate { display: none; }
         <div id="rjStats" class="grid grid-cols-2 gap-2 sm:grid-cols-4"></div>
         <div id="rjTable"></div>
         <input id="rjFile" type="file" accept="image/*" multiple hidden>
+        <input id="rjCam" type="file" accept="image/*" capture="environment" hidden>
         <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
           <button id="rjClear" type="button" class="btn btn-ghost">Bersihkan layar</button>
           <button id="rjReload" type="button" class="btn btn-ghost">Muat ulang nama &amp; barcode</button>
@@ -692,7 +698,7 @@ body:not(.auth-locked) #loginGate { display: none; }
             <button id="rjSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button>
           </div>
         </div>
-        <p class="text-xs text-slate-500">Nama Checker diambil dari sheet “Source” kolom C, barcode dari sheet “Source Barcode”. Setiap scan menjadi <b>baris baru</b> (tidak menimpa data yang sudah ada) dan Qty bisa diubah. Tiap produk bisa diberi <b>sampai 5 foto bukti</b> (kolom Foto). Foto masuk ke sheet “Reject Scrap” sebagai gambar di dalam sel, bukan link. File CSV hanya memuat jumlah foto (CSV tidak bisa membawa gambar).</p>
+        <p class="text-xs text-slate-500">Nama Checker diambil dari sheet “Source” kolom C, barcode dari sheet “Source Barcode”. Setiap scan menjadi <b>baris baru</b> (tidak menimpa data yang sudah ada) dan Qty bisa diubah. Tiap produk bisa diberi <b>sampai 5 foto bukti</b> (kolom Foto): tombol <b>Kamera</b> langsung membuka kamera perangkat dan hasil jepretan otomatis diberi <b>timestamp, lokasi WH, dan logo Jumpstart</b> di dalam gambar; tombol <b>Galeri</b> memilih foto yang sudah ada (tanpa watermark). Foto masuk ke sheet “Reject Scrap” sebagai gambar di dalam sel, bukan link. File CSV hanya memuat jumlah foto (CSV tidak bisa membawa gambar).</p>
       </section>
 
       <!-- IMPORT (Admin) -->
@@ -3564,7 +3570,9 @@ $('riReload').onclick = async () => { await ckLoadNames(true); riFillNames(); lo
                   dimasukkan GAS sebagai gambar di dalam sel. Pengiriman dipecah per kelompok baris agar tidak terlalu besar.
    ===================================================================== */
 const RJ = { rows: [], cur: '', lastRaw: '', lastSeen: 0, sug: [], sugI: -1, photoSid: '', rid: '', warned: false };   // row: { sid, at, code, id, name, qty, photos:[dataURI], pc, saved }
-const RJ_KEY = 'planner_rj_rows', RJ_NAME = 'planner_rj_name', RJ_MAX_PHOTO = 5;
+const RJ_KEY = 'planner_rj_rows', RJ_NAME = 'planner_rj_name', RJ_WH_KEY = 'planner_rj_wh', RJ_MAX_PHOTO = 5, RJ_WH_DEF = 'WH Pulogadung';
+const RJ_LOGO = 'data:image/png;base64,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';   // logo Jumpstart (dipotong rapat) untuk watermark foto kamera
+const rjWh = () => ($('rjWh').value.trim() || RJ_WH_DEF).slice(0, 40);
 const rjInDlg = () => $('ckScanDlg').open && SC.target === 'rj';
 const rjPc = r => r.saved ? (r.pc || 0) : r.photos.length;
 function rjPersist() {
@@ -3591,7 +3599,7 @@ function rjShowBc() {
     : BC.loaded ? `Source Barcode: ${fmt(BC.n)} kode · scan atau ketik angka barcode — setiap scan menjadi baris baru` : '';
 }
 async function rjEnter() {
-  $('rjDate').value = todayStr();
+  $('rjDate').value = todayStr(); $('rjWh').value = localStorage.getItem(RJ_WH_KEY) || RJ_WH_DEF;
   rjFillNames(); rjRender(); rjShowBc();
   loadBarcodes();
   if (!CK.names.length) { await ckLoadNames(); rjFillNames(); }
@@ -3611,7 +3619,7 @@ function rjFlash(sid) {
 function rjPhotoCell(r) {
   if (r.saved) return r.pc ? `<span class="ri-tag">${r.pc} foto ✓</span>` : '<span class="text-xs text-slate-400">tanpa foto</span>';
   const th = r.photos.map((p, i) => `<span class="rj-th"><img src="${p}" alt="Foto bukti ${i + 1}"><button type="button" data-rjb="rmph" data-sid="${esc(r.sid)}" data-i="${i}" aria-label="Hapus foto ${i + 1}">✕</button></span>`).join('');
-  const add = r.photos.length < RJ_MAX_PHOTO ? `<button type="button" class="btn btn-ghost rj-add" data-rjb="addph" data-sid="${esc(r.sid)}" aria-label="Tambah foto bukti">＋ Foto<b>${r.photos.length}/${RJ_MAX_PHOTO}</b></button>` : '';
+  const add = r.photos.length < RJ_MAX_PHOTO ? `<span class="rj-btns"><button type="button" class="btn btn-ghost rj-add rj-cam" data-rjb="addcam" data-sid="${esc(r.sid)}" aria-label="Ambil foto dengan kamera">📷 Kamera</button><button type="button" class="btn btn-ghost rj-add" data-rjb="addph" data-sid="${esc(r.sid)}" aria-label="Pilih foto dari galeri">🖼 Galeri</button><span class="rj-cnt">${r.photos.length}/${RJ_MAX_PHOTO}</span></span>` : '';
   return `<div class="rj-wrap">${th}${add}</div>`;
 }
 function rjRender(flashSid) {
@@ -3737,24 +3745,57 @@ $('scInfo').addEventListener('input', e => {
   rjPersist(); rjRender();
 });
 
-/* ---- foto bukti: kompres di browser (sisi terpanjang 800 px, JPEG) agar kiriman ringan ---- */
-function rjCompress(file) {
+/* ---- foto bukti: kompres di browser agar kiriman ringan ----
+   Galeri : sisi terpanjang 800 px, JPEG 0.65 (tanpa watermark — foto lama tidak diberi cap waktu baru).
+   Kamera : sisi terpanjang 1000 px, JPEG 0.72 + watermark (timestamp, lokasi WH, logo Jumpstart) digambar menjadi satu dengan fotonya. */
+let rjLogoP = null;
+const rjLogo = () => rjLogoP || (rjLogoP = new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = RJ_LOGO; }));
+function rjStampText(ms) {
+  const d = new Date(ms), p = n => String(n).padStart(2, '0');
+  return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}  ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+async function rjStamp(g, w, h, ms, loc) {
+  const u = Math.min(w, h) / 100, pad = 2.6 * u, bar = 22 * u, FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+  const gr = g.createLinearGradient(0, h - bar, 0, h);   // pita gelap transparan di bawah agar teks terbaca di foto terang
+  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.5, 'rgba(0,0,0,.55)'); gr.addColorStop(1, 'rgba(0,0,0,.75)');
+  g.fillStyle = gr; g.fillRect(0, h - bar, w, bar);
+  let textMax = w - 2 * pad;
+  const logo = await rjLogo();
+  if (logo) {   // logo di plat putih (logo berwarna hitam-kuning) pojok kanan bawah
+    const lh = 7.5 * u, lw = lh * logo.width / logo.height, px = 1.8 * u, py = 1.3 * u, pw = lw + 2 * px, ph = lh + 2 * py, x = w - pad - pw, y = h - pad - ph, r = 1.4 * u;
+    g.save(); g.fillStyle = 'rgba(255,255,255,.93)'; g.beginPath();
+    g.moveTo(x + r, y); g.arcTo(x + pw, y, x + pw, y + ph, r); g.arcTo(x + pw, y + ph, x, y + ph, r); g.arcTo(x, y + ph, x, y, r); g.arcTo(x, y, x + pw, y, r); g.closePath(); g.fill();
+    g.drawImage(logo, x + px, y + py, lw, lh); g.restore();
+    textMax = x - pad * 1.5 - pad;
+  }
+  const fit = (txt, wt, size) => { g.font = `${wt} ${size}px ${FONT}`; const m = g.measureText(txt).width; return m > textMax ? size * textMax / m : size; };
+  const t1 = rjStampText(ms), s1 = fit(t1, 700, 4.8 * u), s2 = fit(loc, 600, 3.7 * u);
+  const y2 = h - pad - 0.7 * u, y1 = y2 - s2 * 1.15 - 0.6 * u;
+  g.save(); g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.shadowColor = 'rgba(0,0,0,.65)'; g.shadowBlur = u * .8;
+  g.font = `700 ${s1}px ${FONT}`; g.fillStyle = '#fff'; g.fillText(t1, pad, y1);
+  g.font = `600 ${s2}px ${FONT}`; g.fillStyle = '#FBB315'; g.fillText(loc, pad, y2);
+  g.restore();
+}
+function rjCompress(file, wm) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file), img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
       URL.revokeObjectURL(url);
-      const k = Math.min(1, 800 / Math.max(img.naturalWidth, img.naturalHeight, 1));
-      const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
-      const c = document.createElement('canvas'); c.width = w; c.height = h;
-      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
-      resolve(c.toDataURL('image/jpeg', 0.65));
+      try {
+        const max = wm ? 1000 : 800, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight, 1));
+        const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+        if (wm) await rjStamp(g, w, h, wm.ms, wm.loc);
+        resolve(c.toDataURL('image/jpeg', wm ? 0.72 : 0.65));
+      } catch (e) { reject(e); }
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Gambar tidak bisa dibaca')); };
     img.src = url;
   });
 }
-$('rjFile').addEventListener('change', async e => {
-  const all = [...e.target.files], r = RJ.rows.find(x => x.sid === RJ.photoSid); e.target.value = '';
+async function rjTakeFiles(inp, cam) {
+  const all = [...inp.files], r = RJ.rows.find(x => x.sid === RJ.photoSid); inp.value = '';
   if (!r || r.saved || !all.length) return;
   const room = RJ_MAX_PHOTO - r.photos.length;
   if (room <= 0) return toast(`Maksimal ${RJ_MAX_PHOTO} foto per produk`, 3000);
@@ -3762,17 +3803,33 @@ $('rjFile').addEventListener('change', async e => {
   if (!imgs.length) return toast('Pilih file gambar (JPG / PNG)', 3000);
   if (imgs.length > room) toast(`Maksimal ${RJ_MAX_PHOTO} foto per produk — ${room} foto pertama dipakai`, 3500);
   const row = $('rjTable').querySelector(`tr[data-sid="${CSS.escape(r.sid)}"] .rj-ph`); if (row) row.insertAdjacentHTML('beforeend', '<span class="rj-busy">Memproses foto…</span>');
+  const loc = rjWh();
   let ok = 0;
-  for (const f of imgs.slice(0, room)) { try { r.photos.push(await rjCompress(f)); ok++; } catch (err) { toast(`Foto “${f.name.slice(0, 30)}” tidak bisa dibaca (coba format JPG / PNG)`, 4000); } }
+  for (const f of imgs.slice(0, room)) {
+    try {
+      let wm = null;
+      if (cam) {   // waktu jepret: waktu file bila wajar (bukan masa depan / bukan nilai kosong), selain itu waktu sekarang
+        const now = Date.now(), lm = Number(f.lastModified) || 0;
+        wm = { ms: lm > 946684800000 && lm <= now + 60000 ? lm : now, loc };
+      }
+      r.photos.push(await rjCompress(f, wm)); ok++;
+      if (cam) r.wh = loc;
+    } catch (err) { toast(`Foto “${f.name.slice(0, 30)}” tidak bisa dibaca (coba format JPG / PNG)`, 4000); }
+  }
   if (ok) rjPersist();
   rjRender(ok ? r.sid : '');
-});
+}
+$('rjFile').addEventListener('change', e => rjTakeFiles(e.target, false));
+$('rjCam').addEventListener('change', e => rjTakeFiles(e.target, true));
+$('rjWh').addEventListener('input', () => { try { localStorage.setItem(RJ_WH_KEY, $('rjWh').value.trim().slice(0, 40)); } catch (e) { /* abaikan */ } });
+$('rjWh').addEventListener('blur', () => { if (!$('rjWh').value.trim()) { $('rjWh').value = RJ_WH_DEF; try { localStorage.setItem(RJ_WH_KEY, RJ_WH_DEF); } catch (e) { /* abaikan */ } } });
 
 /* ---- tabel: ubah Qty / hapus baris / tambah & hapus foto ---- */
 $('rjTable').addEventListener('click', e => {
   const b = e.target.closest('[data-rjb]'); if (!b) return;
   const r = RJ.rows.find(x => x.sid === b.dataset.sid); if (!r || r.saved) return;
   const a = b.dataset.rjb;
+  if (a === 'addcam') { RJ.photoSid = r.sid; $('rjCam').click(); return; }
   if (a === 'addph') { RJ.photoSid = r.sid; $('rjFile').click(); return; }
   if (a === 'rmph') { r.photos.splice(Number(b.dataset.i), 1); }
   else if (a === 'dec') r.qty = Math.max(1, riQty(r) - 1);
@@ -3807,8 +3864,8 @@ async function rjSave() {
       btn.textContent = batches.length > 1 ? `Menyimpan ${b + 1}/${batches.length}…` : 'Menyimpan…';
       const rows = batches[b];
       const r = await (await fetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'saveRejectScrap', checkerName: name, rejectDate: date, rejectId: RJ.rid, savedBy: name,
-          rows: rows.map(x => ({ scanId: x.sid, no: RJ.rows.indexOf(x) + 1, scannedAt: x.at, barcode: x.code, productId: x.id, productName: x.name, qty: riQty(x), photos: x.photos })) }) })).json();
+        body: JSON.stringify({ action: 'saveRejectScrap', checkerName: name, rejectDate: date, rejectId: RJ.rid, savedBy: name, whLocation: rjWh(),
+          rows: rows.map(x => ({ scanId: x.sid, no: RJ.rows.indexOf(x) + 1, scannedAt: x.at, barcode: x.code, productId: x.id, productName: x.name, qty: riQty(x), whLocation: x.wh || rjWh(), photos: x.photos })) }) })).json();
       if (!r.ok) throw new Error(r.error);
       saved += r.saved; skipped += r.skipped; fail += r.photoFail || 0; sheet = r.sheet || sheet; done += rows.length;
       rows.forEach(x => { x.pc = x.photos.length; x.photos = []; x.saved = true; });   // foto sudah di spreadsheet: lepas dari memori & penyimpanan perangkat
@@ -3825,8 +3882,8 @@ function rjCsv() {
   if (!RJ.rows.length) return toast('Belum ada data untuk diunduh', 3000);
   const name = $('rjName').value, date = todayStr();
   downloadCsv(`RejectScrap_${name || 'Checker'}_${date}.csv`,
-    ['No', 'Tanggal', 'Nama Checker', 'Waktu Scan', 'Barcode / Input', 'Product ID', 'Product Name', 'Qty', 'Jumlah Foto', 'Status'],
-    RJ.rows.map((r, i) => [i + 1, date, name, r.at, r.code, r.id, r.name, riQty(r), rjPc(r), r.saved ? 'Tersimpan' : 'Belum disimpan']));
+    ['No', 'Tanggal', 'Nama Checker', 'Lokasi WH', 'Waktu Scan', 'Barcode / Input', 'Product ID', 'Product Name', 'Qty', 'Jumlah Foto', 'Status'],
+    RJ.rows.map((r, i) => [i + 1, date, name, r.wh || rjWh(), r.at, r.code, r.id, r.name, riQty(r), rjPc(r), r.saved ? 'Tersimpan' : 'Belum disimpan']));
   toast(`Download CSV Reject/Scrap: ${RJ.rows.length} baris (foto hanya ada di spreadsheet)`, 3500);
 }
 function rjClear() {
