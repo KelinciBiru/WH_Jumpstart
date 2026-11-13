@@ -283,7 +283,8 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
 body.ri-mode #otherTabs, body.ri-mode #eventPanel, body.ri-mode #formPanel, body.ri-mode #importCard, body.ri-mode #packerBar,
 body.ri-mode #printBar, body.ri-mode #stats, body.ri-mode #insight, body.ri-mode #grandTotals, body.ri-mode #toolbar,
 body.ri-mode #driverTotals, body.ri-mode #result, body.ri-mode #empty { display: none !important; }
-#riInput, #riName { font-size: 16px; }   /* iOS Safari zoom otomatis bila font input < 16px */
+#riInput, #riName { font-size: 16px; }
+#riName[readonly], #rjName[readonly] { background: #f1f5f9; color: #0f172a; font-weight: 600; cursor: default; }   /* iOS Safari zoom otomatis bila font input < 16px */
 #riTable tr.saved { background: #F1FBF4; }
 #riCat { font-size: 16px; }
 #riSug { position: absolute; left: 0; right: 0; top: 100%; z-index: 40; margin-top: 2px; max-height: 280px; overflow-y: auto; background: #fff; border: 1px solid var(--line); border-radius: .6rem; box-shadow: 0 8px 24px rgba(0,0,0,.14); }
@@ -630,7 +631,7 @@ body:not(.auth-locked) #loginGate { display: none; }
       <!-- RETUR INBOUND -->
       <section id="returPanel" class="no-print hidden panel space-y-4 p-4 md:p-5">
         <div class="grid gap-3 sm:grid-cols-2">
-          <label class="field">Nama Checker<select id="riName"><option value="">Memuat…</option></select></label>
+          <label class="field">Nama Checker (otomatis dari login)<input id="riName" type="text" readonly tabindex="-1" aria-readonly="true" autocomplete="off"></label>
           <label class="field">Tanggal Retur<input id="riDate" type="date"></label>
         </div>
         <div class="grid gap-3 sm:grid-cols-2">
@@ -664,13 +665,13 @@ body:not(.auth-locked) #loginGate { display: none; }
             <button id="riSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button>
           </div>
         </div>
-        <p class="text-xs text-slate-500">Nama Checker diambil dari sheet “Source”, barcode dari sheet “Source Barcode”. Setiap scan menjadi <b>baris baru</b> (produk yang sama di-scan lagi tidak menimpa) dan Qty bisa diubah. Baris yang sudah tersimpan ke sheet “Retur Inbound” ditandai ✓ dan tidak dikirim ulang.</p>
+        <p class="text-xs text-slate-500">Nama Checker otomatis sesuai username login, barcode dari sheet “Source Barcode”. Setiap scan menjadi <b>baris baru</b> (produk yang sama di-scan lagi tidak menimpa) dan Qty bisa diubah. Baris yang sudah tersimpan ke sheet “Retur Inbound” ditandai ✓ dan tidak dikirim ulang.</p>
       </section>
 
       <!-- REJECT / SCRAP -->
       <section id="rejectPanel" class="no-print hidden panel space-y-4 p-4 md:p-5">
         <div class="grid gap-3 sm:grid-cols-3">
-          <label class="field">Nama Checker<select id="rjName"><option value="">Memuat…</option></select></label>
+          <label class="field">Nama Checker (otomatis dari login)<input id="rjName" type="text" readonly tabindex="-1" aria-readonly="true" autocomplete="off"></label>
           <label class="field">Tanggal (otomatis)<input id="rjDate" type="text" readonly tabindex="-1" aria-readonly="true"></label>
           <label class="field">Lokasi WH (tercetak di foto)<input id="rjWh" type="text" maxlength="40" autocomplete="off" placeholder="WH Pulogadung"></label>
         </div>
@@ -698,7 +699,7 @@ body:not(.auth-locked) #loginGate { display: none; }
             <button id="rjSave" type="button" disabled class="btn btn-accent">Simpan ke Spreadsheet</button>
           </div>
         </div>
-        <p class="text-xs text-slate-500">Nama Checker diambil dari sheet “Source” kolom C, barcode dari sheet “Source Barcode”. Setiap scan menjadi <b>baris baru</b> (tidak menimpa data yang sudah ada) dan Qty bisa diubah. Tiap produk bisa diberi <b>sampai 5 foto bukti</b> (kolom Foto): tombol <b>Kamera</b> langsung membuka kamera perangkat dan hasil jepretan otomatis diberi <b>timestamp, lokasi WH, dan logo Jumpstart</b> di dalam gambar; tombol <b>Galeri</b> memilih foto yang sudah ada (tanpa watermark). Foto masuk ke sheet “Reject Scrap” sebagai gambar di dalam sel, bukan link. File CSV hanya memuat jumlah foto (CSV tidak bisa membawa gambar).</p>
+        <p class="text-xs text-slate-500">Nama Checker otomatis sesuai username login, barcode dari sheet “Source Barcode”. Setiap scan menjadi <b>baris baru</b> (tidak menimpa data yang sudah ada) dan Qty bisa diubah. Tiap produk bisa diberi <b>sampai 5 foto bukti</b> (kolom Foto): tombol <b>Kamera</b> langsung membuka kamera perangkat dan hasil jepretan otomatis diberi <b>timestamp, lokasi WH, dan logo Jumpstart</b> di dalam gambar; tombol <b>Galeri</b> memilih foto yang sudah ada (tanpa watermark). Foto masuk ke sheet “Reject Scrap” sebagai gambar di dalam sel, bukan link. File CSV hanya memuat jumlah foto (CSV tidak bisa membawa gambar).</p>
       </section>
 
       <!-- IMPORT (Admin) -->
@@ -3299,11 +3300,9 @@ const riInDlg = () => $('ckScanDlg').open && SC.target === 'ri';
 function riPersist() { try { localStorage.setItem(RI_KEY, JSON.stringify(RI.rows)); } catch (e) { /* penyimpanan penuh: abaikan */ } }
 (function riRestore() { try { const r = JSON.parse(localStorage.getItem(RI_KEY) || '[]'); if (Array.isArray(r)) RI.rows = r.filter(x => x && x.sid && (x.id || x.name)); } catch (e) { RI.rows = []; } })();
 
-function riFillNames() {
-  const sel = $('riName'), keep = sel.value || localStorage.getItem(RI_NAME) || '';
-  sel.innerHTML = '<option value="">— Pilih nama checker —</option>' + CK.names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-  if (CK.names.includes(keep)) sel.value = keep;
-}
+/* Nama Checker = username yang dipakai login (dikunci; server GAS juga memaksa nama ini dari token sesi) */
+const loginName = () => String((window.AUTH && AUTH.user && AUTH.user.nama) || '').trim();
+function riFillNames() { $('riName').value = loginName(); }
 function riFillCat() { const c = localStorage.getItem(RI_CAT) || ''; if (RI_CATS.includes(c) && !$('riCat').value) $('riCat').value = c; }
 function riNeedCat() {
   const c = $('riCat').value;
@@ -3319,7 +3318,6 @@ async function riEnter() {
   if (!$('riDate').value) $('riDate').value = todayStr();
   riFillNames(); riFillCat(); riRender(); riShowBc();
   loadBarcodes();
-  if (!CK.names.length) { await ckLoadNames(); riFillNames(); }
 }
 
 const riTotals = () => ({ n: RI.rows.length, qty: RI.rows.reduce((a, r) => a + riQty(r), 0), open: RI.rows.filter(r => !r.saved).length });
@@ -3508,7 +3506,7 @@ $('riTable').addEventListener('input', e => {
 /* ---- simpan / CSV / bersihkan layar ---- */
 async function riSave() {
   if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
-  const name = $('riName').value; if (!name) { $('riName').focus(); return toast('Pilih Nama Checker terlebih dahulu', 3500); }
+  riFillNames(); const name = loginName(); if (!name) return toast('Nama login tidak terbaca. Silakan keluar lalu masuk lagi.', 4500);
   const date = $('riDate').value; if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toast('Isi Tanggal Retur terlebih dahulu', 3500);
   const open = RI.rows.filter(r => !r.saved);
   if (!open.length) return toast('Semua baris sudah tersimpan', 3000);
@@ -3530,7 +3528,7 @@ async function riSave() {
 }
 function riCsv() {
   if (!RI.rows.length) return toast('Belum ada data untuk diunduh', 3000);
-  const name = $('riName').value, date = $('riDate').value || todayStr();
+  const name = loginName(), date = $('riDate').value || todayStr();
   downloadCsv(`ReturInbound_${name || 'Checker'}_${date}.csv`,
     ['No', 'Tanggal Retur', 'Nama Checker', 'Waktu Scan', 'Category', 'Barcode / Input', 'Product ID', 'Product Name', 'Qty', 'Status'],
     RI.rows.map((r, i) => [i + 1, date, name, r.at, r.cat || '', r.code, r.id, r.name, riQty(r), r.saved ? 'Tersimpan' : 'Belum disimpan']));
@@ -3557,9 +3555,8 @@ $('riSug').addEventListener('mousedown', e => e.preventDefault());   // jaga fok
 $('riSug').addEventListener('click', e => { const b = e.target.closest('[data-sug]'); if (b) riPick(RI.sug[Number(b.dataset.sug)]); });
 document.addEventListener('click', e => { if (!e.target.closest('#riInput, #riSug')) riSugHide(); });
 $('riCat').onchange = () => localStorage.setItem(RI_CAT, $('riCat').value);
-$('riName').onchange = () => localStorage.setItem(RI_NAME, $('riName').value);
 $('riSave').onclick = riSave; $('riCsv').onclick = riCsv; $('riClear').onclick = riClear;
-$('riReload').onclick = async () => { await ckLoadNames(true); riFillNames(); loadBarcodes(true); };
+$('riReload').onclick = () => { riFillNames(); loadBarcodes(true); };
 
 /* =====================================================================
    REJECT / SCRAP — catat produk reject / scrap (Role Checker)
@@ -3588,11 +3585,7 @@ function rjPersist() {
   } catch (e) { RJ.rows = []; }
 })();
 
-function rjFillNames() {
-  const sel = $('rjName'), keep = sel.value || localStorage.getItem(RJ_NAME) || '';
-  sel.innerHTML = '<option value="">— Pilih nama checker —</option>' + CK.names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-  if (CK.names.includes(keep)) sel.value = keep;
-}
+function rjFillNames() { $('rjName').value = loginName(); }
 function rjShowBc() {
   const el = $('rjHint'); if (!el) return;
   el.innerHTML = BC.loading ? 'Memuat Source Barcode…' : BC.err ? `<span class="text-red-600">Source Barcode: ${esc(BC.err)}</span>`
@@ -3602,7 +3595,6 @@ async function rjEnter() {
   $('rjDate').value = todayStr(); $('rjWh').value = localStorage.getItem(RJ_WH_KEY) || RJ_WH_DEF;
   rjFillNames(); rjRender(); rjShowBc();
   loadBarcodes();
-  if (!CK.names.length) { await ckLoadNames(); rjFillNames(); }
 }
 
 const rjTotals = () => ({ n: RJ.rows.length, qty: RJ.rows.reduce((a, r) => a + riQty(r), 0), photos: RJ.rows.reduce((a, r) => a + rjPc(r), 0), open: RJ.rows.filter(r => !r.saved).length });
@@ -3847,7 +3839,7 @@ $('rjTable').addEventListener('input', e => {
 /* ---- simpan / CSV / bersihkan layar ---- */
 async function rjSave() {
   if (!gasReady()) return toast('Atur URL GAS terlebih dahulu', 3500);
-  const name = $('rjName').value; if (!name) { $('rjName').focus(); return toast('Pilih Nama Checker terlebih dahulu', 3500); }
+  rjFillNames(); const name = loginName(); if (!name) return toast('Nama login tidak terbaca. Silakan keluar lalu masuk lagi.', 4500);
   const date = todayStr(); $('rjDate').value = date;
   const open = RJ.rows.filter(r => !r.saved);
   if (!open.length) return toast('Semua baris sudah tersimpan', 3000);
@@ -3880,7 +3872,7 @@ async function rjSave() {
 }
 function rjCsv() {
   if (!RJ.rows.length) return toast('Belum ada data untuk diunduh', 3000);
-  const name = $('rjName').value, date = todayStr();
+  const name = loginName(), date = todayStr();
   downloadCsv(`RejectScrap_${name || 'Checker'}_${date}.csv`,
     ['No', 'Tanggal', 'Nama Checker', 'Lokasi WH', 'Waktu Scan', 'Barcode / Input', 'Product ID', 'Product Name', 'Qty', 'Jumlah Foto', 'Status'],
     RJ.rows.map((r, i) => [i + 1, date, name, r.wh || rjWh(), r.at, r.code, r.id, r.name, riQty(r), rjPc(r), r.saved ? 'Tersimpan' : 'Belum disimpan']));
@@ -3906,9 +3898,8 @@ $('rjInput').addEventListener('focus', () => { if ($('rjInput').value.trim().len
 $('rjSug').addEventListener('mousedown', e => e.preventDefault());   // jaga fokus input saat klik suggest
 $('rjSug').addEventListener('click', e => { const b = e.target.closest('[data-sug]'); if (b) rjPick(RJ.sug[Number(b.dataset.sug)]); });
 document.addEventListener('click', e => { if (!e.target.closest('#rjInput, #rjSug')) rjSugHide(); });
-$('rjName').onchange = () => localStorage.setItem(RJ_NAME, $('rjName').value);
 $('rjSave').onclick = rjSave; $('rjCsv').onclick = rjCsv; $('rjClear').onclick = rjClear;
-$('rjReload').onclick = async () => { await ckLoadNames(true); rjFillNames(); loadBarcodes(true); };
+$('rjReload').onclick = () => { rjFillNames(); loadBarcodes(true); };
 
 $('planDate').value = todayStr();
 /* Dijalankan oleh halaman login SETELAH sesi sah, supaya tidak ada permintaan data sebelum login. */
