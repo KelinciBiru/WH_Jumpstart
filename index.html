@@ -2641,7 +2641,7 @@ $('ckSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.prev
 $('ckGo').onclick = ckSubmitSearch;
 
 /* ---------- Source Barcode (sheet "Source Barcode": barcode -> Product ID + Product Name) ---------- */
-const BC = { map: new Map(), n: 0, loaded: false, loading: null, last: 0, err: '' };
+const BC = { map: new Map(), n: 0, loaded: false, loading: null, last: 0, err: '', ver: '', synced: false };
 const bcKey = d => String(d || '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');   // UPC-A 12 digit == EAN-13 berawalan 0
 function bcSet(items) {
   const m = new Map();
@@ -2689,21 +2689,34 @@ function ckShowBc() {
 }
 async function loadBarcodes(force) {
   if (BC.loading) return BC.loading;
-  if (!BC.loaded) { try { const c = JSON.parse(localStorage.getItem('planner_barcode_cache') || 'null'); if (c && c.length) bcSet(c); } catch (e) { /* abaikan cache rusak */ } }
+  if (!BC.loaded) { try { const c = JSON.parse(localStorage.getItem('planner_barcode_cache') || 'null'); if (c && c.length) { bcSet(c); BC.ver = localStorage.getItem('planner_barcode_ver') || ''; } } catch (e) { /* abaikan cache rusak */ } }
   if (!gasReady()) { ckShowBc(); return; }
   BC.loading = (async () => {
     ckShowBc();
     try {
-      const r = await (await fetch(`${GAS_URL()}?action=getBarcodes${force ? '&refresh=1' : ''}`)).json();
+      // kirim version terakhir: bila isi sheet "Source Barcode" belum berubah, server cukup membalas {unchanged:true} (ringan)
+      const r = await (await fetch(`${GAS_URL()}?action=getBarcodes${force ? '&refresh=1' : ''}${BC.loaded && BC.ver ? '&v=' + encodeURIComponent(BC.ver) : ''}`)).json();
       if (!r.ok) throw new Error(r.error);
-      bcSet(r.items); BC.last = Date.now();
-      try { localStorage.setItem('planner_barcode_cache', JSON.stringify(r.items)); } catch (e) { /* penyimpanan penuh: abaikan */ }
+      BC.last = Date.now();
+      if (!r.unchanged) {
+        const before = BC.n;
+        bcSet(r.items); BC.ver = r.version || '';
+        try { localStorage.setItem('planner_barcode_cache', JSON.stringify(r.items)); localStorage.setItem('planner_barcode_ver', BC.ver); } catch (e) { /* penyimpanan penuh: abaikan */ }
+        if (BC.synced && BC.n !== before) toast(`Source Barcode diperbarui: ${fmt(BC.n)} kode`, 2500);   // data baru dari sheet terbaca otomatis
+        BC.synced = true;
+      }
       if (force && r.conflicts && r.conflicts.length) toast(`${r.conflicts.length} barcode di Source Barcode terdaftar untuk lebih dari satu ID (dipakai baris pertama)`, 6000);
     } catch (e) { BC.err = e.message + ckDeployHint(e); if (!BC.loaded) toast('Gagal memuat Source Barcode: ' + BC.err, 8000); }
     BC.loading = null; ckShowBc();
   })();
   return BC.loading;
 }
+/* sinkron otomatis Source Barcode: selama menu Retur Inbound / Reject/Scrap dipakai, cek sheet tiap 20 detik (ringan: server balas unchanged bila tak ada perubahan) */
+setInterval(() => {
+  if (document.hidden || !gasReady() || BC.loading) return;
+  if (state.menu === 'retur' || state.menu === 'reject' || riInDlg() || rjInDlg()) loadBarcodes(true);
+}, 20000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && gasReady() && (state.menu === 'retur' || state.menu === 'reject') && Date.now() - BC.last > 5000) loadBarcodes(true); });
 $('ckSearch').addEventListener('input', ckShowBc);
 
 /* ---------- scanner: barcode / QR (BarcodeDetector -> html5-qrcode) + angka (OCR Tesseract) + ketik angka ---------- */
@@ -3370,8 +3383,8 @@ async function riResolve(raw) {
   let e = bcLookup(raw);
   const digits = raw.replace(/\D/g, '');
   if (!e && !BC.loaded && gasReady()) { scLive('Memuat Source Barcode…'); await loadBarcodes(); e = bcLookup(raw); scLive(''); }
-  if (!e && digits.length >= 6 && !BC.loading && Date.now() - BC.last > 45000 && gasReady()) {   // barcode baru ditambah di sheet? muat ulang sekali
-    scLive('Mencari di Source Barcode terbaru…'); await loadBarcodes(true); e = bcLookup(raw); scLive('');
+  if (!e && digits.length >= 6 && gasReady() && Date.now() - BC.last > 4000) {   // barcode baru ditambah di sheet? langsung baca ulang sheet (tunggu sinkron yang sedang jalan bila ada)
+    scLive('Mencari di Source Barcode terbaru…'); if (BC.loading) await BC.loading; if (!bcLookup(raw)) await loadBarcodes(true); e = bcLookup(raw); scLive('');
   }
   if (e) { const i = bcInfo(e); if (i.id || i.name) return { id: i.id, name: i.name, code: e.barcode }; }
   const s = skuOf(raw);   // cadangan: Product ID langsung (mis. QR lama berisi Product ID)
