@@ -4231,7 +4231,20 @@ const PB_PAPERS = [
 const PB_GRP = { 'Thermal': 'Kertas Thermal (label / roll)', 'Tom & Jerry': 'Label Sticker Tom & Jerry', 'Kertas Biasa': 'Kertas biasa', 'Custom': 'Ukuran khusus' };
 const PB_DEF = { ptype: 'thermal', paper: 't5030', orient: 'l', cw: 50, ch: 30, cols: 1, rows: 1, auto: true, m: 1, g: 0, qr: 100, text: true, cut: false, ecl: 'M', copies: 1 };
 /* Tom & Jerry: lembar multi-label. Satuan mm. Ukuran bawaan = spesifikasi umum penjual (No. 103: 32 × 64 mm, 12 label per lembar ±160 × 210 mm); sesuaikan bila lembar Anda berbeda. */
-const PB_TJ_DEF = { sheet: 'tj', sw: 160, sh: 210, lw: 32, lh: 64, cols: 4, rows: 3, gx: 0, gy: 0, ctr: true, ml: 0, mt: 0, ox: 0, oy: 0, n: 12, start: 1, pad: 1.5, tpos: 'b', fs: 0, src: 'list', prefix: 'PG-REC-', digits: 3, num: '' };
+const PB_TJ_DEF = { v: 2, sheet: 'tj', sw: 160, sh: 210, lw: 32, lh: 64, cols: 4, rows: 3, gx: 0, gy: 0, ctr: true, ml: 0, mt: 0, ox: 0, oy: 0, n: 12, start: 1, pad: 1.5, tpos: 'b', fs: 0, src: 'list', prefix: 'PG-REC-', digits: 3, num: '' };
+/* Preset per jenis label (setelan siap pakai, user tidak perlu mengatur ulang). No. 121 = 38 × 75 mm, label LANSKAP 75 × 38 di A4 potret, 2 kolom × 5 baris = 10 label,
+   jarak 2 mm, ruang tepi 3 mm, grid mulai dari pojok kiri atas lalu digeser 8,5 mm ke kanan & 6,5 mm ke bawah (kalibrasi printer). */
+const PB_TJ_PRESETS = {
+  tj121: { sheet: 'a4', sw: 210, sh: 297, lw: 75, lh: 38, cols: 2, rows: 5, gx: 2, gy: 2, ctr: false, ml: 0, mt: 0, ox: 8.5, oy: 6.5, pad: 3, n: 10, start: 1 }
+};
+const PB_TJ_KEEP = ['src', 'prefix', 'digits', 'num', 'tpos', 'fs'];   // pilihan sumber QR & teks tidak ikut direset saat ganti jenis label
+function pbTjApplyPaper(c, P) {   // fungsi murni (aman saat inisialisasi)
+  const t = c.tj, keep = {}; PB_TJ_KEEP.forEach(k => { keep[k] = t[k]; });
+  c.orient = 'p';
+  const pr = PB_TJ_PRESETS[P.id];
+  if (pr) Object.assign(t, PB_TJ_DEF, pr, keep);
+  else { Object.assign(t, PB_TJ_DEF, { lw: P.w, lh: P.h }, keep); const f = pbTjFitC(c); t.cols = f.cols; t.rows = f.rows; t.n = f.cols * f.rows; }
+}
 const PB_TJ_SHEETS = [
   { id: 'tj', n: 'Lembar Tom & Jerry (± 160 × 210 mm)', w: 160, h: 210 },
   { id: 'a4', n: 'A4 — 210 × 297 mm', w: 210, h: 297 },
@@ -4252,9 +4265,10 @@ function pbLoadCfg() {
   try {
     const o = JSON.parse(localStorage.getItem(PB_LS) || 'null'); const c = Object.assign({}, PB_DEF, o && typeof o === 'object' ? o : {});
     if (!PB_PAPERS.some(p => p.id === c.paper)) c.paper = PB_DEF.paper;
-    c.tj = Object.assign({}, PB_TJ_DEF, o && o.tj && typeof o.tj === 'object' ? o.tj : {});
+    const saved = o && o.tj && typeof o.tj === 'object' && o.tj.v === PB_TJ_DEF.v ? o.tj : null;   // setelan lama (versi beda) diganti default baru
+    c.tj = Object.assign({}, PB_TJ_DEF, saved || {});
     const P = PB_PAPERS.find(p => p.id === c.paper);
-    if (P && P.grp === 'Tom & Jerry' && !(o && o.tj)) { c.tj.lw = P.w; c.tj.lh = P.h; const f = pbTjFitC(c); c.tj.cols = f.cols; c.tj.rows = f.rows; c.tj.n = f.cols * f.rows; }
+    if (P && P.grp === 'Tom & Jerry' && !saved) { const k = o && o.tj ? o.tj : {}; PB_TJ_KEEP.forEach(x => { if (k[x] !== undefined) c.tj[x] = k[x]; }); pbTjApplyPaper(c, P); }
     return c;
   }
   catch (e) { const c = Object.assign({}, PB_DEF); c.tj = Object.assign({}, PB_TJ_DEF); return c; }
@@ -4269,7 +4283,7 @@ const mmTxt = n => String(Math.round(n * 10) / 10).replace('.', ',');
 function pbSetPaper(id) {
   PB.cfg.paper = id; const P = pbPaper();
   PB.cfg.orient = P.nat || 'l'; PB.cfg.cols = P.cols || 1; PB.cfg.rows = P.rows || 1;
-  if (P.grp === 'Tom & Jerry') { const t = PB.cfg.tj; PB.cfg.orient = 'p'; t.lw = P.w; t.lh = P.h; const f = pbTjFitC(PB.cfg); t.cols = f.cols; t.rows = f.rows; t.n = f.cols * f.rows; t.start = 1; }   // jenis label dipilih -> ukuran label & kisi menyesuaikan
+  if (P.grp === 'Tom & Jerry') pbTjApplyPaper(PB.cfg, P);   // jenis label dipilih -> setelan preset (No. 121) / ukuran label & kisi menyesuaikan
 }
 
 /* ---- geometri: semua ukuran dihitung otomatis dari kertas ---- */
