@@ -417,6 +417,11 @@ body:not(.pb-mode) #printPanel { display: none !important; }
 .pb-list { max-height: 340px; overflow-y: auto; border: 1px solid var(--line); border-radius: .75rem; }
 .pb-row { display: flex; align-items: center; gap: .7rem; padding: .45rem .75rem; border-bottom: 1px solid #F0F0ED; cursor: pointer; font-size: .9rem; font-weight: 600; }
 .pb-row:last-child { border-bottom: 0; }
+.pb-row .pb-loc { margin-left: auto; font-size: .7rem; font-weight: 700; color: #686760; background: #F3F3F0; border-radius: 999px; padding: .1rem .55rem; white-space: nowrap; max-width: 55%; overflow: hidden; text-overflow: ellipsis; }
+.pb-locbox { max-height: 132px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: .4rem; padding: .5rem; border: 1px solid var(--line); border-radius: .75rem; background: #FAFAF8; }
+.pb-chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: .25rem .7rem; font-size: .75rem; font-weight: 700; color: #52514B; cursor: pointer; min-height: 30px; }
+.pb-chip small { font-weight: 600; opacity: .65; margin-left: .25rem; }
+.pb-chip.on { background: #141414; border-color: #141414; color: #FBB315; }
 .pb-row:hover { background: #FFF8E1; }
 .pb-row input { width: 18px; height: 18px; accent-color: #141414; flex: 0 0 auto; }
 #pbSearch { font-size: 16px; }
@@ -930,11 +935,19 @@ body:not(.pb-mode) #printPanel { display: none !important; }
                 <h2 class="display text-lg">Data Kode</h2>
                 <button id="pbReload" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Muat ulang</button>
               </div>
-              <p id="pbSrc" class="text-xs text-slate-500">Sumber: spreadsheet “Dashboard Plan Warehouse PG” · sheet “Barcode Label” · kolom B (Code)</p>
+              <p id="pbSrc" class="text-xs text-slate-500">Sumber: spreadsheet “Dashboard Plan Warehouse PG” · sheet “Barcode Label” · kolom A (Location Code) &amp; kolom B (Code)</p>
               <p class="pb-tjonly text-[11px] leading-relaxed text-slate-500">Mode Tom &amp; Jerry: centang <b>2 kode atau lebih</b> (atau tekan “Pilih semua”) = hanya kode terpilih yang dicetak, jumlah label &amp; lembar dihitung otomatis dan langsung tampil di preview. Centang 1 kode = titik awal, lalu label berikutnya memakai kode urut di bawahnya sebanyak “Jumlah label dicetak”. Tanpa centang = mulai dari kode paling atas.</p>
-              <input id="pbSearch" type="search" placeholder="Cari kode, mis. PG-REC-001…" autocomplete="off" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+              <div id="pbLocWrap" class="space-y-1.5">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="pb-g">Location Code</div>
+                  <button id="pbLocAll" type="button" class="btn btn-ghost" style="padding:.25rem .7rem;font-size:.72rem;min-height:30px" title="Tampilkan kode dari semua Location">Semua Location</button>
+                </div>
+                <div id="pbLocBox" class="pb-locbox" role="group" aria-label="Pilih Location"></div>
+                <p id="pbLocInfo" class="text-[11px] text-slate-500"></p>
+              </div>
+              <input id="pbSearch" type="search" placeholder="Cari kode atau Location, mis. PG-REC-001…" autocomplete="off" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
               <div class="flex flex-wrap gap-2">
-                <button id="pbAll" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Pilih semua (hasil pencarian)</button>
+                <button id="pbAll" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Pilih semua (hasil filter)</button>
                 <button id="pbNone" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Kosongkan pilihan</button>
               </div>
               <p id="pbSelInfo" class="rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" aria-live="polite"></p>
@@ -2507,7 +2520,7 @@ const MENUS = {
     packer: '', loadBtn: 'Muat data', empty: 'Belum ada data'
   },
   print: {
-    nav: 'Print/Cetak', title: 'Print Barcode', sub: 'Cetak QR Code dari sheet Barcode Label · untuk Manager, SPV & Admin', side: 'Print/Cetak · Warehouse PG',
+    nav: 'Print/Cetak', title: 'Print Barcode', sub: 'Cetak QR Code dari sheet Barcode Label (pilih per Location) · untuk Manager, SPV & Admin', side: 'Print/Cetak · Warehouse PG',
     saveAction: '', loadAction: '', noun: 'Print Barcode', loadTitle: 'Print Barcode', fp: 'PrintBarcode_',
     xlsLabel: 'Print Barcode', xlsSheet: 'Print Barcode', xlsFile: 'PrintBarcode',
     packer: '', loadBtn: 'Muat data', empty: 'Belum ada data'
@@ -4215,7 +4228,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 <script id="pb-js">
 /* =====================================================================
    PRINT / CETAK > PRINT BARCODE  (Role: Manager, SPV, Admin — ditegakkan di GAS lewat ACTION_ACL)
-   Data   : GAS action getBarcodeLabels -> sheet "Barcode Label" kolom B (Code), mulai B2
+   Data   : GAS action getBarcodeLabels -> sheet "Barcode Label" kolom A (Location Code) & kolom B (Code), mulai baris 2; filter Location memilih kode yang boleh dicetak
    QR     : dibuat di browser (SVG vektor, library qrcode-generator tertanam) -> tajam di printer thermal maupun laser/inkjet
    Kertas : @page size dibuat dinamis dari jenis kertas + orientasi, margin halaman = 0; margin & jarak label, ukuran QR, dan ukuran teks
             dihitung otomatis dari ukuran kertas (kode terpanjang menentukan ukuran teks supaya semua label seragam & tidak terpotong)
@@ -4292,7 +4305,7 @@ function pbLoadCfg() {
   try { return pbCfgFrom(JSON.parse(localStorage.getItem(PB_LS) || 'null')); }
   catch (e) { const c = Object.assign({}, PB_DEF); c.tj = Object.assign({}, PB_TJ_DEF); return c; }
 }
-const PB = { cfg: pbLoadCfg(), codes: [], codeSet: new Set(), sel: new Set(), loaded: false, loading: false, err: '', dup: 0, q: '', limit: 150, last: -1, f: [], init: false, g: null,
+const PB = { cfg: pbLoadCfg(), codes: [], codeSet: new Set(), loc: new Map(), locList: [], locSel: new Set(), sel: new Set(), loaded: false, loading: false, err: '', dup: 0, q: '', limit: 150, last: -1, f: [], init: false, g: null,
   saved: { has: false, at: '', str: '' }, setApplied: false, setBusy: false };
 const pbSave = () => { try { localStorage.setItem(PB_LS, JSON.stringify(PB.cfg)); } catch (e) { /* penyimpanan penuh / diblokir */ } };
 
@@ -4518,23 +4531,45 @@ async function pbLoad(force) {
     const r = await (await fetch(`${GAS_URL()}?action=getBarcodeLabels${force ? '&refresh=1' : ''}`)).json();
     if (!r || !r.ok) throw new Error((r && r.error) || 'Gagal memuat sheet Barcode Label');
     PB.codes = Array.isArray(r.codes) ? r.codes.map(String) : []; PB.codeSet = new Set(PB.codes); PB.dup = r.duplicates || 0; PB.loaded = true;
+    PB.loc = new Map(); const lc = Array.isArray(r.locs) ? r.locs : []; PB.codes.forEach((c, i) => PB.loc.set(c, String(lc[i] == null ? '' : lc[i])));
+    pbLocRebuild();
     for (const c of [...PB.sel]) if (!PB.codeSet.has(c)) PB.sel.delete(c);
     if (force) toast(`Barcode Label dimuat ulang: ${fmt(PB.codes.length)} kode`, 2600);
   } catch (e) {
     PB.err = /Action tidak dikenal/i.test(e.message) ? 'Server belum diperbarui. Deploy ulang Apps Script sebagai versi baru.' : (e.message || 'Gagal memuat data');
   } finally { PB.loading = false; pbRenderList(); pbRender(); }
 }
-const pbFiltered = () => { const q = PB.q.trim().toLowerCase(); return q ? PB.codes.filter(c => c.toLowerCase().includes(q)) : PB.codes; };
+const PB_NOLOC = '(Tanpa Location)';
+const pbLocOf = c => PB.loc.get(c) || '';
+function pbLocRebuild() {   // daftar Location unik (urutan sheet) + jumlah kode; pilihan Location yang sudah tidak ada dibuang
+  const m = new Map(); PB.codes.forEach(c => { const l = pbLocOf(c); m.set(l, (m.get(l) || 0) + 1); });
+  PB.locList = [...m].map(([name, count]) => ({ name, count }));
+  for (const l of [...PB.locSel]) if (!m.has(l)) PB.locSel.delete(l);
+}
+const pbFiltered = () => {
+  const q = PB.q.trim().toLowerCase(), ls = PB.locSel;
+  return PB.codes.filter(c => (!ls.size || ls.has(pbLocOf(c))) && (!q || c.toLowerCase().includes(q) || pbLocOf(c).toLowerCase().includes(q)));
+};
+function pbRenderLoc() {
+  const wrap = $('pbLocWrap'), box = $('pbLocBox'); if (!wrap || !box) return;
+  const hasLoc = PB.locList.some(o => o.name);
+  wrap.classList.toggle('hidden', !PB.loaded || !hasLoc);
+  if (!PB.loaded || !hasLoc) return;
+  box.innerHTML = PB.locList.map((o, i) => `<button type="button" class="pb-chip${PB.locSel.has(o.name) ? ' on' : ''}" data-li="${i}">${esc(o.name || PB_NOLOC)}<small>${fmt(o.count)}</small></button>`).join('');
+  const n = PB.locSel.size, inLoc = n ? PB.locList.filter(o => PB.locSel.has(o.name)).reduce((a, o) => a + o.count, 0) : PB.codes.length;
+  $('pbLocInfo').textContent = n ? `${fmt(n)} Location dipilih · ${fmt(inLoc)} kode ditampilkan. Hanya kode pada Location ini yang bisa dipilih untuk dicetak.` : `Semua Location (${fmt(PB.locList.length)}) · ${fmt(PB.codes.length)} kode. Klik Location untuk menyaring; bisa pilih lebih dari satu.`;
+}
 function pbRenderList() {
   const box = $('pbList'); if (!box) return;
   const msg = (t, cls) => `<div class="px-4 py-6 text-center text-sm ${cls || 'text-slate-500'}">${t}</div>`;
   if (PB.loading && !PB.loaded) { box.innerHTML = msg('Memuat sheet “Barcode Label”…'); return; }
   if (PB.err) { box.innerHTML = msg(esc(PB.err), 'text-red-600'); return; }
   const f = PB.f = pbFiltered();
-  $('pbSrc').textContent = PB.loaded ? `Sumber: sheet “Barcode Label” kolom B · ${fmt(PB.codes.length)} kode${PB.dup ? ` (${fmt(PB.dup)} kode ganda diabaikan)` : ''}` : 'Sumber: sheet “Barcode Label” kolom B (Code)';
-  if (!f.length) { box.innerHTML = msg(PB.codes.length ? 'Tidak ada kode yang cocok dengan pencarian.' : 'Sheet “Barcode Label” belum berisi kode di kolom B.'); return; }
+  $('pbSrc').textContent = PB.loaded ? `Sumber: sheet “Barcode Label” kolom A (Location Code) & B (Code) · ${fmt(f.length)} dari ${fmt(PB.codes.length)} kode${PB.dup ? ` (${fmt(PB.dup)} kode ganda diabaikan)` : ''}` : 'Sumber: sheet “Barcode Label” kolom A (Location Code) & B (Code)';
+  pbRenderLoc();
+  if (!f.length) { box.innerHTML = msg(PB.codes.length ? 'Tidak ada kode yang cocok dengan Location / pencarian.' : 'Sheet “Barcode Label” belum berisi kode di kolom B.'); return; }
   const shown = f.slice(0, PB.limit);
-  box.innerHTML = shown.map((c, i) => `<label class="pb-row"><input type="checkbox" data-i="${i}"${PB.sel.has(c) ? ' checked' : ''}><span class="num">${esc(c)}</span></label>`).join('') +
+  box.innerHTML = shown.map((c, i) => `<label class="pb-row"><input type="checkbox" data-i="${i}"${PB.sel.has(c) ? ' checked' : ''}><span class="num">${esc(c)}</span>${pbLocOf(c) ? `<span class="pb-loc" title="${esc(pbLocOf(c))}">${esc(pbLocOf(c))}</span>` : ''}</label>`).join('') +
     (f.length > shown.length ? `<div class="p-2"><button type="button" id="pbMore" class="btn btn-ghost w-full">Tampilkan lebih banyak (${fmt(f.length - shown.length)} tersisa)</button></div>` : '');
 }
 
@@ -4581,6 +4616,13 @@ function pbInit() {
   $('pbSearch').addEventListener('input', e => { PB.q = e.target.value; PB.limit = 150; PB.last = -1; pbRenderList(); });
   $('pbAll').onclick = () => { pbFiltered().forEach(c => PB.sel.add(c)); pbRenderList(); pbRender(); };
   $('pbNone').onclick = () => { PB.sel.clear(); pbRenderList(); pbRender(); };
+  $('pbLocBox').addEventListener('click', e => {
+    const b = e.target.closest('[data-li]'); if (!b) return;
+    const o = PB.locList[+b.dataset.li]; if (!o) return;
+    if (PB.locSel.has(o.name)) PB.locSel.delete(o.name); else PB.locSel.add(o.name);
+    PB.limit = 150; PB.last = -1; pbRenderList();
+  });
+  $('pbLocAll').onclick = () => { PB.locSel.clear(); PB.limit = 150; PB.last = -1; pbRenderList(); };
   $('pbReload').onclick = () => pbLoad(true);
   $('pbPrintBtn').onclick = pbPrint;
   $('pbSaveSet').onclick = pbSaveSetting; $('pbLoadSet').onclick = () => pbSetSync(true); $('pbDelSet').onclick = pbDeleteSetting;
