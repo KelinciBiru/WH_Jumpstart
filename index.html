@@ -444,6 +444,12 @@ body:not(.pb-mode) #printPanel { display: none !important; }
 .pb-qr { display: block; flex: 0 0 auto; }
 .pb-qr svg { display: block; width: 100%; height: 100%; }
 .pb-tx { font-family: 'Courier New', Courier, 'DejaVu Sans Mono', monospace; font-weight: 700; white-space: nowrap; line-height: 1.25; text-align: center; letter-spacing: 0; }
+/* --- Simpan Setelan --- */
+.pb-setstat { font-size: .68rem; font-weight: 700; padding: .18rem .55rem; border-radius: 999px; background: #F0F0ED; color: #686760; white-space: nowrap; }
+.pb-setstat.ok { background: #E6F4EA; color: #1E6B34; }
+.pb-setstat.dirty { background: #FFF1CC; color: #8A5A00; }
+.pb-setbar { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pb-setbar .btn:disabled { opacity: .45; cursor: not-allowed; }
 .nav-sub { padding-left: 1.5rem; }
 .dk6 .dk { font-size: 8.5px; letter-spacing: -.01em; }
 .dk6 .dk svg { width: 20px; height: 20px; }
@@ -781,7 +787,15 @@ body:not(.pb-mode) #printPanel { display: none !important; }
             <div class="panel space-y-4 p-4 md:p-5">
               <div class="flex items-center justify-between gap-2">
                 <h2 class="display text-lg">Page Setup</h2>
-                <span class="text-[11px] text-slate-500">Pengaturan tersimpan otomatis di perangkat ini</span>
+                <span id="pbSetStat" class="pb-setstat" aria-live="polite">Memuat setelan…</span>
+              </div>
+              <div class="space-y-1.5">
+                <div class="pb-setbar">
+                  <button id="pbSaveSet" type="button" class="btn btn-accent" style="padding:.35rem .9rem;font-size:.78rem;min-height:36px" title="Simpan semua pengaturan kertas, tata letak &amp; label di bawah ini">Simpan Setelan</button>
+                  <button id="pbLoadSet" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px" title="Kembalikan pengaturan ke setelan yang terakhir disimpan">Pakai Setelan Tersimpan</button>
+                  <button id="pbDelSet" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px" title="Hapus setelan tersimpan">Hapus</button>
+                </div>
+                <p class="text-[11px] leading-relaxed text-slate-500">Setelan yang disimpan (printer, kertas, kolom × baris, ukuran label, margin, geser cetak, ukuran QR, dll.) otomatis dipakai setiap kali menu ini dibuka, di perangkat mana pun Anda masuk. Slot awal &amp; nomor awal kode tidak ikut disimpan karena berbeda tiap cetakan.</p>
               </div>
 
               <div class="space-y-1.5">
@@ -849,6 +863,7 @@ body:not(.pb-mode) #printPanel { display: none !important; }
                   <label class="pb-f">Mulai dari slot (lembar 1)<input id="pbTjStart" type="number" min="1" step="1" inputmode="numeric"></label>
                 </div>
                 <p id="pbTjSlotHint" class="text-[11px] text-slate-500"></p>
+                <p id="pbTjNHint" class="text-[11px] font-semibold text-slate-700"></p>
               </div>
 
               <div class="space-y-3">
@@ -916,12 +931,13 @@ body:not(.pb-mode) #printPanel { display: none !important; }
                 <button id="pbReload" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Muat ulang</button>
               </div>
               <p id="pbSrc" class="text-xs text-slate-500">Sumber: spreadsheet “Dashboard Plan Warehouse PG” · sheet “Barcode Label” · kolom B (Code)</p>
-              <p class="pb-tjonly text-[11px] leading-relaxed text-slate-500">Mode Tom &amp; Jerry: kode awal = kode pertama yang dicentang (tidak ada centang = mulai dari kode paling atas). Label berikutnya memakai kode urut di bawahnya, masing-masing berbeda.</p>
+              <p class="pb-tjonly text-[11px] leading-relaxed text-slate-500">Mode Tom &amp; Jerry: centang <b>2 kode atau lebih</b> (atau tekan “Pilih semua”) = hanya kode terpilih yang dicetak, jumlah label &amp; lembar dihitung otomatis dan langsung tampil di preview. Centang 1 kode = titik awal, lalu label berikutnya memakai kode urut di bawahnya sebanyak “Jumlah label dicetak”. Tanpa centang = mulai dari kode paling atas.</p>
               <input id="pbSearch" type="search" placeholder="Cari kode, mis. PG-REC-001…" autocomplete="off" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
               <div class="flex flex-wrap gap-2">
                 <button id="pbAll" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Pilih semua (hasil pencarian)</button>
                 <button id="pbNone" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Kosongkan pilihan</button>
               </div>
+              <p id="pbSelInfo" class="rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" aria-live="polite"></p>
               <div id="pbList" class="pb-list" role="group" aria-label="Daftar kode"></div>
               <p class="text-[11px] text-slate-500">Tip: klik satu kode lalu tekan <b>Shift</b> + klik kode lain untuk memilih rentang.</p>
             </div>
@@ -4261,20 +4277,122 @@ function pbTjFitC(c) {
   const lw = f(t.lw, 32) || 1, lh = f(t.lh, 64) || 1, gx = f(t.gx, 0), gy = f(t.gy, 0);
   return { cols: Math.max(1, Math.floor((W - 2 * M + gx) / (lw + gx))), rows: Math.max(1, Math.floor((H - 2 * M + gy) / (lh + gy))) };
 }
+function pbCfgFrom(o) {   // normalisasi objek setelan (dari perangkat / server) menjadi cfg yang valid
+  const c = Object.assign({}, PB_DEF, o && typeof o === 'object' ? o : {});
+  if (!PB_PAPERS.some(p => p.id === c.paper)) c.paper = PB_DEF.paper;
+  if (c.ptype !== 'thermal' && c.ptype !== 'office') c.ptype = PB_DEF.ptype;
+  const saved = o && o.tj && typeof o.tj === 'object' && o.tj.v === PB_TJ_DEF.v ? o.tj : null;   // setelan lama (versi beda) diganti default baru
+  c.tj = Object.assign({}, PB_TJ_DEF, saved || {});
+  const P = PB_PAPERS.find(p => p.id === c.paper);
+  if (P && P.grp === 'Tom & Jerry' && !saved) { const k = o && o.tj ? o.tj : {}; PB_TJ_KEEP.forEach(x => { if (k[x] !== undefined) c.tj[x] = k[x]; }); pbTjApplyPaper(c, P); }
+  if (P && P.grp === 'Thermal') c.ptype = 'thermal'; else if (P && P.grp === 'Kertas Biasa') c.ptype = 'office';   // tipe printer selalu cocok dengan jenis kertas
+  return c;
+}
 function pbLoadCfg() {
-  try {
-    const o = JSON.parse(localStorage.getItem(PB_LS) || 'null'); const c = Object.assign({}, PB_DEF, o && typeof o === 'object' ? o : {});
-    if (!PB_PAPERS.some(p => p.id === c.paper)) c.paper = PB_DEF.paper;
-    const saved = o && o.tj && typeof o.tj === 'object' && o.tj.v === PB_TJ_DEF.v ? o.tj : null;   // setelan lama (versi beda) diganti default baru
-    c.tj = Object.assign({}, PB_TJ_DEF, saved || {});
-    const P = PB_PAPERS.find(p => p.id === c.paper);
-    if (P && P.grp === 'Tom & Jerry' && !saved) { const k = o && o.tj ? o.tj : {}; PB_TJ_KEEP.forEach(x => { if (k[x] !== undefined) c.tj[x] = k[x]; }); pbTjApplyPaper(c, P); }
-    return c;
-  }
+  try { return pbCfgFrom(JSON.parse(localStorage.getItem(PB_LS) || 'null')); }
   catch (e) { const c = Object.assign({}, PB_DEF); c.tj = Object.assign({}, PB_TJ_DEF); return c; }
 }
-const PB = { cfg: pbLoadCfg(), codes: [], codeSet: new Set(), sel: new Set(), loaded: false, loading: false, err: '', dup: 0, q: '', limit: 150, last: -1, f: [], init: false, g: null };
+const PB = { cfg: pbLoadCfg(), codes: [], codeSet: new Set(), sel: new Set(), loaded: false, loading: false, err: '', dup: 0, q: '', limit: 150, last: -1, f: [], init: false, g: null,
+  saved: { has: false, at: '', str: '' }, setApplied: false, setBusy: false };
 const pbSave = () => { try { localStorage.setItem(PB_LS, JSON.stringify(PB.cfg)); } catch (e) { /* penyimpanan penuh / diblokir */ } };
+
+/* =====================================================================
+   SIMPAN SETELAN  (satu setelan tersimpan per akun)
+   - Disimpan di GAS (sheet "Setelan Print", action savePrintSetting) -> ikut ke perangkat mana pun; salinan di perangkat dipakai
+     sebagai cache supaya setelan langsung terpasang tanpa menunggu server dan tetap ada bila server sedang tidak terjangkau.
+   - Dipakai otomatis saat menu Print Barcode pertama dibuka (setelah login / muat ulang halaman).
+   - Slot awal (tj.start) & nomor awal (tj.num) sengaja tidak ikut disimpan: nilainya khusus untuk satu kali cetak.
+   ===================================================================== */
+const PB_SAVED_LS = 'planner_pb_saved_v1:';
+const PB_SET_VOLATILE = { start: 1, num: '' };
+const pbUserKey = () => { try { return String(loginName() || '').trim().toLowerCase(); } catch (e) { return ''; } };
+const pbSnap = cfg => { const c = JSON.parse(JSON.stringify(cfg || PB.cfg)); c.tj = Object.assign(c.tj || {}, PB_SET_VOLATILE); return c; };
+const pbStable = o => JSON.stringify(o, (k, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.keys(v).sort().reduce((a, x) => (a[x] = v[x], a), {}) : v);
+const pbCacheGet = () => { try { const u = pbUserKey(); return u ? JSON.parse(localStorage.getItem(PB_SAVED_LS + u) || 'null') : null; } catch (e) { return null; } };
+const pbCachePut = rec => { try { const u = pbUserKey(); if (!u) return; if (rec) localStorage.setItem(PB_SAVED_LS + u, JSON.stringify(rec)); else localStorage.removeItem(PB_SAVED_LS + u); } catch (e) { /* penyimpanan penuh / diblokir */ } };
+const pbNowTxt = () => todayStr() + ' ' + new Date().toTimeString().slice(0, 5);
+const pbSetErr = e => /Action tidak dikenal/i.test(e && e.message) ? 'Server belum diperbarui. Deploy ulang Apps Script sebagai versi baru.' : ((e && e.message) || 'Gagal menghubungi server');
+
+function pbSetStatus() {
+  const el = $('pbSetStat'); if (!el) return;
+  const s = PB.saved, ld = $('pbLoadSet'), dl = $('pbDelSet');
+  if (!s.has) { el.className = 'pb-setstat'; el.textContent = 'Belum ada setelan tersimpan'; }
+  else if (pbStable(pbSnap()) !== s.str) { el.className = 'pb-setstat dirty'; el.textContent = 'Ada perubahan belum disimpan'; }
+  else { el.className = 'pb-setstat ok'; el.textContent = 'Setelan tersimpan' + (s.at ? ' · ' + s.at : ''); }
+  if (ld) ld.disabled = !s.has; if (dl) dl.disabled = !s.has;
+}
+function pbApplySaved(cfg, at, quiet) {
+  PB.cfg = pbCfgFrom(cfg);
+  PB.saved = { has: true, at: at || '', str: pbStable(pbSnap()) };
+  pbSave(); pbFillControls(); pbRender();
+  if (!quiet) toast('Setelan tersimpan dipakai', 2400);
+}
+async function pbSaveSetting() {
+  if (PB.setBusy) return toast('Sebentar, setelan sedang diproses. Coba lagi.', 2500);
+  PB.setBusy = true; const btn = $('pbSaveSet'); btn.disabled = true;
+  const snap = pbSnap(); let at = pbNowTxt();
+  try {
+    if (!gasReady()) throw new Error('URL GAS belum diatur.');
+    const r = await (await fetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'savePrintSetting', setting: snap }) })).json();
+    if (!r || !r.ok) throw new Error((r && r.error) || 'Gagal menyimpan setelan');
+    at = String(r.savedAt || at).slice(0, 16);
+    pbCachePut({ cfg: snap, at });
+    PB.saved = { has: true, at, str: pbStable(snap) };
+    toast('Setelan disimpan. Otomatis dipakai setiap kali Print Barcode dibuka.', 3500);
+  } catch (e) {
+    pbCachePut({ cfg: snap, at, local: true });   // server gagal: tetap simpan di perangkat ini
+    PB.saved = { has: true, at, str: pbStable(snap) };
+    toast('Tersimpan di perangkat ini saja, gagal ke server: ' + pbSetErr(e), 6000);
+  } finally { PB.setBusy = false; btn.disabled = false; pbSetStatus(); }
+}
+/* manual = true: tombol "Pakai Setelan Tersimpan". manual = false: sinkron otomatis saat menu dibuka. */
+async function pbSetSync(manual) {
+  if (PB.setBusy) { if (manual) toast('Sebentar, setelan sedang diproses. Coba lagi.', 2500); return; }
+  PB.setBusy = true;
+  const cache = pbCacheGet();
+  try {
+    if (!gasReady()) throw new Error('URL GAS belum diatur.');
+    const r = await (await fetch(`${GAS_URL()}?action=getPrintSetting`)).json();
+    if (!r || !r.ok) throw new Error((r && r.error) || 'Gagal memuat setelan tersimpan');
+    if (r.found && r.setting && typeof r.setting === 'object') {
+      const at = String(r.savedAt || '').slice(0, 16), incoming = pbStable(pbSnap(pbCfgFrom(r.setting)));
+      pbCachePut({ cfg: r.setting, at });
+      const clean = !PB.saved.has || pbStable(pbSnap()) === PB.saved.str;   // layar belum diubah dari setelan sebelumnya
+      if (manual || (clean && incoming !== PB.saved.str)) pbApplySaved(r.setting, at, false);
+      else { PB.saved = { has: true, at, str: incoming }; pbSetStatus(); }
+    } else if (cache && cache.local) {   // hanya ada di perangkat ini (server sempat gagal saat menyimpan)
+      if (manual) pbApplySaved(cache.cfg, cache.at, false);
+      else pbSetStatus();
+      if (manual) toast('Setelan ini baru ada di perangkat ini. Tekan “Simpan Setelan” untuk mengirimnya ke server.', 5000);
+    } else {
+      if (cache) pbCachePut(null);   // sudah dihapus dari perangkat lain
+      PB.saved = { has: false, at: '', str: '' }; pbSetStatus();
+      if (manual) toast('Belum ada setelan tersimpan', 3000);
+    }
+  } catch (e) {
+    if (manual) {
+      if (cache && cache.cfg) { pbApplySaved(cache.cfg, cache.at, true); toast('Server tidak terjangkau, memakai setelan tersimpan di perangkat ini.', 4500); }
+      else toast(pbSetErr(e), 5000);
+    }
+  } finally { PB.setBusy = false; pbSetStatus(); }
+}
+async function pbDeleteSetting() {
+  if (!PB.saved.has) return;
+  if (PB.setBusy) return toast('Sebentar, setelan sedang diproses. Coba lagi.', 2500);
+  if (!confirm('Hapus setelan tersimpan?\nPengaturan di layar tidak berubah, hanya tidak dipakai otomatis lagi saat menu dibuka.')) return;
+  PB.setBusy = true;
+  try {
+    const cache = pbCacheGet();
+    if (!(cache && cache.local) || gasReady()) {
+      if (!gasReady()) throw new Error('URL GAS belum diatur.');
+      const r = await (await fetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deletePrintSetting' }) })).json();
+      if (!r || !r.ok) throw new Error((r && r.error) || 'Gagal menghapus setelan');
+    }
+    pbCachePut(null); PB.saved = { has: false, at: '', str: '' };
+    toast('Setelan tersimpan dihapus', 2600);
+  } catch (e) { toast('Gagal menghapus: ' + pbSetErr(e), 5000); }
+  finally { PB.setBusy = false; pbSetStatus(); }
+}
 const pbNum = (v, lo, hi, d) => { v = parseFloat(String(v).replace(',', '.')); return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };
 const pbPaper = () => PB_PAPERS.find(p => p.id === PB.cfg.paper) || PB_PAPERS[2];
 const pbPapers = () => PB_PAPERS.filter(p => p.grp === 'Tom & Jerry' || p.grp === 'Custom' || p.grp === (PB.cfg.ptype === 'thermal' ? 'Thermal' : 'Kertas Biasa'));
@@ -4338,9 +4456,18 @@ function pbItems() {
   return out;
 }
 
+/* baris ringkas di bawah tombol "Pilih semua": jumlah kode terpilih, label, dan lembar yang akan dicetak (selalu ikut pilihan terbaru) */
+function pbSelLine(labels, pages, tj) {
+  const el = $('pbSelInfo'); if (!el) return;
+  const n = PB.sel.size;
+  if (n) el.textContent = `${fmt(n)} dari ${fmt(PB.codes.length)} kode dipilih · ${fmt(labels)} label · ${fmt(pages)} lembar akan dicetak`;
+  else el.textContent = tj ? `Belum ada kode dipilih · mencetak ${fmt(labels)} label dari kode paling atas · ${fmt(pages)} lembar` : 'Belum ada kode dipilih. Centang kode atau tekan “Pilih semua”.';
+}
+
 /* ---- preview ---- */
 function pbRender() {
   const box = $('pbPrev'); if (!box) return;
+  pbSetStatus();
   if (pbIsTj()) return pbRenderTj();
   const items = pbItems(), sample = !items.length;
   const maxLen = (sample ? ['PG-REC-001'] : items).reduce((a, c) => Math.max(a, c.length), 0);
@@ -4348,7 +4475,8 @@ function pbRender() {
   const list = sample ? Array(Math.min(g.per, 60)).fill('PG-REC-001') : items;
   const pages = Math.max(1, Math.ceil(list.length / g.per));
   const labelsN = items.length;
-  $('pbSum').textContent = `${fmt(PB.sel.size)} kode dipilih · ${fmt(labelsN)} label · ${fmt(sample ? 0 : pages)} halaman`;
+  $('pbSum').textContent = `${fmt(PB.sel.size)} kode dipilih · ${fmt(labelsN)} label · ${fmt(sample ? 0 : pages)} lembar`;
+  pbSelLine(labelsN, sample ? 0 : pages, false);
   $('pbPrintBtn').disabled = !labelsN || g.bad;
   const orient = g.roll ? 'Roll (tinggi otomatis)' : g.W >= g.H ? 'Lanskap' : 'Potret';
   $('pbInfo').innerHTML = `<b>Penyesuaian otomatis:</b> kertas ${mmTxt(g.W)} × ${mmTxt(g.H)} mm · ${orient} · ${g.per > 1 ? g.cols + ' × ' + g.rows + ' = ' + g.per + ' label/halaman' : '1 label/halaman'} · margin ${mmTxt(g.m)} mm${g.gap ? ' · jarak ' + mmTxt(g.gap) + ' mm' : ''} · QR ${mmTxt(g.q)} mm${g.fs ? ' · teks ' + mmTxt(g.fs) + ' mm' : ''}. Margin halaman pada dialog cetak sudah dibuat 0 (tidak perlu diatur ulang).`;
@@ -4455,6 +4583,7 @@ function pbInit() {
   $('pbNone').onclick = () => { PB.sel.clear(); pbRenderList(); pbRender(); };
   $('pbReload').onclick = () => pbLoad(true);
   $('pbPrintBtn').onclick = pbPrint;
+  $('pbSaveSet').onclick = pbSaveSetting; $('pbLoadSet').onclick = () => pbSetSync(true); $('pbDelSet').onclick = pbDeleteSetting;
   $('pbList').addEventListener('click', e => {
     if (e.target.closest('#pbMore')) { PB.limit += 150; return pbRenderList(); }
     const inp = e.target.closest('input[data-i]'); if (!inp) return;
@@ -4468,6 +4597,12 @@ function pbInit() {
 }
 function pbEnter() {
   if (!PB.init) pbInit();
+  if (!PB.setApplied) {   // pertama kali menu dibuka: pasang setelan tersimpan (cache perangkat dulu, lalu cocokkan dengan server)
+    PB.setApplied = true;
+    const c = pbCacheGet();
+    if (c && c.cfg) pbApplySaved(c.cfg, c.at, true);
+    pbSetSync(false);
+  }
   pbFillControls(); pbRenderList(); pbRender();
   if (!PB.loaded) pbLoad(false);
 }
@@ -4520,6 +4655,8 @@ function pbTjSrcInfo() {
   }
   const all = PB.codes;
   if (!all.length) return { n, mode: 'list', codes: Array.from({ length: Math.min(n, 60) }, (_, i) => 'PG-REC-' + String(i + 1).padStart(3, '0')), short: 0, sample: true };
+  const picked = all.filter(c => PB.sel.has(c));   // urutan sheet
+  if (picked.length >= 2) return { n: picked.length, mode: 'list', codes: picked, short: 0, sample: false, auto: true };   // pilih semua / beberapa kode: jumlah label = jumlah kode terpilih
   const fi = all.findIndex(c => PB.sel.has(c)), s = fi > 0 ? fi : 0, codes = all.slice(s, s + n);
   return { n, mode: 'list', codes, short: Math.max(0, n - codes.length), sample: false };
 }
@@ -4538,12 +4675,16 @@ function pbRenderTj() {
   const info = pbTjSrcInfo(), codes = info.codes;
   const g = PB.g = pbTjGeo(codes.reduce((a, c) => Math.max(a, c.length), 6));
   const items = pbTjItems(codes, g), pages = Math.max(1, Math.ceil(items.length / g.per));
+  const nIn = $('pbTjN');   // kode terpilih >= 2: isian jumlah label otomatis mengikuti pilihan
+  if (nIn) { nIn.disabled = !!info.auto; if (info.auto) nIn.value = codes.length; else if (document.activeElement !== nIn) nIn.value = PB.cfg.tj.n; }
+  const nHint = $('pbTjNHint'); if (nHint) nHint.textContent = info.auto ? `Otomatis: ${fmt(codes.length)} kode terpilih = ${fmt(codes.length)} label. Kosongkan pilihan untuk mengisi jumlah label secara manual.` : '';
   $('pbTjSlotHint').textContent = `Slot 1–${g.per} (kiri ke kanan, atas ke bawah). Klik kotak pada preview lembar 1 untuk memilih slot awal${g.start > 1 ? ` · slot 1–${g.start - 1} dikosongkan` : ''}.`;
   $('pbSum').textContent = info.sample ? 'Tom & Jerry · belum ada kode' : `${fmt(codes.length)} label (QR berbeda tiap label) · ${fmt(pages)} lembar · mulai slot ${g.start}`;
+  pbSelLine(info.sample ? 0 : codes.length, info.sample ? 0 : pages, true);
   $('pbPrintBtn').disabled = info.sample || !codes.length || g.bad;
   const orient = g.W >= g.H ? 'Lanskap' : 'Potret';
   $('pbInfo').innerHTML = `<b>Tom &amp; Jerry:</b> lembar ${mmTxt(g.W)} × ${mmTxt(g.H)} mm · ${orient} · ${g.cols} × ${g.rows} = ${g.per} label/lembar · label ${mmTxt(g.lw)} × ${mmTxt(g.lh)} mm${g.gx || g.gy ? ` · jarak ${mmTxt(g.gx)} / ${mmTxt(g.gy)} mm` : ''} · QR ${mmTxt(g.q)} mm${g.fs ? ' · teks ' + mmTxt(g.fs) + ' mm' : ''}.`
-    + (codes.length ? ` Kode: <b>${esc(codes[0])}</b>${codes.length > 1 ? ' → <b>' + esc(codes[codes.length - 1]) + '</b>' : ''}${info.mode === 'new' ? ' (nomor final ditetapkan server saat dicetak dan langsung dicatat di sheet “Barcode Label”)' : ''}.` : '')
+    + (codes.length ? ` Kode: <b>${esc(codes[0])}</b>${codes.length > 1 ? ' → <b>' + esc(codes[codes.length - 1]) + '</b>' : ''}${info.auto ? ' (' + fmt(codes.length) + ' kode terpilih, urut sesuai sheet)' : ''}${info.mode === 'new' ? ' (nomor final ditetapkan server saat dicetak dan langsung dicatat di sheet “Barcode Label”)' : ''}.` : '')
     + ' Margin halaman pada dialog cetak sudah dibuat 0.';
   const warn = [];
   if (g.bad) warn.push('Ukuran label terlalu kecil untuk QR. Perbesar label atau kurangi ruang tepi / teks.');
@@ -4613,7 +4754,7 @@ function pbTjFill() {
   $('pbTjNew').classList.toggle('hidden', t.src !== 'new');
   $('pbTjSrcHint').textContent = t.src === 'new'
     ? 'Kode baru dibuat berurutan (awalan + nomor), menyambung dari nomor terbesar di sheet “Barcode Label”. Saat tombol Cetak ditekan, GAS mencatatnya ke sheet itu (tanpa menimpa data) sehingga tidak pernah bentrok dengan cetakan lain. Riwayat ada di sheet “Barcode Label Log”.'
-    : 'Label diambil berurutan dari sheet “Barcode Label” (kolom B) mulai dari kode yang dicentang — satu kode per label, tidak ada yang sama. Tidak ada yang ditulis ke sheet.';
+    : 'Centang 2 kode atau lebih (atau “Pilih semua”): hanya kode terpilih yang dicetak, satu kode per label, jumlah label & lembar dihitung otomatis. Centang 1 kode: label diambil berurutan mulai dari kode itu sebanyak “Jumlah label dicetak”. Tidak ada yang ditulis ke sheet.';
 }
 function pbTjInit() {
   const t = () => PB.cfg.tj;
@@ -4728,7 +4869,7 @@ function pbTjInit() {
     if (m === 'reject') h += grp('Simpan', item('rjSave', 'Simpan ke Spreadsheet', 'Catat ke sheet Reject Scrap (beserta foto)', 'save', 1)) +
       grp('Download', item('rjCsv', 'Download CSV', 'Semua baris di layar (.csv)', 'xls')) +
       grp('Lainnya', item('rjReload', 'Muat ulang nama & barcode', 'Ambil data Source & Source Barcode terbaru', 'ref'), item('rjClear', 'Bersihkan layar', 'Kosongkan daftar scan & foto', 'trash'));
-    if (m === 'print') h += grp('Cetak', item('pbPrintBtn', 'Cetak QR Code', 'Buka dialog cetak sesuai pengaturan kertas', 'print', 1)) +
+    if (m === 'print') h += grp('Cetak', item('pbPrintBtn', 'Cetak QR Code', 'Buka dialog cetak sesuai pengaturan kertas', 'print', 1), item('pbSaveSet', 'Simpan Setelan', 'Simpan pengaturan kertas & label agar tidak perlu diatur ulang', 'save')) +
       grp('Lainnya', item('pbReload', 'Muat ulang daftar kode', 'Ambil sheet Barcode Label terbaru', 'ref'), item('pbNone', 'Kosongkan pilihan', 'Batalkan semua centang kode', 'trash'));
     if (m === 'checker') h += grp('Simpan', item('ckSave', 'Simpan ke Spreadsheet', 'Catat hasil ke sheet Checker Result', 'save', 1)) +
       grp('Cetak / PDF', item('ckPrint', 'Hasil Adjustment', 'Produk yang sudah dicek', 'print')) +
