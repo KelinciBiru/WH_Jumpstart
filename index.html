@@ -413,7 +413,7 @@ body:not(.pb-mode) #printPanel { display: none !important; }
 .pb-f input[type=number], .pb-f input[type=text], .pb-f select { border: 1px solid var(--line); border-radius: .5rem; padding: .4rem .6rem; font-size: 16px; color: var(--ink); background: #fff; min-height: 40px; width: 100%; }
 .pb-chk { display: flex; align-items: center; gap: .55rem; font-size: .85rem; font-weight: 600; min-height: 36px; cursor: pointer; }
 .pb-chk input { width: 18px; height: 18px; accent-color: #141414; }
-.pb-g { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #98978D; }
+.pb-g { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #6B6A62; }
 .pb-list { max-height: 340px; overflow-y: auto; border: 1px solid var(--line); border-radius: .75rem; }
 .pb-row { display: flex; align-items: center; gap: .7rem; padding: .45rem .75rem; border-bottom: 1px solid #F0F0ED; cursor: pointer; font-size: .9rem; font-weight: 600; }
 .pb-row:last-child { border-bottom: 0; }
@@ -458,6 +458,76 @@ body:not(.pb-mode) #printPanel { display: none !important; }
 .nav-sub { padding-left: 1.5rem; }
 .dk6 .dk { font-size: 8.5px; letter-spacing: -.01em; }
 .dk6 .dk svg { width: 20px; height: 20px; }
+/* ===== PRINT BARCODE · UI v2 (hanya tampilan: ID, atribut data-*, dan logika JS tidak diubah) ===== */
+#printPanel { --pb-line: #E2E1DB; --pb-soft: #F7F7F4; --pb-mute: #5F5E57; --pb-ring: rgba(251,179,21,.5); }
+.pb-col, .pb-stack { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+.pb-stack > * { margin: 0 !important; }
+.pb-h { display: flex; align-items: center; gap: .6rem; line-height: 1.2; }
+.pb-h::before { content: ''; flex: 0 0 auto; width: 5px; height: 1.15em; border-radius: 1px; background: var(--amber); transform: skewX(-18deg); }
+.pb-sec { padding-top: 1.1rem; border-top: 1px solid var(--pb-line); }
+.pb-sec > .pb-g { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
+.pb-acc > summary { list-style: none; cursor: pointer; min-height: 36px; align-items: center; border-radius: .4rem; }
+.pb-acc > summary::-webkit-details-marker { display: none; }
+.pb-acc > summary small { margin-left: auto; font-size: .68rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--pb-mute); }
+.pb-acc > summary::after { content: ''; flex: 0 0 auto; width: 7px; height: 7px; margin: 0 .25rem 3px .4rem; border-right: 2px solid #3F3E39; border-bottom: 2px solid #3F3E39; transform: rotate(45deg); transition: transform .15s; }
+.pb-acc[open] > summary::after { transform: rotate(-135deg); margin-bottom: -2px; }
+.pb-acc > summary:hover { background: var(--pb-soft); }
+#printPanel .pb-f { gap: .3rem; color: #3F3E39; font-size: .76rem; }
+#printPanel .pb-f input[type=number], #printPanel .pb-f input[type=text], #printPanel .pb-f select { border-color: #D4D3CA; transition: border-color .15s, box-shadow .15s; }
+#printPanel .pb-f input:hover:not(:disabled), #printPanel .pb-f select:hover:not(:disabled) { border-color: #A9A89E; }
+#printPanel .pb-f input:focus, #printPanel .pb-f select:focus, #pbSearch:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px var(--pb-ring); }
+#printPanel .pb-f input:disabled, #printPanel .pb-f select:disabled { background: #F3F3F0; color: #85847A; cursor: not-allowed; }
+.pb-f input[type=range] { height: 28px; }
+.pb-chk { padding: .1rem .4rem .1rem 0; border-radius: .4rem; }
+.pb-chk:hover { background: var(--pb-soft); }
+.pb-seg { background: #EDEDE8; box-shadow: inset 0 0 0 1px #E2E1DB; }
+.pb-seg button { transition: background .15s, color .15s, box-shadow .15s; }
+.pb-seg button:hover:not(.on) { color: var(--ink); background: rgba(255,255,255,.55); }
+.pb-seg button:focus-visible { outline: 3px solid var(--amber); outline-offset: 1px; }
+.pb-seg button.on { box-shadow: 0 1px 3px rgba(0,0,0,.22), inset 0 -3px 0 var(--amber); }
+.pb-btn-sm { padding: .35rem .85rem; font-size: .78rem; min-height: 36px; }
+.pb-btn-xs { padding: .25rem .7rem; font-size: .72rem; min-height: 32px; }
+.pb-btn-danger { color: #B42318; }
+.pb-btn-danger:hover:not(:disabled) { border-color: #B42318; background: #FEF3F2; }
+.pb-setbar { align-items: center; }
+.pb-setbar #pbDelSet { margin-left: auto; }
+.pb-setstat { border: 1px solid transparent; }
+.pb-setstat.ok { border-color: #BFE3C9; } .pb-setstat.dirty { border-color: #F2D48A; }
+#pbSearch { min-height: 42px; border-radius: .6rem; border-color: #D4D3CA; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236B6A62' stroke-width='2' stroke-linecap='round' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E") no-repeat .75rem 50%; padding-left: 2.2rem; }
+#pbSelInfo { background: var(--pb-soft); border-left: 4px solid var(--amber); border-radius: .5rem; }
+#pbSelInfo:empty { display: none; }
+.pb-list { border-color: #D4D3CA; border-radius: .8rem; scrollbar-width: thin; background: #fff; }
+.pb-row { min-height: 44px; padding: .5rem .85rem; transition: background .12s; }
+.pb-row:has(input:checked) { background: #FFF8E1; box-shadow: inset 3px 0 0 var(--amber); }
+.pb-row .pb-loc { background: #EDEDE8; color: #3F3E39; }
+.pb-locbox { background: var(--pb-soft); border-color: #D4D3CA; scrollbar-width: thin; }
+.pb-chip { min-height: 32px; transition: border-color .12s, background .12s; }
+.pb-chip:hover:not(.on) { border-color: var(--ink); }
+#pbInfo { border-left: 4px solid var(--amber); border-radius: .5rem; }
+#pbWarn { border-left: 4px solid #DC2626; border-radius: .5rem; }
+.pb-stage { background-color: #ECECE7; background-image: radial-gradient(#D3D2C9 1px, transparent 1px); background-size: 14px 14px; border: 1px solid var(--pb-line); border-radius: .85rem; padding: 1rem; /* padding-x 1rem = dipakai JS (clientWidth - 34) */ }
+.pb-cap { display: table; margin: .4rem auto 0; padding: .1rem .6rem; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px var(--pb-line); font-weight: 700; color: #3F3E39; }
+.pb-stage .py-10 { width: 100%; text-align: center; }
+@media (min-width: 1280px) {
+  .pb-preview { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; scrollbar-width: thin; }
+}
+@media (max-width: 639.98px) {
+  .pb-tjgrid { gap: .6rem; }
+  .pb-col, .pb-stack { gap: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { .pb-acc > summary::after, .pb-seg button, .pb-row, .pb-chip, #printPanel .pb-f input, #printPanel .pb-f select { transition: none; } }
+/* penyempurnaan: judul accordion, header Tom & Jerry, bar setelan di layar kecil */
+.pb-acc > summary { flex-wrap: wrap; row-gap: 0; }
+.pb-acc > summary::after { order: 2; margin-left: auto; }
+.pb-acc > summary small { order: 3; flex: 0 0 100%; margin: 0 0 .15rem; }
+.pb-acc:not([open]) > summary { margin-bottom: 0 !important; }
+#pbTj > .flex:first-child { flex-wrap: wrap; row-gap: .5rem; }
+#pbTjFit { white-space: nowrap; }
+@media (max-width: 639.98px) {
+  .pb-setbar .btn { flex: 1 1 auto; }
+  .pb-setbar #pbDelSet { margin-left: 0; }
+}
+
 @media print {
   body.pb-printing > *:not(#pbPrint) { display: none !important; }
   body.pb-printing #pbPrint { display: block !important; }
@@ -786,25 +856,25 @@ body:not(.pb-mode) #printPanel { display: none !important; }
 
       <!-- PRINT/CETAK > PRINT BARCODE (Manager, SPV, Admin) -->
       <section id="printPanel" class="no-print space-y-4">
-        <div class="grid items-start gap-4 xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
-          <div class="space-y-4">
+        <div class="grid items-start gap-4 xl:grid-cols-[minmax(340px,440px)_minmax(0,1fr)]">
+          <div class="pb-col">
 
             <!-- PAGE SETUP -->
-            <div class="panel space-y-4 p-4 md:p-5">
+            <div class="panel pb-stack p-4 md:p-5">
               <div class="flex items-center justify-between gap-2">
-                <h2 class="display text-lg">Page Setup</h2>
+                <h2 class="display text-lg pb-h">Page Setup</h2>
                 <span id="pbSetStat" class="pb-setstat" aria-live="polite">Memuat setelan…</span>
               </div>
               <div class="space-y-1.5">
                 <div class="pb-setbar">
-                  <button id="pbSaveSet" type="button" class="btn btn-accent" style="padding:.35rem .9rem;font-size:.78rem;min-height:36px" title="Simpan semua pengaturan kertas, tata letak &amp; label di bawah ini">Simpan Setelan</button>
-                  <button id="pbLoadSet" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px" title="Kembalikan pengaturan ke setelan yang terakhir disimpan">Pakai Setelan Tersimpan</button>
-                  <button id="pbDelSet" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px" title="Hapus setelan tersimpan">Hapus</button>
+                  <button id="pbSaveSet" type="button" class="btn btn-accent pb-btn-sm" title="Simpan semua pengaturan kertas, tata letak &amp; label di bawah ini">Simpan Setelan</button>
+                  <button id="pbLoadSet" type="button" class="btn btn-ghost pb-btn-sm" title="Kembalikan pengaturan ke setelan yang terakhir disimpan">Pakai Setelan Tersimpan</button>
+                  <button id="pbDelSet" type="button" class="btn btn-ghost pb-btn-sm pb-btn-danger" title="Hapus setelan tersimpan">Hapus</button>
                 </div>
                 <p class="text-[11px] leading-relaxed text-slate-500">Setelan yang disimpan (printer, kertas, kolom × baris, ukuran label, margin, geser cetak, ukuran QR, dll.) otomatis dipakai setiap kali menu ini dibuka, di perangkat mana pun Anda masuk. Slot awal &amp; nomor awal kode tidak ikut disimpan karena berbeda tiap cetakan.</p>
               </div>
 
-              <div class="space-y-1.5">
+              <div class="space-y-1.5 pb-sec">
                 <div class="pb-g">Tipe printer</div>
                 <div id="pbPt" class="pb-seg" role="group" aria-label="Tipe printer">
                   <button type="button" data-pt="thermal">Thermal / Label</button>
@@ -813,7 +883,7 @@ body:not(.pb-mode) #printPanel { display: none !important; }
                 <p id="pbHint" class="text-xs leading-relaxed text-slate-500"></p>
               </div>
 
-              <div class="space-y-3">
+              <div class="space-y-3 pb-sec">
                 <div class="pb-g">Kertas &amp; tata letak</div>
                 <label class="pb-f">Jenis &amp; ukuran kertas<select id="pbPaper"></select></label>
                 <div id="pbCustom" class="grid grid-cols-2 gap-3">
@@ -833,7 +903,7 @@ body:not(.pb-mode) #printPanel { display: none !important; }
                 </div>
               </div>
 
-              <div class="space-y-2 pb-gen">
+              <div class="space-y-2 pb-gen pb-sec">
                 <div class="pb-g">Margin</div>
                 <label class="pb-chk"><input id="pbAuto" type="checkbox"> Margin &amp; jarak otomatis (sesuai kertas)</label>
                 <div id="pbMan" class="grid grid-cols-2 gap-3">
@@ -842,7 +912,7 @@ body:not(.pb-mode) #printPanel { display: none !important; }
                 </div>
               </div>
 
-              <div class="space-y-2">
+              <div class="space-y-2 pb-sec">
                 <div class="pb-g">Tampilan label</div>
                 <label class="pb-f">Ukuran QR: <span id="pbQrV" class="num">100%</span><input id="pbQr" type="range" min="40" max="100" step="5" class="w-full accent-[#141414]"></label>
                 <label class="pb-chk pb-gen"><input id="pbText" type="checkbox"> Tampilkan kode di bawah QR</label>
@@ -855,14 +925,14 @@ body:not(.pb-mode) #printPanel { display: none !important; }
             </div>
 
             <!-- TOM & JERRY: lembar stiker multi-label, QR berbeda tiap label -->
-            <div id="pbTj" class="panel space-y-4 p-4 md:p-5">
+            <div id="pbTj" class="panel pb-stack p-4 md:p-5">
               <div class="flex items-center justify-between gap-2">
-                <h2 class="display text-lg">Tom &amp; Jerry · Lembar &amp; Label</h2>
-                <button id="pbTjFit" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px" title="Hitung kolom × baris yang muat di lembar">Kolom × baris otomatis</button>
+                <h2 class="display text-lg pb-h">Tom &amp; Jerry · Lembar &amp; Label</h2>
+                <button id="pbTjFit" type="button" class="btn btn-ghost pb-btn-sm" title="Hitung kolom × baris yang muat di lembar">Kolom × baris otomatis</button>
               </div>
               <p class="text-xs leading-relaxed text-slate-500">Satu lembar berisi banyak label dan <b>setiap label mendapat QR Code yang berbeda</b>. Ukuran bawaan memakai spesifikasi umum (No. 103: 12 label per lembar); ukur lembar Anda lalu sesuaikan. Cetak uji dulu di kertas biasa dengan “Garis tepi label” aktif, lalu tempelkan ke lembar stiker sambil diterawang.</p>
 
-              <div class="space-y-3">
+              <div class="space-y-3 pb-sec">
                 <div class="pb-g">Jumlah &amp; slot awal</div>
                 <div class="pb-tjgrid">
                   <label class="pb-f">Jumlah label dicetak<input id="pbTjN" type="number" min="1" max="5000" step="1" inputmode="numeric"></label>
@@ -872,8 +942,8 @@ body:not(.pb-mode) #printPanel { display: none !important; }
                 <p id="pbTjNHint" class="text-[11px] font-semibold text-slate-700"></p>
               </div>
 
-              <div class="space-y-3">
-                <div class="pb-g">Tata letak per lembar</div>
+              <details class="space-y-3 pb-sec pb-acc">
+                <summary class="pb-g">Tata letak per lembar<small>Ukuran lembar, kolom, margin, kalibrasi</small></summary>
                 <label class="pb-f">Ukuran lembar<select id="pbTjSheet"></select></label>
                 <div id="pbTjSheetC" class="pb-tjgrid">
                   <label class="pb-f">Lebar lembar (mm)<input id="pbTjSW" type="number" min="20" max="1000" step="0.5" inputmode="decimal"></label>
@@ -897,10 +967,10 @@ body:not(.pb-mode) #printPanel { display: none !important; }
                   <label class="pb-f">Geser cetak Y (mm)<input id="pbTjOY" type="number" min="-30" max="30" step="0.1" inputmode="decimal"></label>
                 </div>
                 <p class="text-[11px] text-slate-500">“Geser cetak” untuk kalibrasi bila hasil printer sedikit meleset dari stiker (positif = ke kanan / ke bawah).</p>
-              </div>
+              </details>
 
-              <div class="space-y-3">
-                <div class="pb-g">Tata letak per label</div>
+              <details class="space-y-3 pb-sec pb-acc">
+                <summary class="pb-g">Tata letak per label<small>Ukuran label, teks kode</small></summary>
                 <div class="pb-tjgrid">
                   <label class="pb-f">Lebar label (mm)<input id="pbTjLW" type="number" min="5" max="500" step="0.1" inputmode="decimal"></label>
                   <label class="pb-f">Tinggi label (mm)<input id="pbTjLH" type="number" min="5" max="500" step="0.1" inputmode="decimal"></label>
@@ -911,9 +981,9 @@ body:not(.pb-mode) #printPanel { display: none !important; }
                 </div>
                 <label class="pb-f">Ukuran teks (mm, 0 = otomatis)<input id="pbTjFs" type="number" min="0" max="20" step="0.1" inputmode="decimal"></label>
                 <p class="text-[11px] text-slate-500">Ukuran QR diatur dengan slider “Ukuran QR” di Page Setup.</p>
-              </div>
+              </details>
 
-              <div class="space-y-3">
+              <div class="space-y-3 pb-sec">
                 <div class="pb-g">Sumber QR (berbeda tiap label)</div>
                 <div id="pbTjSrc" class="pb-seg" role="group" aria-label="Sumber QR">
                   <button type="button" data-src="list">Dari daftar Barcode Label</button>
@@ -931,25 +1001,25 @@ body:not(.pb-mode) #printPanel { display: none !important; }
             </div>
 
             <!-- DATA -->
-            <div id="pbDataPanel" class="panel space-y-3 p-4 md:p-5">
+            <div id="pbDataPanel" class="panel pb-stack p-4 md:p-5">
               <div class="flex items-center justify-between gap-2">
-                <h2 class="display text-lg">Data Kode</h2>
-                <button id="pbReload" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Muat ulang</button>
+                <h2 class="display text-lg pb-h">Data Kode</h2>
+                <button id="pbReload" type="button" class="btn btn-ghost pb-btn-sm">Muat ulang</button>
               </div>
               <p id="pbSrc" class="text-xs text-slate-500">Sumber: spreadsheet “Dashboard Plan Warehouse PG” · sheet “Barcode Label” · kolom A (Location Code) &amp; kolom B (Code)</p>
               <p class="pb-tjonly text-[11px] leading-relaxed text-slate-500">Mode Tom &amp; Jerry: centang <b>2 kode atau lebih</b> (atau tekan “Pilih semua”) = hanya kode terpilih yang dicetak, jumlah label &amp; lembar dihitung otomatis dan langsung tampil di preview. Centang 1 kode = titik awal, lalu label berikutnya memakai kode urut di bawahnya sebanyak “Jumlah label dicetak”. Tanpa centang = mulai dari kode paling atas.</p>
               <div id="pbLocWrap" class="space-y-1.5">
                 <div class="flex items-center justify-between gap-2">
                   <div class="pb-g">Location Code</div>
-                  <button id="pbLocAll" type="button" class="btn btn-ghost" style="padding:.25rem .7rem;font-size:.72rem;min-height:30px" title="Tampilkan kode dari semua Location">Semua Location</button>
+                  <button id="pbLocAll" type="button" class="btn btn-ghost pb-btn-xs" title="Tampilkan kode dari semua Location">Semua Location</button>
                 </div>
                 <div id="pbLocBox" class="pb-locbox" role="group" aria-label="Pilih Location"></div>
                 <p id="pbLocInfo" class="text-[11px] text-slate-500"></p>
               </div>
               <input id="pbSearch" type="search" placeholder="Cari kode atau Location, mis. PG-REC-001…" autocomplete="off" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
               <div class="flex flex-wrap gap-2">
-                <button id="pbAll" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Pilih semua (hasil filter)</button>
-                <button id="pbNone" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Kosongkan pilihan</button>
+                <button id="pbAll" type="button" class="btn btn-ghost pb-btn-sm">Pilih semua (hasil filter)</button>
+                <button id="pbNone" type="button" class="btn btn-ghost pb-btn-sm">Kosongkan pilihan</button>
               </div>
               <p id="pbSelInfo" class="rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700" aria-live="polite"></p>
               <div id="pbList" class="pb-list" role="group" aria-label="Daftar kode"></div>
@@ -958,10 +1028,10 @@ body:not(.pb-mode) #printPanel { display: none !important; }
           </div>
 
           <!-- PREVIEW -->
-          <div class="panel space-y-3 p-4 md:p-5">
+          <div class="panel pb-stack pb-preview p-4 md:p-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 class="display text-lg">Preview Cetak</h2>
+                <h2 class="display text-lg pb-h">Preview Cetak</h2>
                 <p id="pbSum" class="text-xs text-slate-500"></p>
               </div>
               <button id="pbPrintBtn" type="button" class="btn btn-accent">
