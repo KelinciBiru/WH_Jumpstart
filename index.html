@@ -402,6 +402,48 @@ body:not(.auth-locked) #loginGate { display: none; }
 }
 @media print { #loginGate { display: none !important; } }
 </style>
+<style id="pb-css">
+/* ===== MENU PRINT/CETAK > PRINT BARCODE (additif) ===== */
+body:not(.pb-mode) #printPanel { display: none !important; }
+#pbPrint { display: none; }
+.pb-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; background: #F0F0ED; border-radius: .6rem; padding: 4px; }
+.pb-seg button { min-height: 40px; border-radius: .45rem; font-weight: 700; font-size: .8rem; color: #686760; background: none; border: 0; }
+.pb-seg button.on { background: #fff; color: #141414; box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+.pb-f { display: flex; flex-direction: column; gap: 3px; font-size: .75rem; font-weight: 600; color: #52514B; }
+.pb-f input[type=number], .pb-f select { border: 1px solid var(--line); border-radius: .5rem; padding: .4rem .6rem; font-size: 16px; color: var(--ink); background: #fff; min-height: 40px; width: 100%; }
+.pb-chk { display: flex; align-items: center; gap: .55rem; font-size: .85rem; font-weight: 600; min-height: 36px; cursor: pointer; }
+.pb-chk input { width: 18px; height: 18px; accent-color: #141414; }
+.pb-g { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #98978D; }
+.pb-list { max-height: 340px; overflow-y: auto; border: 1px solid var(--line); border-radius: .75rem; }
+.pb-row { display: flex; align-items: center; gap: .7rem; padding: .45rem .75rem; border-bottom: 1px solid #F0F0ED; cursor: pointer; font-size: .9rem; font-weight: 600; }
+.pb-row:last-child { border-bottom: 0; }
+.pb-row:hover { background: #FFF8E1; }
+.pb-row input { width: 18px; height: 18px; accent-color: #141414; flex: 0 0 auto; }
+#pbSearch { font-size: 16px; }
+.pb-stage { background: #E8E8E3; border-radius: .75rem; padding: 1rem; min-height: 220px; display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; justify-content: center; }
+.pb-pvw { position: relative; flex: 0 0 auto; }
+.pb-pvw .pb-pv { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: #fff; box-shadow: 0 0 0 1px #C9C8C0, 0 6px 18px rgba(0,0,0,.14); }
+.pb-cap { text-align: center; font-size: .7rem; color: #686760; margin-top: .3rem; }
+/* halaman label (dipakai preview & cetak; satuan mm) */
+.pb-page { box-sizing: border-box; overflow: hidden; background: #fff; height: var(--h); }
+.pb-grid { display: grid; justify-content: start; align-content: start; }
+.pb-cell { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6mm; overflow: hidden; color: #000; }
+.pb-cell.pb-cut { outline: .15mm dashed #555; outline-offset: -.15mm; }
+.pb-qr { display: block; flex: 0 0 auto; }
+.pb-qr svg { display: block; width: 100%; height: 100%; }
+.pb-tx { font-family: 'Courier New', Courier, 'DejaVu Sans Mono', monospace; font-weight: 700; white-space: nowrap; line-height: 1.25; text-align: center; letter-spacing: 0; }
+.nav-sub { padding-left: 1.5rem; }
+.dk6 .dk { font-size: 8.5px; letter-spacing: -.01em; }
+.dk6 .dk svg { width: 20px; height: 20px; }
+@media print {
+  body.pb-printing > *:not(#pbPrint) { display: none !important; }
+  body.pb-printing #pbPrint { display: block !important; }
+  body.pb-printing { background: #fff !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+  #pbPrint, #pbPrint * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #pbPrint .pb-page { height: calc(var(--h) - .4mm); break-after: page; page-break-after: always; }
+  #pbPrint .pb-page:last-child { break-after: auto; page-break-after: auto; }
+}
+</style>
 </head>
 <body class="auth-locked">
 
@@ -482,6 +524,11 @@ body:not(.auth-locked) #loginGate { display: none; }
         <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 21a9 9 0 100-18 9 9 0 000 18zM5.6 5.6l12.8 12.8"/></svg>
         Reject/Scrap
       </a>
+      <div data-menu-group="print" class="nav-label" style="padding-top:1.1rem">Print/Cetak</div>
+      <a href="#" data-menu="print" class="nav-item nav-sub">
+        <svg class="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2M14 18h2v2M18 18h2v2"/></svg>
+        Print Barcode
+      </a>
     </nav>
     <div class="space-y-2.5 border-t border-slate-200 px-6 py-5 text-xs text-slate-500">
       <div class="flex items-center gap-2"><span id="dot" class="h-2 w-2 rounded-full bg-slate-500"></span><span id="statusText">Menghubungkan…</span></div>
@@ -520,6 +567,7 @@ body:not(.auth-locked) #loginGate { display: none; }
         <button type="button" data-menu="checker" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Checker</button>
         <button type="button" data-menu="retur" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Retur</button>
         <button type="button" data-menu="reject" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Reject</button>
+        <button type="button" data-menu="print" class="menu-btn flex-1 rounded-md px-3 py-2 font-semibold">Cetak</button>
       </nav>
 
       <!-- TAB OTHER REQUEST: Import Request | Event -->
@@ -710,6 +758,105 @@ body:not(.auth-locked) #loginGate { display: none; }
           </div>
         </div>
         <p class="text-xs text-slate-500">Nama Checker otomatis sesuai username login, barcode dari sheet “Source Barcode”. <b>Category</b> wajib dipilih sebelum scan dan <b>Remark</b> (Reject/Scrap atau Expired) wajib diisi per baris sebelum simpan — keduanya ikut tercatat di spreadsheet &amp; file CSV. Setiap scan menjadi <b>baris baru</b> (tidak menimpa data yang sudah ada) dan Qty bisa diubah. Tiap produk bisa diberi <b>sampai 5 foto bukti</b> (kolom Foto): tombol <b>Kamera</b> langsung membuka kamera perangkat dan hasil jepretan otomatis diberi <b>timestamp, lokasi WH, dan logo Jumpstart</b> di dalam gambar; tombol <b>Galeri</b> memilih foto yang sudah ada (tanpa watermark). Foto masuk ke sheet “Reject Scrap” sebagai gambar di dalam sel, bukan link. File CSV hanya memuat jumlah foto (CSV tidak bisa membawa gambar).</p>
+      </section>
+
+      <!-- PRINT/CETAK > PRINT BARCODE (Manager, SPV, Admin) -->
+      <section id="printPanel" class="no-print space-y-4">
+        <div class="grid items-start gap-4 xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
+          <div class="space-y-4">
+
+            <!-- PAGE SETUP -->
+            <div class="panel space-y-4 p-4 md:p-5">
+              <div class="flex items-center justify-between gap-2">
+                <h2 class="display text-lg">Page Setup</h2>
+                <span class="text-[11px] text-slate-500">Pengaturan tersimpan otomatis di perangkat ini</span>
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="pb-g">Tipe printer</div>
+                <div id="pbPt" class="pb-seg" role="group" aria-label="Tipe printer">
+                  <button type="button" data-pt="thermal">Thermal / Label</button>
+                  <button type="button" data-pt="office">Printer Umum</button>
+                </div>
+                <p id="pbHint" class="text-xs leading-relaxed text-slate-500"></p>
+              </div>
+
+              <div class="space-y-3">
+                <div class="pb-g">Kertas &amp; tata letak</div>
+                <label class="pb-f">Jenis &amp; ukuran kertas<select id="pbPaper"></select></label>
+                <div id="pbCustom" class="grid grid-cols-2 gap-3">
+                  <label class="pb-f">Lebar (mm)<input id="pbCW" type="number" min="10" max="1000" step="0.5" inputmode="decimal"></label>
+                  <label class="pb-f">Tinggi (mm)<input id="pbCH" type="number" min="10" max="1500" step="0.5" inputmode="decimal"></label>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="text-xs font-semibold text-[#52514B]">Orientasi</div>
+                  <div id="pbOr" class="pb-seg" role="group" aria-label="Orientasi">
+                    <button type="button" data-or="p">Potret (Portrait)</button>
+                    <button type="button" data-or="l">Lanskap (Landscape)</button>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="pb-f">Kolom label<input id="pbCols" type="number" min="1" max="12" step="1" inputmode="numeric"></label>
+                  <label class="pb-f">Baris label<input id="pbRows" type="number" min="1" max="40" step="1" inputmode="numeric"></label>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <div class="pb-g">Margin</div>
+                <label class="pb-chk"><input id="pbAuto" type="checkbox"> Margin &amp; jarak otomatis (sesuai kertas)</label>
+                <div id="pbMan" class="grid grid-cols-2 gap-3">
+                  <label class="pb-f">Margin (mm)<input id="pbM" type="number" min="0" max="30" step="0.5" inputmode="decimal"></label>
+                  <label class="pb-f">Jarak antar label (mm)<input id="pbG" type="number" min="0" max="20" step="0.5" inputmode="decimal"></label>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <div class="pb-g">Tampilan label</div>
+                <label class="pb-f">Ukuran QR: <span id="pbQrV" class="num">100%</span><input id="pbQr" type="range" min="40" max="100" step="5" class="w-full accent-[#141414]"></label>
+                <label class="pb-chk"><input id="pbText" type="checkbox"> Tampilkan kode di bawah QR</label>
+                <label class="pb-chk"><input id="pbCut" type="checkbox"> Garis tepi label (panduan potong)</label>
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="pb-f">Kerapatan QR<select id="pbEcl"><option value="L">Ringan (L)</option><option value="M">Standar (M)</option><option value="Q">Tinggi (Q)</option><option value="H">Maksimal (H)</option></select></label>
+                  <label class="pb-f">Salinan tiap kode<input id="pbCopies" type="number" min="1" max="500" step="1" inputmode="numeric"></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- DATA -->
+            <div class="panel space-y-3 p-4 md:p-5">
+              <div class="flex items-center justify-between gap-2">
+                <h2 class="display text-lg">Data Kode</h2>
+                <button id="pbReload" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Muat ulang</button>
+              </div>
+              <p id="pbSrc" class="text-xs text-slate-500">Sumber: spreadsheet “Dashboard Plan Warehouse PG” · sheet “Barcode Label” · kolom B (Code)</p>
+              <input id="pbSearch" type="search" placeholder="Cari kode, mis. PG-REC-001…" autocomplete="off" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
+              <div class="flex flex-wrap gap-2">
+                <button id="pbAll" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Pilih semua (hasil pencarian)</button>
+                <button id="pbNone" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Kosongkan pilihan</button>
+              </div>
+              <div id="pbList" class="pb-list" role="group" aria-label="Daftar kode"></div>
+              <p class="text-[11px] text-slate-500">Tip: klik satu kode lalu tekan <b>Shift</b> + klik kode lain untuk memilih rentang.</p>
+            </div>
+          </div>
+
+          <!-- PREVIEW -->
+          <div class="panel space-y-3 p-4 md:p-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="display text-lg">Preview Cetak</h2>
+                <p id="pbSum" class="text-xs text-slate-500"></p>
+              </div>
+              <button id="pbPrintBtn" type="button" class="btn btn-accent">
+                <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
+                Cetak QR Code
+              </button>
+            </div>
+            <div id="pbInfo" class="rounded-lg bg-[#FFF8E1] px-3 py-2 text-xs leading-relaxed text-slate-700"></div>
+            <div id="pbWarn" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"></div>
+            <div id="pbPrev" class="pb-stage" aria-label="Preview halaman cetak"></div>
+            <p id="pbMore2" class="text-xs text-slate-500"></p>
+          </div>
+        </div>
       </section>
 
       <!-- IMPORT (Admin) -->
@@ -905,6 +1052,7 @@ body:not(.auth-locked) #loginGate { display: none; }
 </dialog>
 
 <div id="printArea"></div>
+<div id="pbPrint" aria-hidden="true"></div>
 
 <div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 z-50 hidden max-w-[92vw] -translate-x-1/2 rounded-lg border-l-4 border-[#FBB315] bg-slate-900 px-4 py-2.5 text-sm text-white shadow-lg"></div>
 
@@ -933,7 +1081,7 @@ const state = {
   excelIds: new Map(),            // normName -> ID dari baris "Need Refill 2" di Excel (cadangan)
   overrides: JSON.parse(localStorage.getItem(LS.ovr) || '{}'),
   drivers: [], sheets: [], req: [], fileName: '', cache: new Map(), role: localStorage.getItem(LS.role) || 'admin',
-  menu: ['other', 'checker', 'retur', 'reject'].includes(localStorage.getItem(LS.menu)) ? localStorage.getItem(LS.menu) : 'planner'
+  menu: ['other', 'checker', 'retur', 'reject', 'print'].includes(localStorage.getItem(LS.menu)) ? localStorage.getItem(LS.menu) : 'planner'
 };
 const SRC = { planner: null, other: null };   // file Excel asli hasil import (untuk Share ke Checker)
 const $ = id => document.getElementById(id);
@@ -2253,6 +2401,12 @@ const MENUS = {
     saveAction: 'saveRejectScrap', loadAction: '', noun: 'Reject/Scrap', loadTitle: 'Reject/Scrap', fp: 'RejectScrap_',
     xlsLabel: 'Reject/Scrap', xlsSheet: 'Reject Scrap', xlsFile: 'RejectScrap',
     packer: '', loadBtn: 'Muat data', empty: 'Belum ada data'
+  },
+  print: {
+    nav: 'Print/Cetak', title: 'Print Barcode', sub: 'Cetak QR Code dari sheet Barcode Label · untuk Manager, SPV & Admin', side: 'Print/Cetak · Warehouse PG',
+    saveAction: '', loadAction: '', noun: 'Print Barcode', loadTitle: 'Print Barcode', fp: 'PrintBarcode_',
+    xlsLabel: 'Print Barcode', xlsSheet: 'Print Barcode', xlsFile: 'PrintBarcode',
+    packer: '', loadBtn: 'Muat data', empty: 'Belum ada data'
   }
 };
 const L = () => MENUS[state.menu];
@@ -2267,7 +2421,8 @@ function snapshotMenu() {
 function applyMenu() {
   const m = L();
   document.body.classList.toggle('ck-mode', state.menu === 'checker');
-  document.body.classList.toggle('ri-mode', state.menu === 'retur' || state.menu === 'reject');   // Reject/Scrap memakai aturan sembunyi elemen Planner yang sama dengan Retur
+  document.body.classList.toggle('ri-mode', state.menu === 'retur' || state.menu === 'reject' || state.menu === 'print');   // Print Barcode juga menyembunyikan elemen Planner
+  document.body.classList.toggle('pb-mode', state.menu === 'print');   // Reject/Scrap memakai aturan sembunyi elemen Planner yang sama dengan Retur
   $('returPanel').classList.toggle('hidden', state.menu !== 'retur');
   $('rejectPanel').classList.toggle('hidden', state.menu !== 'reject');
   document.querySelectorAll('.nav-item[data-menu]').forEach(a => {
@@ -2297,6 +2452,7 @@ function applyMenu() {
   if (state.menu === 'checker') ckEnter();
   if (state.menu === 'retur') riEnter();
   if (state.menu === 'reject') rjEnter();
+  if (state.menu === 'print' && typeof pbEnter === 'function') pbEnter();
 }
 function switchMenu(key) {
   if (!MENUS[key] || key === state.menu || !ACCESS.menus.includes(key)) return;
@@ -3949,6 +4105,240 @@ $('planDate').value = todayStr();
 /* Dijalankan oleh halaman login SETELAH sesi sah, supaya tidak ada permintaan data sebelum login. */
 function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
 </script>
+<script id="pb-qr">
+var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});
+</script>
+<script id="pb-js">
+/* =====================================================================
+   PRINT / CETAK > PRINT BARCODE  (Role: Manager, SPV, Admin — ditegakkan di GAS lewat ACTION_ACL)
+   Data   : GAS action getBarcodeLabels -> sheet "Barcode Label" kolom B (Code), mulai B2
+   QR     : dibuat di browser (SVG vektor, library qrcode-generator tertanam) -> tajam di printer thermal maupun laser/inkjet
+   Kertas : @page size dibuat dinamis dari jenis kertas + orientasi, margin halaman = 0; margin & jarak label, ukuran QR, dan ukuran teks
+            dihitung otomatis dari ukuran kertas (kode terpanjang menentukan ukuran teks supaya semua label seragam & tidak terpotong)
+   Printer: browser tidak boleh membaca daftar printer; printer yang sudah terpasang di perangkat dipilih di dialog cetak sistem.
+   ===================================================================== */
+const PB_LS = 'planner_pb_cfg_v1';
+const PB_PAPERS = [
+  { id: 't3020', grp: 'Thermal', n: 'Thermal 30 × 20 mm', w: 30, h: 20, type: 'label', nat: 'l' },
+  { id: 't4030', grp: 'Thermal', n: 'Thermal 40 × 30 mm', w: 40, h: 30, type: 'label', nat: 'l' },
+  { id: 't5030', grp: 'Thermal', n: 'Thermal 50 × 30 mm', w: 50, h: 30, type: 'label', nat: 'l' },
+  { id: 't5040', grp: 'Thermal', n: 'Thermal 50 × 40 mm', w: 50, h: 40, type: 'label', nat: 'l' },
+  { id: 't6040', grp: 'Thermal', n: 'Thermal 60 × 40 mm', w: 60, h: 40, type: 'label', nat: 'l' },
+  { id: 't7050', grp: 'Thermal', n: 'Thermal 70 × 50 mm', w: 70, h: 50, type: 'label', nat: 'l' },
+  { id: 't10050', grp: 'Thermal', n: 'Thermal 100 × 50 mm', w: 100, h: 50, type: 'label', nat: 'l' },
+  { id: 't100100', grp: 'Thermal', n: 'Thermal 100 × 100 mm', w: 100, h: 100, type: 'label', nat: 'p' },
+  { id: 't100150', grp: 'Thermal', n: 'Thermal 100 × 150 mm (resi)', w: 100, h: 150, type: 'label', nat: 'p' },
+  { id: 'r58', grp: 'Thermal', n: 'Roll struk 58 mm (tinggi otomatis)', w: 58, h: 0, type: 'roll', nat: 'p' },
+  { id: 'r80', grp: 'Thermal', n: 'Roll struk 80 mm (tinggi otomatis)', w: 80, h: 0, type: 'roll', nat: 'p' },
+  { id: 'tj103', grp: 'Tom & Jerry', n: 'Tom & Jerry No. 103 — 32 × 64 mm', w: 32, h: 64, type: 'label', nat: 'p' },
+  { id: 'tj121', grp: 'Tom & Jerry', n: 'Tom & Jerry No. 121 — 38 × 75 mm', w: 38, h: 75, type: 'label', nat: 'p' },
+  { id: 'a4', grp: 'Kertas Biasa', n: 'A4 — 210 × 297 mm', w: 210, h: 297, type: 'sheet', nat: 'p', cols: 4, rows: 7 },
+  { id: 'a5', grp: 'Kertas Biasa', n: 'A5 — 148 × 210 mm', w: 148, h: 210, type: 'sheet', nat: 'p', cols: 3, rows: 5 },
+  { id: 'a6', grp: 'Kertas Biasa', n: 'A6 — 105 × 148 mm', w: 105, h: 148, type: 'sheet', nat: 'p', cols: 2, rows: 4 },
+  { id: 'letter', grp: 'Kertas Biasa', n: 'Letter — 215,9 × 279,4 mm', w: 215.9, h: 279.4, type: 'sheet', nat: 'p', cols: 4, rows: 7 },
+  { id: 'f4', grp: 'Kertas Biasa', n: 'F4 / Folio — 215 × 330 mm', w: 215, h: 330, type: 'sheet', nat: 'p', cols: 4, rows: 9 },
+  { id: 'legal', grp: 'Kertas Biasa', n: 'Legal — 215,9 × 355,6 mm', w: 215.9, h: 355.6, type: 'sheet', nat: 'p', cols: 4, rows: 9 },
+  { id: 'custom', grp: 'Custom', n: 'Ukuran khusus (isi sendiri)', w: 50, h: 30, type: 'custom', nat: 'l' }
+];
+const PB_GRP = { 'Thermal': 'Kertas Thermal (label / roll)', 'Tom & Jerry': 'Label Sticker Tom & Jerry', 'Kertas Biasa': 'Kertas biasa', 'Custom': 'Ukuran khusus' };
+const PB_DEF = { ptype: 'thermal', paper: 't5030', orient: 'l', cw: 50, ch: 30, cols: 1, rows: 1, auto: true, m: 1, g: 0, qr: 100, text: true, cut: false, ecl: 'M', copies: 1 };
+function pbLoadCfg() {
+  try { const o = JSON.parse(localStorage.getItem(PB_LS) || 'null'); const c = Object.assign({}, PB_DEF, o && typeof o === 'object' ? o : {}); if (!PB_PAPERS.some(p => p.id === c.paper)) c.paper = PB_DEF.paper; return c; }
+  catch (e) { return Object.assign({}, PB_DEF); }
+}
+const PB = { cfg: pbLoadCfg(), codes: [], codeSet: new Set(), sel: new Set(), loaded: false, loading: false, err: '', dup: 0, q: '', limit: 150, last: -1, f: [], init: false, g: null };
+const pbSave = () => { try { localStorage.setItem(PB_LS, JSON.stringify(PB.cfg)); } catch (e) { /* penyimpanan penuh / diblokir */ } };
+const pbNum = (v, lo, hi, d) => { v = parseFloat(String(v).replace(',', '.')); return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };
+const pbPaper = () => PB_PAPERS.find(p => p.id === PB.cfg.paper) || PB_PAPERS[2];
+const pbPapers = () => PB_PAPERS.filter(p => p.grp === 'Tom & Jerry' || p.grp === 'Custom' || p.grp === (PB.cfg.ptype === 'thermal' ? 'Thermal' : 'Kertas Biasa'));
+const mmTxt = n => String(Math.round(n * 10) / 10).replace('.', ',');
+
+function pbSetPaper(id) {
+  PB.cfg.paper = id; const P = pbPaper();
+  PB.cfg.orient = P.nat || 'l'; PB.cfg.cols = P.cols || 1; PB.cfg.rows = P.rows || 1;
+}
+
+/* ---- geometri: semua ukuran dihitung otomatis dari kertas ---- */
+function pbGeo(maxLen) {
+  const c = PB.cfg, P = pbPaper(), custom = P.type === 'custom', roll = P.type === 'roll';
+  const bw = custom ? pbNum(c.cw, 10, 1000, 50) : P.w, bh = custom ? pbNum(c.ch, 10, 1500, 30) : P.h;
+  let W = bw, H = bh;
+  if (!roll) { const a = Math.min(bw, bh), b = Math.max(bw, bh); if (c.orient === 'p') { W = a; H = b; } else { W = b; H = a; } }
+  const sheet = P.type === 'sheet' || (custom && Math.min(bw, bh) >= 100);
+  const cols = roll ? 1 : Math.round(pbNum(c.cols, 1, 12, 1)), rows = roll ? 1 : Math.round(pbNum(c.rows, 1, 40, 1));
+  const multi = cols * rows > 1;
+  const m = c.auto ? (sheet ? 8 : Math.min(W, H || W) <= 40 ? 1 : 2) : pbNum(c.m, 0, 30, 1);
+  const gap = c.auto ? (multi ? 2 : 0) : pbNum(c.g, 0, 20, 0);
+  const cw = Math.floor((W - 2 * m - (cols - 1) * gap) / cols * 100) / 100;
+  let ch = roll ? 0 : Math.floor((H - 2 * m - (rows - 1) * gap) / rows * 100) / 100;
+  const pad = Math.max(0.6, (roll ? cw : Math.min(cw, ch)) * 0.05);
+  const len = Math.max(maxLen || 10, 6), scale = pbNum(c.qr, 40, 100, 100) / 100;
+  let fs = 0;
+  if (c.text) fs = Math.max(0, Math.min((cw - 2 * pad) / (len * 0.62), roll ? 5 : ch * 0.2, 5.5));
+  fs = Math.floor(fs * 100) / 100;
+  const th = c.text ? fs * 1.25 + 0.6 : 0;
+  let q;
+  if (roll) { q = Math.min(cw - 2 * pad, 40) * scale; ch = Math.round((2 * pad + q + th) * 100) / 100; H = Math.round((ch + 2 * m) * 100) / 100; }
+  else q = Math.min(cw - 2 * pad, ch - 2 * pad - th) * scale;
+  q = Math.floor(q * 100) / 100;
+  return { W, H, cols, rows, m, gap, cw, ch, pad, fs, th, q, per: cols * rows, roll, sheet, P, bad: !(cw > 0 && ch > 0 && q >= 3) };
+}
+
+/* ---- QR (SVG vektor, satu path) ---- */
+const pbSvgCache = new Map();
+function pbQr(code) {
+  const ecl = ['L', 'M', 'Q', 'H'].includes(PB.cfg.ecl) ? PB.cfg.ecl : 'M', k = ecl + '|' + code;
+  if (pbSvgCache.has(k)) return pbSvgCache.get(k);
+  let svg = '';
+  try {
+    if (/[^\x20-\x7e]/.test(code)) throw new Error('non-ASCII');   // QR bawaan hanya untuk karakter ASCII (kode seperti PG-REC-001)
+    const o = qrcode(0, ecl); o.addData(code, 'Byte'); o.make();
+    const n = o.getModuleCount(), qz = 2, tot = n + 2 * qz; let d = '';
+    for (let r = 0; r < n; r++) { let c = 0; while (c < n) { if (o.isDark(r, c)) { const s0 = c; while (c < n && o.isDark(r, c)) c++; d += `M${s0 + qz} ${r + qz}h${c - s0}v1h-${c - s0}z`; } else c++; } }
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${tot} ${tot}" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet"><path d="${d}" fill="#000"/></svg>`;
+  } catch (e) { svg = ''; }
+  if (pbSvgCache.size > 4000) pbSvgCache.clear();
+  pbSvgCache.set(k, svg); return svg;
+}
+const pbCell = (code, g) => `<div class="pb-cell${PB.cfg.cut ? ' pb-cut' : ''}" style="width:${g.cw}mm;height:${g.ch}mm;padding:${g.pad}mm"><div class="pb-qr" style="width:${g.q}mm;height:${g.q}mm">${pbQr(code)}</div>${g.fs ? `<div class="pb-tx" style="font-size:${g.fs}mm">${esc(code)}</div>` : ''}</div>`;
+const pbPageHtml = (items, g) => `<div class="pb-page" style="width:${g.W}mm;--h:${g.H}mm;padding:${g.m}mm"><div class="pb-grid" style="grid-template-columns:repeat(${g.cols},${g.cw}mm);grid-auto-rows:${g.ch}mm;gap:${g.gap}mm">${items.map(c => pbCell(c, g)).join('')}</div></div>`;
+const pbChunk = (a, n) => { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; };
+
+function pbItems() {
+  const n = Math.round(pbNum(PB.cfg.copies, 1, 500, 1)), out = [];
+  PB.codes.forEach(c => { if (PB.sel.has(c)) for (let i = 0; i < n; i++) out.push(c); });
+  return out;
+}
+
+/* ---- preview ---- */
+function pbRender() {
+  const box = $('pbPrev'); if (!box) return;
+  const items = pbItems(), sample = !items.length;
+  const maxLen = (sample ? ['PG-REC-001'] : items).reduce((a, c) => Math.max(a, c.length), 0);
+  const g = PB.g = pbGeo(maxLen), P = g.P;
+  const list = sample ? Array(Math.min(g.per, 60)).fill('PG-REC-001') : items;
+  const pages = Math.max(1, Math.ceil(list.length / g.per));
+  const labelsN = items.length;
+  $('pbSum').textContent = `${fmt(PB.sel.size)} kode dipilih · ${fmt(labelsN)} label · ${fmt(sample ? 0 : pages)} halaman`;
+  $('pbPrintBtn').disabled = !labelsN || g.bad;
+  const orient = g.roll ? 'Roll (tinggi otomatis)' : g.W >= g.H ? 'Lanskap' : 'Potret';
+  $('pbInfo').innerHTML = `<b>Penyesuaian otomatis:</b> kertas ${mmTxt(g.W)} × ${mmTxt(g.H)} mm · ${orient} · ${g.per > 1 ? g.cols + ' × ' + g.rows + ' = ' + g.per + ' label/halaman' : '1 label/halaman'} · margin ${mmTxt(g.m)} mm${g.gap ? ' · jarak ' + mmTxt(g.gap) + ' mm' : ''} · QR ${mmTxt(g.q)} mm${g.fs ? ' · teks ' + mmTxt(g.fs) + ' mm' : ''}. Margin halaman pada dialog cetak sudah dibuat 0 (tidak perlu diatur ulang).`;
+  const warn = [];
+  if (g.bad) warn.push('Ukuran kertas / jumlah kolom-baris terlalu kecil untuk QR. Kurangi kolom/baris atau pilih kertas lebih besar.');
+  else { if (g.q < 12) warn.push(`QR hanya ${mmTxt(g.q)} mm — bisa sulit dipindai. Pakai label lebih besar atau kurangi kolom/baris.`); if (PB.cfg.text && g.fs < 1.8) warn.push('Teks kode sangat kecil. Matikan teks, atau pakai label lebih besar.'); }
+  if (!sample && items.some(c => /[^\x20-\x7e]/.test(c))) warn.push('Ada kode berisi karakter non-ASCII — QR-nya tidak bisa dibuat (hanya teks yang tampil).');
+  const wb = $('pbWarn'); wb.classList.toggle('hidden', !warn.length); wb.innerHTML = warn.map(esc).join('<br>');
+  if (g.bad) { box.innerHTML = '<div class="py-10 text-sm text-slate-500">Preview tidak tersedia untuk pengaturan ini.</div>'; $('pbMore2').textContent = ''; return; }
+  const show = Math.min(pages, 6), avail = Math.max(220, (box.clientWidth || 360) - 34);
+  const pxmm = Math.max(0.8, Math.min(7, avail / g.W, 430 / g.H)), s = pxmm / 3.7795;
+  box.innerHTML = pbChunk(list, g.per).slice(0, show).map((p, i) =>
+    `<div><div class="pb-pvw" style="width:${g.W * pxmm}px;height:${g.H * pxmm}px"><div class="pb-pv" style="width:${g.W}mm;transform:scale(${s})">${pbPageHtml(p, g)}</div></div><div class="pb-cap">${sample ? 'Contoh tampilan' : 'Halaman ' + (i + 1) + ' dari ' + fmt(pages)}</div></div>`).join('');
+  $('pbMore2').textContent = sample ? 'Pilih kode di daftar untuk melihat preview data sebenarnya.' : pages > show ? `Preview menampilkan ${show} halaman pertama; seluruh ${fmt(pages)} halaman ikut tercetak.` : '';
+}
+
+/* ---- cetak ---- */
+function pbPrint() {
+  const items = pbItems(); if (!items.length) return toast('Pilih minimal satu kode untuk dicetak', 3500);
+  const g = pbGeo(items.reduce((a, c) => Math.max(a, c.length), 0)); if (g.bad) return toast('Pengaturan kertas belum valid — lihat peringatan di preview', 4000);
+  const pages = pbChunk(items, g.per);
+  if (pages.length > 500 && !confirm(`Akan mencetak ${fmt(pages.length)} halaman (${fmt(items.length)} label). Lanjutkan?`)) return;
+  $('pbPrint').innerHTML = pages.map(p => pbPageHtml(p, g)).join('');
+  const st = document.createElement('style'); st.id = 'pbPageStyle'; st.textContent = `@page { size: ${g.W}mm ${g.H}mm; margin: 0; }`; document.head.appendChild(st);
+  const old = document.title; document.title = 'Barcode_Label_' + todayStr();
+  document.body.classList.add('pb-printing');
+  const done = () => { document.body.classList.remove('pb-printing'); document.title = old; $('pbPrint').innerHTML = ''; st.remove(); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  requestAnimationFrame(() => setTimeout(() => window.print(), 60));
+}
+
+/* ---- data (sheet "Barcode Label" kolom B) ---- */
+async function pbLoad(force) {
+  if (PB.loading) return;
+  if (!gasReady()) { PB.err = 'URL GAS belum diatur.'; return pbRenderList(); }
+  PB.loading = true; PB.err = ''; pbRenderList();
+  try {
+    const r = await (await fetch(`${GAS_URL()}?action=getBarcodeLabels${force ? '&refresh=1' : ''}`)).json();
+    if (!r || !r.ok) throw new Error((r && r.error) || 'Gagal memuat sheet Barcode Label');
+    PB.codes = Array.isArray(r.codes) ? r.codes.map(String) : []; PB.codeSet = new Set(PB.codes); PB.dup = r.duplicates || 0; PB.loaded = true;
+    for (const c of [...PB.sel]) if (!PB.codeSet.has(c)) PB.sel.delete(c);
+    if (force) toast(`Barcode Label dimuat ulang: ${fmt(PB.codes.length)} kode`, 2600);
+  } catch (e) {
+    PB.err = /Action tidak dikenal/i.test(e.message) ? 'Server belum diperbarui. Deploy ulang Apps Script sebagai versi baru.' : (e.message || 'Gagal memuat data');
+  } finally { PB.loading = false; pbRenderList(); pbRender(); }
+}
+const pbFiltered = () => { const q = PB.q.trim().toLowerCase(); return q ? PB.codes.filter(c => c.toLowerCase().includes(q)) : PB.codes; };
+function pbRenderList() {
+  const box = $('pbList'); if (!box) return;
+  const msg = (t, cls) => `<div class="px-4 py-6 text-center text-sm ${cls || 'text-slate-500'}">${t}</div>`;
+  if (PB.loading && !PB.loaded) { box.innerHTML = msg('Memuat sheet “Barcode Label”…'); return; }
+  if (PB.err) { box.innerHTML = msg(esc(PB.err), 'text-red-600'); return; }
+  const f = PB.f = pbFiltered();
+  $('pbSrc').textContent = PB.loaded ? `Sumber: sheet “Barcode Label” kolom B · ${fmt(PB.codes.length)} kode${PB.dup ? ` (${fmt(PB.dup)} kode ganda diabaikan)` : ''}` : 'Sumber: sheet “Barcode Label” kolom B (Code)';
+  if (!f.length) { box.innerHTML = msg(PB.codes.length ? 'Tidak ada kode yang cocok dengan pencarian.' : 'Sheet “Barcode Label” belum berisi kode di kolom B.'); return; }
+  const shown = f.slice(0, PB.limit);
+  box.innerHTML = shown.map((c, i) => `<label class="pb-row"><input type="checkbox" data-i="${i}"${PB.sel.has(c) ? ' checked' : ''}><span class="num">${esc(c)}</span></label>`).join('') +
+    (f.length > shown.length ? `<div class="p-2"><button type="button" id="pbMore" class="btn btn-ghost w-full">Tampilkan lebih banyak (${fmt(f.length - shown.length)} tersisa)</button></div>` : '');
+}
+
+/* ---- kontrol ---- */
+function pbFillControls() {
+  const c = PB.cfg, P = pbPaper();
+  document.querySelectorAll('#pbPt [data-pt]').forEach(b => b.classList.toggle('on', b.dataset.pt === c.ptype));
+  document.querySelectorAll('#pbOr [data-or]').forEach(b => b.classList.toggle('on', b.dataset.or === c.orient));
+  $('pbPaper').innerHTML = ['Thermal', 'Kertas Biasa', 'Tom & Jerry', 'Custom'].map(gr => {
+    const ps = pbPapers().filter(p => p.grp === gr); return ps.length ? `<optgroup label="${esc(PB_GRP[gr])}">${ps.map(p => `<option value="${p.id}">${esc(p.n)}</option>`).join('')}</optgroup>` : '';
+  }).join('');
+  $('pbPaper').value = c.paper;
+  $('pbCW').value = c.cw; $('pbCH').value = c.ch; $('pbCols').value = c.cols; $('pbRows').value = c.rows;
+  $('pbAuto').checked = !!c.auto; $('pbM').value = c.m; $('pbG').value = c.g;
+  $('pbQr').value = c.qr; $('pbQrV').textContent = c.qr + '%'; $('pbText').checked = !!c.text; $('pbCut').checked = !!c.cut;
+  $('pbEcl').value = c.ecl; $('pbCopies').value = c.copies;
+  $('pbCustom').classList.toggle('hidden', P.type !== 'custom');
+  $('pbMan').classList.toggle('hidden', !!c.auto);
+  const roll = P.type === 'roll'; $('pbCols').disabled = $('pbRows').disabled = roll; $('pbOr').classList.toggle('opacity-40', roll); $('pbOr').style.pointerEvents = roll ? 'none' : '';
+  $('pbHint').textContent = (c.ptype === 'thermal'
+    ? 'Printer thermal (USB / Bluetooth / jaringan) yang sudah terpasang di perangkat ini muncul di dialog cetak. Ukuran kertas & margin dikirim otomatis. '
+    : 'Printer laser / inkjet yang sudah terpasang di perangkat ini muncul di dialog cetak. Ukuran kertas & margin dikirim otomatis. ')
+    + (P.grp === 'Tom & Jerry' ? 'Tom & Jerry: satu label per halaman — untuk banyak label per lembar pakai A4/A5 lalu atur Kolom × Baris. ' : '')
+    + 'Di dialog cukup biarkan Margins: None/Default dan Scale: 100%.';
+}
+function pbSync() { pbFillControls(); pbSave(); pbRender(); }
+function pbInit() {
+  PB.init = true;
+  document.querySelector('#pbPt').addEventListener('click', e => {
+    const b = e.target.closest('[data-pt]'); if (!b || b.dataset.pt === PB.cfg.ptype) return;
+    PB.cfg.ptype = b.dataset.pt; if (!pbPapers().some(p => p.id === PB.cfg.paper)) pbSetPaper(PB.cfg.ptype === 'thermal' ? 't5030' : 'a4'); pbSync();
+  });
+  $('pbPaper').addEventListener('change', () => { pbSetPaper($('pbPaper').value); pbSync(); });
+  $('pbOr').addEventListener('click', e => {
+    const b = e.target.closest('[data-or]'); if (!b || b.dataset.or === PB.cfg.orient) return;
+    PB.cfg.orient = b.dataset.or; if (PB.cfg.cols * PB.cfg.rows > 1) { const t = PB.cfg.cols; PB.cfg.cols = PB.cfg.rows; PB.cfg.rows = t; }   // kisi ikut berputar
+    pbSync();
+  });
+  const bind = (id, key, fn) => { const el = $(id); el.addEventListener('input', () => { PB.cfg[key] = el.type === 'checkbox' ? el.checked : fn ? fn(el.value) : el.value; if (id === 'pbQr') $('pbQrV').textContent = el.value + '%'; pbSave(); if (el.type === 'checkbox' || el.tagName === 'SELECT') pbFillControls(); pbRender(); }); };
+  bind('pbCW', 'cw'); bind('pbCH', 'ch'); bind('pbCols', 'cols'); bind('pbRows', 'rows'); bind('pbAuto', 'auto'); bind('pbM', 'm'); bind('pbG', 'g');
+  bind('pbQr', 'qr', v => +v); bind('pbText', 'text'); bind('pbCut', 'cut'); bind('pbEcl', 'ecl'); bind('pbCopies', 'copies');
+  $('pbSearch').addEventListener('input', e => { PB.q = e.target.value; PB.limit = 150; PB.last = -1; pbRenderList(); });
+  $('pbAll').onclick = () => { pbFiltered().forEach(c => PB.sel.add(c)); pbRenderList(); pbRender(); };
+  $('pbNone').onclick = () => { PB.sel.clear(); pbRenderList(); pbRender(); };
+  $('pbReload').onclick = () => pbLoad(true);
+  $('pbPrintBtn').onclick = pbPrint;
+  $('pbList').addEventListener('click', e => {
+    if (e.target.closest('#pbMore')) { PB.limit += 150; return pbRenderList(); }
+    const inp = e.target.closest('input[data-i]'); if (!inp) return;
+    const i = +inp.dataset.i, f = PB.f || [];
+    if (e.shiftKey && PB.last >= 0) { const a = Math.min(PB.last, i), b = Math.max(PB.last, i); for (let k = a; k <= b; k++) { if (inp.checked) PB.sel.add(f[k]); else PB.sel.delete(f[k]); } PB.last = i; pbRenderList(); }
+    else { if (inp.checked) PB.sel.add(f[i]); else PB.sel.delete(f[i]); PB.last = i; }
+    pbRender();
+  });
+  let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { if (state.menu === 'print') pbRender(); }, 150); });
+}
+function pbEnter() {
+  if (!PB.init) pbInit();
+  pbFillControls(); pbRenderList(); pbRender();
+  if (!PB.loaded) pbLoad(false);
+}
+</script>
 <script id="m-ux-js">
 /* Lapisan UX mobile: dock + sheet. Hanya memanggil handler yang sudah ada (tidak mengubah logika). */
 (() => {
@@ -3968,7 +4358,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   };
   const ic = k => `<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="${I[k]}"/></svg>`;
   const $$ = id => document.getElementById(id);
-  const mode = () => state.menu === 'reject' ? 'reject' : state.menu === 'retur' ? 'retur' : state.menu === 'checker' ? 'checker' : fmMode() ? 'form' : evMode() ? 'event' : (state.menu === 'other' ? 'req' : 'planner');
+  const mode = () => state.menu === 'print' ? 'print' : state.menu === 'reject' ? 'reject' : state.menu === 'retur' ? 'retur' : state.menu === 'checker' ? 'checker' : fmMode() ? 'form' : evMode() ? 'event' : (state.menu === 'other' ? 'req' : 'planner');
   const hasData = () => (state.drivers && state.drivers.length) || (state.req && state.req.length);
 
   /* ---- elemen ---- */
@@ -3980,6 +4370,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     <button class="dk" data-d="checker">${ic('chk')}<span>Checker</span></button>
     <button class="dk" data-d="retur">${ic('ret')}<span>Retur</span></button>
     <button class="dk" data-d="reject">${ic('rej')}<span>Reject</span></button>
+    <button class="dk" data-d="print">${ic('print')}<span>Cetak</span></button>
     <button class="dk dk-fab" data-d="fab"><i class="c"></i><span></span></button>
     <button class="dk" data-d="act">${ic('act')}<span>Aksi</span></button>
     <button class="dk" data-d="set">${ic('set')}<span>Setelan</span></button>`;
@@ -3993,6 +4384,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   /* ---- tombol tengah: aksi berikutnya yang paling masuk akal ---- */
   function fab() {
     const m = mode(), admin = state.role === 'admin';
+    if (m === 'print') return { l: 'Cetak', k: 'print', s: 1, go: () => $$('pbPrintBtn').click() };
     if (m === 'retur') return { l: 'Scan', k: 'scan', go: () => $$('riScan').click() };
     if (m === 'reject') return { l: 'Scan', k: 'scan', go: () => $$('rjScan').click() };
     if (m === 'checker') return { l: 'Scan', k: 'scan', go: () => $$('ckScan').click() };
@@ -4004,7 +4396,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   let cur;
   function sync() {
     if (!mq.matches) return;
-    dock.querySelectorAll('[data-d=planner],[data-d=other],[data-d=checker],[data-d=retur],[data-d=reject]').forEach(b => b.classList.toggle('on', b.dataset.d === state.menu));
+    dock.querySelectorAll('[data-d=planner],[data-d=other],[data-d=checker],[data-d=retur],[data-d=reject],[data-d=print]').forEach(b => b.classList.toggle('on', b.dataset.d === state.menu));
     cur = fab(); const f = dock.querySelector('.dk-fab');
     f.classList.toggle('save', !!cur.s);
     f.querySelector('.c').innerHTML = ic(cur.k).replace('<svg', '<svg width="26" height="26"'); f.querySelector('span').textContent = cur.l;
@@ -4042,6 +4434,8 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
     if (m === 'reject') h += grp('Simpan', item('rjSave', 'Simpan ke Spreadsheet', 'Catat ke sheet Reject Scrap (beserta foto)', 'save', 1)) +
       grp('Download', item('rjCsv', 'Download CSV', 'Semua baris di layar (.csv)', 'xls')) +
       grp('Lainnya', item('rjReload', 'Muat ulang nama & barcode', 'Ambil data Source & Source Barcode terbaru', 'ref'), item('rjClear', 'Bersihkan layar', 'Kosongkan daftar scan & foto', 'trash'));
+    if (m === 'print') h += grp('Cetak', item('pbPrintBtn', 'Cetak QR Code', 'Buka dialog cetak sesuai pengaturan kertas', 'print', 1)) +
+      grp('Lainnya', item('pbReload', 'Muat ulang daftar kode', 'Ambil sheet Barcode Label terbaru', 'ref'), item('pbNone', 'Kosongkan pilihan', 'Batalkan semua centang kode', 'trash'));
     if (m === 'checker') h += grp('Simpan', item('ckSave', 'Simpan ke Spreadsheet', 'Catat hasil ke sheet Checker Result', 'save', 1)) +
       grp('Cetak / PDF', item('ckPrint', 'Hasil Adjustment', 'Produk yang sudah dicek', 'print')) +
       grp('Lainnya', item('ckLoad', 'Muat ulang file', 'Ambil nama checker & file dari Admin', 'ref'), item('shRefresh', 'Muat file dari Admin', 'File plan yang dibagikan hari ini', 'ref'), item('ckReset', 'Reset pengecekan', 'Kosongkan tanda ✓ / ✗ tampilan ini', 'trash'));
@@ -4064,7 +4458,7 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   /* ---- event ---- */
   dock.addEventListener('click', e => {
     const b = e.target.closest('[data-d]'); if (!b) return; const d = b.dataset.d;
-    if (d === 'planner' || d === 'other' || d === 'checker' || d === 'retur' || d === 'reject') { if (state.menu === d) window.scrollTo({ top: 0, behavior: 'smooth' }); else switchMenu(d); sync(); }
+    if (d === 'planner' || d === 'other' || d === 'checker' || d === 'retur' || d === 'reject' || d === 'print') { if (state.menu === d) window.scrollTo({ top: 0, behavior: 'smooth' }); else switchMenu(d); sync(); }
     else if (d === 'fab') cur.go();
     else if (d === 'act') sheetAksi(); else sheetSet();
   });
@@ -4150,24 +4544,27 @@ function startApp() { applyMenu(); applyRole(); loadSku(); render(); }
   /* ---- hak akses menu ----
      Server mengirim user.menus. Cadangan di bawah hanya dipakai bila catatan sesi lama tidak memuatnya (mis. tersimpan sebelum pembaruan).
      Divisi tidak dikenal => tidak ada menu => ditolak masuk. */
-  const ALL_MENUS = ['planner', 'other', 'checker', 'retur', 'reject'];
-  const BY_DIVISI = { manager: ALL_MENUS, spv: ALL_MENUS, admin: ['planner', 'other'], checker: ['checker', 'reject'], packer: ['retur'] };
+  const CORE_MENUS = ['planner', 'other', 'checker', 'retur', 'reject'];   // menu inti: pemilik semuanya = Manager / SPV (boleh pindah peran Admin/Packer)
+  const ALL_MENUS = [...CORE_MENUS, 'print'];
+  const BY_DIVISI = { manager: ALL_MENUS, spv: ALL_MENUS, admin: ['planner', 'other', 'print'], checker: ['checker', 'reject'], packer: ['retur'] };   // Print/Cetak: hanya Manager, SPV, Admin
   function accessFor(u) {
     u = u || {};
     let menus = Array.isArray(u.menus) ? u.menus : BY_DIVISI[String(u.divisi || '').toLowerCase().replace(/[^a-z]/g, '')] || [];
     menus = ALL_MENUS.filter(m => menus.includes(m));
     // admin = boleh bekerja sebagai Admin (import Excel, simpan, share) di menu Planner / Other Request, tetapi tanpa tombol pindah peran
-    return { menus, full: menus.length === ALL_MENUS.length, admin: menus.includes('planner') || menus.includes('other') };
+    return { menus, full: CORE_MENUS.every(m => menus.includes(m)), admin: menus.includes('planner') || menus.includes('other') };
   }
   let applied = '';
   function applyAccess() {
     const menus = ACCESS.menus;
     // hapus (bukan sekadar sembunyikan) tombol menu yang tidak diizinkan
     document.querySelectorAll('[data-menu]').forEach(el => { if (!menus.includes(el.dataset.menu)) el.remove(); });
+    document.querySelectorAll('[data-menu-group]').forEach(el => { if (!menus.includes(el.dataset.menuGroup)) el.remove(); });   // judul grup Print/Cetak ikut hilang bila tak ada akses
     const dock = $g('mDock');
     if (dock) {
       dock.querySelectorAll('[data-d]').forEach(el => { if (ALL_MENUS.includes(el.dataset.d) && !menus.includes(el.dataset.d)) el.remove(); });
       dock.style.gridTemplateColumns = 'repeat(' + menus.length + ', 1fr) 84px 1fr 1fr';
+      dock.classList.toggle('dk6', menus.length >= 6);
     }
     if (!menus.includes(state.menu)) { state.menu = menus[0]; try { localStorage.setItem(LS.menu, state.menu); } catch (e) { /* abaikan */ } }
     if (!ACCESS.full) {
