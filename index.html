@@ -527,6 +527,41 @@ body:not(.pb-mode) #printPanel { display: none !important; }
   .pb-setbar .btn { flex: 1 1 auto; }
   .pb-setbar #pbDelSet { margin-left: 0; }
 }
+/* ===== PRATINJAU: gaya ala referensi (header + badge, penggaris grid, pager lembar, kotak saran) ===== */
+.pb-pvh { display: flex; align-items: center; gap: .6rem; }
+.pb-eye { width: 30px; height: 30px; border-radius: 999px; background: #FFF1CC; color: #8A5A00; display: grid; place-items: center; flex: 0 0 auto; }
+.pb-badge { font-size: .68rem; font-weight: 700; padding: .22rem .7rem; border-radius: 999px; background: #EDEDE8; color: #3F3E39; border: 1px solid #DAD9D0; white-space: nowrap; }
+.pb-badge.amber { background: #FFF1CC; color: #8A5A00; border-color: #F2D48A; }
+.pb-badge:empty { display: none; }
+.pb-pvbox { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; max-width: 100%; }
+.pb-pvrow { display: flex; align-items: flex-start; gap: .35rem; }
+.pb-rt { display: flex; align-items: center; gap: .5rem; height: 16px; margin-left: calc(16px + .35rem); font-size: .66rem; font-weight: 700; color: #6B6A62; white-space: nowrap; }
+.pb-rl { display: flex; flex-direction: column; align-items: center; gap: .5rem; width: 16px; font-size: .66rem; font-weight: 700; color: #6B6A62; }
+.pb-rl span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; }
+.pb-rt i, .pb-rl i { flex: 1; background: #A8A79D; position: relative; }
+.pb-rt i { height: 1px; } .pb-rl i { width: 1px; }
+.pb-rt i:first-child::before, .pb-rt i:last-child::after { content: ''; position: absolute; top: -3px; width: 1px; height: 7px; background: #A8A79D; }
+.pb-rt i:first-child::before { left: 0; } .pb-rt i:last-child::after { right: 0; }
+.pb-rl i:first-child::before, .pb-rl i:last-child::after { content: ''; position: absolute; left: -3px; width: 7px; height: 1px; background: #A8A79D; }
+.pb-rl i:first-child::before { top: 0; } .pb-rl i:last-child::after { bottom: 0; }
+.pb-stage .pb-pvw { overflow: hidden; background: #fff; box-shadow: 0 0 0 1px #D9D8D0, 0 6px 18px rgba(0,0,0,.14); }
+.pb-stage .pb-pv { box-shadow: none; }
+#pbPrev .pb-cell:not(.pb-skip):not(.pb-cut) { box-shadow: inset 0 0 0 .2mm #E2E1DB; }
+#pbFullWrap.hidden, #pbPager.hidden { display: none !important; }
+.pb-linkbtn { background: none; border: 0; padding: 0 .25rem; min-height: 32px; font-size: .72rem; font-weight: 700; color: #B25B00; text-decoration: underline; cursor: pointer; }
+.pb-pager { display: flex; justify-content: center; align-items: center; gap: .75rem; }
+.pb-pgb { width: 34px; height: 34px; border: 1px solid #D4D3CA; border-radius: .5rem; background: #fff; font-size: 1.1rem; font-weight: 700; line-height: 1; color: #3F3E39; }
+.pb-pgb:hover:not(:disabled) { border-color: var(--ink); }
+.pb-pgb:disabled { opacity: .4; cursor: not-allowed; }
+.pb-pgtxt { min-width: 7rem; text-align: center; font-size: .8rem; font-weight: 700; color: #141414; }
+.pb-pvmeta { text-align: center; font-size: .7rem; color: #6B6A62; white-space: pre-line; }
+.pb-pvmeta:empty { display: none; }
+.pb-tip { border: 1px solid #F2D48A; background: #FFF8E1; border-radius: .7rem; padding: .7rem .85rem; }
+.pb-tip-h { display: flex; align-items: center; gap: .4rem; font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #8A5A00; margin-bottom: .35rem; }
+.pb-tip #pbInfo { border: 0; border-radius: 0; background: none; padding: 0; }
+.pb-preview > * { flex-shrink: 0; }
+.pb-eye svg { width: 16px; height: 16px; }
+.pb-tip-h svg { width: 14px; height: 14px; flex: 0 0 auto; }
 
 @media print {
   body.pb-printing > *:not(#pbPrint) { display: none !important; }
@@ -1030,19 +1065,36 @@ body:not(.pb-mode) #printPanel { display: none !important; }
           <!-- PREVIEW -->
           <div class="panel pb-stack pb-preview p-4 md:p-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 class="display text-lg pb-h">Preview Cetak</h2>
-                <p id="pbSum" class="text-xs text-slate-500"></p>
+              <div class="pb-pvh">
+                <span class="pb-eye"><svg class="h-[16px] w-[16px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></span>
+                <h2 class="display text-base font-bold">Pratinjau</h2>
               </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span id="pbBadge1" class="pb-badge amber"></span>
+                <span id="pbBadge2" class="pb-badge"></span>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <p id="pbSum" class="text-xs text-slate-500"></p>
               <button id="pbPrintBtn" type="button" class="btn btn-accent">
                 <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
                 Cetak QR Code
               </button>
             </div>
-            <div id="pbInfo" class="rounded-lg bg-[#FFF8E1] px-3 py-2 text-xs leading-relaxed text-slate-700"></div>
             <div id="pbWarn" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"></div>
             <div id="pbPrev" class="pb-stage" aria-label="Preview halaman cetak"></div>
-            <p id="pbMore2" class="text-xs text-slate-500"></p>
+            <div id="pbFullWrap" class="hidden text-center"><button id="pbFullBtn" type="button" class="pb-linkbtn"></button></div>
+            <div id="pbPager" class="pb-pager hidden">
+              <button id="pbPgPrev" type="button" class="pb-pgb" aria-label="Lembar sebelumnya">&#8249;</button>
+              <span id="pbPgTxt" class="pb-pgtxt"></span>
+              <button id="pbPgNext" type="button" class="pb-pgb" aria-label="Lembar berikutnya">&#8250;</button>
+            </div>
+            <p id="pbMore2" class="pb-pvmeta"></p>
+            <div class="pb-tip">
+              <div class="pb-tip-h"><svg class="h-[14px] w-[14px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0012 2z"/></svg>Saran otomatis</div>
+              <div id="pbInfo" class="text-xs leading-relaxed text-slate-700"></div>
+              <p id="pbTip2" class="mt-2 text-xs leading-relaxed text-slate-700"></p>
+            </div>
           </div>
         </div>
       </section>
@@ -4548,7 +4600,41 @@ function pbSelLine(labels, pages, tj) {
   else el.textContent = tj ? `Belum ada kode dipilih · mencetak ${fmt(labels)} label dari kode paling atas · ${fmt(pages)} lembar` : 'Belum ada kode dipilih. Centang kode atau tekan “Pilih semua”.';
 }
 
-/* ---- preview ---- */
+/* ---- preview (gaya referensi: badge, penggaris grid, satu lembar per tampilan + pager) ---- */
+PB.pv = { page: 0, full: false };
+const pbShortName = n => String(n || '').split(' — ')[0].replace(/\s*\(.*$/, '').trim();
+function pbPvReset() {
+  ['pbBadge1', 'pbBadge2'].forEach(i => { const e = $(i); if (e) e.textContent = ''; });
+  ['pbPager', 'pbFullWrap'].forEach(i => { const e = $(i); if (e) e.classList.add('hidden'); });
+  const m = $('pbMore2'); if (m) m.textContent = '';
+  const t = $('pbTip2'); if (t) t.textContent = '';
+}
+function pbPreviewDraw(o) {
+  const box = $('pbPrev'), g = o.g, pv = PB.pv, pages = Math.max(1, o.chunks.length);
+  pv.page = Math.min(Math.max(0, pv.page), pages - 1);
+  const M = 3, x0 = Math.max(0, o.grid.x - M), y0 = Math.max(0, o.grid.y - M), x1 = Math.min(g.W, o.grid.x + o.grid.w + M), y1 = Math.min(g.H, o.grid.y + o.grid.h + M);
+  const canCrop = x0 > 0.05 || y0 > 0.05 || x1 < g.W - 0.05 || y1 < g.H - 0.05;   // area grid lebih kecil dari lembar
+  const full = !canCrop || pv.full;
+  const vx = full ? 0 : x0, vy = full ? 0 : y0, vw = full ? g.W : x1 - x0, vh = full ? g.H : y1 - y0;
+  const avail = Math.max(200, (box.clientWidth || 360) - 34 - 30);
+  const pxmm = Math.max(0.8, Math.min(7, avail / vw, 480 / vh)), s = pxmm / 3.7795, wpx = vw * pxmm, hpx = vh * pxmm;
+  const lbl = full ? 'lembar' : 'grid', rw = full ? g.W : o.grid.w, rh = full ? g.H : o.grid.h;
+  const cur = o.chunks[pv.page] || [];
+  box.innerHTML = `<div class="pb-pvbox"><div class="pb-rt" style="width:${wpx}px"><i></i><span>${lbl} ${mmTxt(rw)} mm</span><i></i></div>`
+    + `<div class="pb-pvrow"><div class="pb-rl" style="height:${hpx}px"><i></i><span>${lbl} ${mmTxt(rh)} mm</span><i></i></div>`
+    + `<div class="pb-pvw" style="width:${wpx}px;height:${hpx}px"><div class="pb-pv" style="width:${g.W}mm;left:${-vx * pxmm}px;top:${-vy * pxmm}px;transform:scale(${s})">${o.pageFn(cur, pv.page)}</div></div></div></div>`;
+  $('pbBadge1').textContent = o.badge1; $('pbBadge2').textContent = o.badge2;
+  const pg = $('pbPager'); pg.classList.toggle('hidden', pages < 2);
+  $('pbPgTxt').textContent = `${o.unit} ${pv.page + 1} / ${fmt(pages)}`;
+  $('pbPgPrev').disabled = pv.page <= 0; $('pbPgNext').disabled = pv.page >= pages - 1;
+  const fw = $('pbFullWrap'); fw.classList.toggle('hidden', !canCrop);
+  $('pbFullBtn').textContent = pv.full ? 'Tampilkan area grid saja' : `Tampilkan ${o.unit.toLowerCase()} penuh (${o.badge2})`;
+  const n = cur.filter(Boolean).length, pt = Math.round(g.fs * 2.8346 * 10) / 10;
+  $('pbMore2').textContent = `${o.sample ? 'Contoh tampilan · ' : ''}${o.unit} ${pv.page + 1} dari ${fmt(pages)} · ${fmt(n)} label di ${o.unit.toLowerCase()} ini · grid ${mmTxt(o.grid.w)} × ${mmTxt(o.grid.h)} mm · QR ${mmTxt(g.q)} mm${g.fs ? ' · font otomatis: kode ' + String(pt).replace('.', ',') + ' pt' : ''}`
+    + (o.note ? '\n' + o.note : '');
+  $('pbTip2').textContent = `Di dialog cetak browser: pilih printer, ukuran kertas ${o.badge2}, Scale/Skala = 100% (Actual size), Margins = None. Sebelum mencetak ke stiker asli, cetak dulu di kertas biasa, lalu tempelkan ke lembar stiker (arahkan ke cahaya) untuk mengecek posisi.${o.tj ? ' Kalau meleset, geser di “Geser cetak” X/Y.' : ''}`;
+}
+
 function pbRender() {
   const box = $('pbPrev'); if (!box) return;
   pbSetStatus();
@@ -4569,12 +4655,12 @@ function pbRender() {
   else { if (g.q < 12) warn.push(`QR hanya ${mmTxt(g.q)} mm — bisa sulit dipindai. Pakai label lebih besar atau kurangi kolom/baris.`); if (PB.cfg.text && g.fs < 1.8) warn.push('Teks kode sangat kecil. Matikan teks, atau pakai label lebih besar.'); }
   if (!sample && items.some(c => /[^\x20-\x7e]/.test(c))) warn.push('Ada kode berisi karakter non-ASCII — QR-nya tidak bisa dibuat (hanya teks yang tampil).');
   const wb = $('pbWarn'); wb.classList.toggle('hidden', !warn.length); wb.innerHTML = warn.map(esc).join('<br>');
-  if (g.bad) { box.innerHTML = '<div class="py-10 text-sm text-slate-500">Preview tidak tersedia untuk pengaturan ini.</div>'; $('pbMore2').textContent = ''; return; }
-  const show = Math.min(pages, 6), avail = Math.max(220, (box.clientWidth || 360) - 34);
-  const pxmm = Math.max(0.8, Math.min(7, avail / g.W, 430 / g.H)), s = pxmm / 3.7795;
-  box.innerHTML = pbChunk(list, g.per).slice(0, show).map((p, i) =>
-    `<div><div class="pb-pvw" style="width:${g.W * pxmm}px;height:${g.H * pxmm}px"><div class="pb-pv" style="width:${g.W}mm;transform:scale(${s})">${pbPageHtml(p, g)}</div></div><div class="pb-cap">${sample ? 'Contoh tampilan' : 'Halaman ' + (i + 1) + ' dari ' + fmt(pages)}</div></div>`).join('');
-  $('pbMore2').textContent = sample ? 'Pilih kode di daftar untuk melihat preview data sebenarnya.' : pages > show ? `Preview menampilkan ${show} halaman pertama; seluruh ${fmt(pages)} halaman ikut tercetak.` : '';
+  if (g.bad) { box.innerHTML = '<div class="py-10 text-sm text-slate-500">Preview tidak tersedia untuk pengaturan ini.</div>'; pbPvReset(); return; }
+  const ori = g.roll ? 'Roll' : g.W >= g.H ? 'Lanskap' : 'Potret';
+  pbPreviewDraw({ g, chunks: pbChunk(list, g.per), pageFn: p => pbPageHtml(p, g), unit: g.sheet ? 'Lembar' : 'Halaman', sample,
+    grid: { x: g.m, y: g.m, w: g.cols * g.cw + (g.cols - 1) * g.gap, h: g.rows * g.ch + (g.rows - 1) * g.gap },
+    badge1: `${g.cols} × ${g.rows} · ${mmTxt(g.cw)} × ${mmTxt(g.ch)} mm`, badge2: `${pbShortName(g.P.n)} — ${ori}`,
+    note: sample ? 'Pilih kode di daftar untuk melihat preview data sebenarnya.' : '' });
 }
 
 /* ---- cetak ---- */
@@ -4810,12 +4896,11 @@ function pbRenderTj() {
   if (info.short > 0) warn.push(`Sheet “Barcode Label” hanya punya ${fmt(codes.length)} kode dari titik awal — ${fmt(info.short)} label tidak terisi. Pilih kode awal lebih atas atau pakai “Buat kode baru berurutan”.`);
   if (codes.some(c => /[^\x20-\x7e]/.test(c))) warn.push('Ada kode berisi karakter non-ASCII — QR-nya tidak bisa dibuat (hanya teks yang tampil).');
   const wb = $('pbWarn'); wb.classList.toggle('hidden', !warn.length); wb.innerHTML = warn.map(esc).join('<br>');
-  if (g.bad) { box.innerHTML = '<div class="py-10 text-sm text-slate-500">Preview tidak tersedia untuk pengaturan ini.</div>'; $('pbMore2').textContent = ''; return; }
-  const show = Math.min(pages, 6), avail = Math.max(220, (box.clientWidth || 360) - 34);
-  const pxmm = Math.max(0.8, Math.min(7, avail / g.W, 430 / g.H)), s = pxmm / 3.7795;
-  box.innerHTML = pbChunk(items, g.per).slice(0, show).map((p, i) =>
-    `<div><div class="pb-pvw" style="width:${g.W * pxmm}px;height:${g.H * pxmm}px"><div class="pb-pv" style="width:${g.W}mm;transform:scale(${s})">${pbTjPageHtml(p, g, i === 0)}</div></div><div class="pb-cap">${info.sample ? 'Contoh tampilan · ' : ''}Lembar ${i + 1} dari ${fmt(pages)}</div></div>`).join('');
-  $('pbMore2').textContent = pages > show ? `Preview menampilkan ${show} lembar pertama; seluruh ${fmt(pages)} lembar ikut tercetak.` : '';
+  if (g.bad) { box.innerHTML = '<div class="py-10 text-sm text-slate-500">Preview tidak tersedia untuk pengaturan ini.</div>'; pbPvReset(); return; }
+  const sh = PB_TJ_SHEETS.find(x => x.id === PB.cfg.tj.sheet);
+  pbPreviewDraw({ g, chunks: pbChunk(items, g.per), pageFn: (p, i) => pbTjPageHtml(p, g, i === 0), unit: 'Lembar', sample: info.sample, tj: true,
+    grid: { x: g.left, y: g.top, w: g.gridW, h: g.gridH },
+    badge1: `${g.cols} × ${g.rows} · ${mmTxt(g.lw)} × ${mmTxt(g.lh)} mm`, badge2: `${pbShortName(sh ? sh.n : 'Lembar')} — ${g.W >= g.H ? 'Lanskap' : 'Potret'}`, note: '' });
 }
 
 async function pbPrintTj() {
@@ -4881,6 +4966,9 @@ function pbTjInit() {
   $('pbTjTp').addEventListener('change', () => { t().tpos = $('pbTjTp').value; pbSync(); });
   $('pbTjSrc').addEventListener('click', e => { const b = e.target.closest('[data-src]'); if (!b || b.dataset.src === t().src) return; t().src = b.dataset.src; pbSync(); });
   $('pbTjFit').addEventListener('click', () => { const q = t(), f = pbTjFitC(PB.cfg); q.cols = f.cols; q.rows = f.rows; q.start = Math.min(q.start, f.cols * f.rows); pbSync(); toast(`Muat ${f.cols} kolom × ${f.rows} baris = ${f.cols * f.rows} label per lembar`, 2800); });
+  $('pbPgPrev').addEventListener('click', () => { PB.pv.page--; pbRender(); });
+  $('pbPgNext').addEventListener('click', () => { PB.pv.page++; pbRender(); });
+  $('pbFullBtn').addEventListener('click', () => { PB.pv.full = !PB.pv.full; pbRender(); });
   $('pbPrev').addEventListener('click', e => {
     if (!pbIsTj()) return; const c = e.target.closest('.pb-cell[data-slot]'); if (!c) return;
     t().start = +c.dataset.slot; pbSave(); pbFillControls(); pbRender();
