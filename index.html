@@ -410,7 +410,7 @@ body:not(.pb-mode) #printPanel { display: none !important; }
 .pb-seg button { min-height: 40px; border-radius: .45rem; font-weight: 700; font-size: .8rem; color: #686760; background: none; border: 0; }
 .pb-seg button.on { background: #fff; color: #141414; box-shadow: 0 1px 4px rgba(0,0,0,.18); }
 .pb-f { display: flex; flex-direction: column; gap: 3px; font-size: .75rem; font-weight: 600; color: #52514B; }
-.pb-f input[type=number], .pb-f select { border: 1px solid var(--line); border-radius: .5rem; padding: .4rem .6rem; font-size: 16px; color: var(--ink); background: #fff; min-height: 40px; width: 100%; }
+.pb-f input[type=number], .pb-f input[type=text], .pb-f select { border: 1px solid var(--line); border-radius: .5rem; padding: .4rem .6rem; font-size: 16px; color: var(--ink); background: #fff; min-height: 40px; width: 100%; }
 .pb-chk { display: flex; align-items: center; gap: .55rem; font-size: .85rem; font-weight: 600; min-height: 36px; cursor: pointer; }
 .pb-chk input { width: 18px; height: 18px; accent-color: #141414; }
 .pb-g { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #98978D; }
@@ -429,6 +429,18 @@ body:not(.pb-mode) #printPanel { display: none !important; }
 .pb-grid { display: grid; justify-content: start; align-content: start; }
 .pb-cell { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6mm; overflow: hidden; color: #000; }
 .pb-cell.pb-cut { outline: .15mm dashed #555; outline-offset: -.15mm; }
+/* --- Tom & Jerry (lembar multi-label, QR berbeda tiap label) --- */
+#printPanel.pb-tjmode .pb-gen { display: none !important; }
+#printPanel:not(.pb-tjmode) #pbTj, #printPanel:not(.pb-tjmode) .pb-tjonly { display: none !important; }
+#printPanel.pb-tjnew #pbDataPanel { display: none !important; }
+#pbTj .hidden { display: none !important; }
+.pb-tjgrid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.pb-page.pb-tj { position: relative; }
+.pb-page.pb-tj .pb-grid { position: absolute; }
+#pbPrev .pb-cell.pb-skip { background: repeating-linear-gradient(45deg, #F3F3F0, #F3F3F0 1.2mm, #fff 1.2mm, #fff 2.4mm); outline: .15mm dashed #bbb; outline-offset: -.15mm; }
+#pbPrev .pb-cell[data-slot] { cursor: pointer; }
+#pbPrev .pb-cell[data-slot]:hover { outline: .4mm solid #FBB315; outline-offset: -.4mm; }
+#pbPrev .pb-cell.pb-start { outline: .5mm solid #FBB315; outline-offset: -.5mm; }
 .pb-qr { display: block; flex: 0 0 auto; }
 .pb-qr svg { display: block; width: 100%; height: 100%; }
 .pb-tx { font-family: 'Courier New', Courier, 'DejaVu Sans Mono', monospace; font-weight: 700; white-space: nowrap; line-height: 1.25; text-align: center; letter-spacing: 0; }
@@ -795,13 +807,13 @@ body:not(.pb-mode) #printPanel { display: none !important; }
                     <button type="button" data-or="l">Lanskap (Landscape)</button>
                   </div>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 gap-3 pb-gen">
                   <label class="pb-f">Kolom label<input id="pbCols" type="number" min="1" max="12" step="1" inputmode="numeric"></label>
                   <label class="pb-f">Baris label<input id="pbRows" type="number" min="1" max="40" step="1" inputmode="numeric"></label>
                 </div>
               </div>
 
-              <div class="space-y-2">
+              <div class="space-y-2 pb-gen">
                 <div class="pb-g">Margin</div>
                 <label class="pb-chk"><input id="pbAuto" type="checkbox"> Margin &amp; jarak otomatis (sesuai kertas)</label>
                 <div id="pbMan" class="grid grid-cols-2 gap-3">
@@ -813,22 +825,98 @@ body:not(.pb-mode) #printPanel { display: none !important; }
               <div class="space-y-2">
                 <div class="pb-g">Tampilan label</div>
                 <label class="pb-f">Ukuran QR: <span id="pbQrV" class="num">100%</span><input id="pbQr" type="range" min="40" max="100" step="5" class="w-full accent-[#141414]"></label>
-                <label class="pb-chk"><input id="pbText" type="checkbox"> Tampilkan kode di bawah QR</label>
+                <label class="pb-chk pb-gen"><input id="pbText" type="checkbox"> Tampilkan kode di bawah QR</label>
                 <label class="pb-chk"><input id="pbCut" type="checkbox"> Garis tepi label (panduan potong)</label>
                 <div class="grid grid-cols-2 gap-3">
                   <label class="pb-f">Kerapatan QR<select id="pbEcl"><option value="L">Ringan (L)</option><option value="M">Standar (M)</option><option value="Q">Tinggi (Q)</option><option value="H">Maksimal (H)</option></select></label>
-                  <label class="pb-f">Salinan tiap kode<input id="pbCopies" type="number" min="1" max="500" step="1" inputmode="numeric"></label>
+                  <label class="pb-f pb-gen">Salinan tiap kode<input id="pbCopies" type="number" min="1" max="500" step="1" inputmode="numeric"></label>
+                </div>
+              </div>
+            </div>
+
+            <!-- TOM & JERRY: lembar stiker multi-label, QR berbeda tiap label -->
+            <div id="pbTj" class="panel space-y-4 p-4 md:p-5">
+              <div class="flex items-center justify-between gap-2">
+                <h2 class="display text-lg">Tom &amp; Jerry · Lembar &amp; Label</h2>
+                <button id="pbTjFit" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px" title="Hitung kolom × baris yang muat di lembar">Kolom × baris otomatis</button>
+              </div>
+              <p class="text-xs leading-relaxed text-slate-500">Satu lembar berisi banyak label dan <b>setiap label mendapat QR Code yang berbeda</b>. Ukuran bawaan memakai spesifikasi umum (No. 103: 12 label per lembar); ukur lembar Anda lalu sesuaikan. Cetak uji dulu di kertas biasa dengan “Garis tepi label” aktif, lalu tempelkan ke lembar stiker sambil diterawang.</p>
+
+              <div class="space-y-3">
+                <div class="pb-g">Jumlah &amp; slot awal</div>
+                <div class="pb-tjgrid">
+                  <label class="pb-f">Jumlah label dicetak<input id="pbTjN" type="number" min="1" max="5000" step="1" inputmode="numeric"></label>
+                  <label class="pb-f">Mulai dari slot (lembar 1)<input id="pbTjStart" type="number" min="1" step="1" inputmode="numeric"></label>
+                </div>
+                <p id="pbTjSlotHint" class="text-[11px] text-slate-500"></p>
+              </div>
+
+              <div class="space-y-3">
+                <div class="pb-g">Tata letak per lembar</div>
+                <label class="pb-f">Ukuran lembar<select id="pbTjSheet"></select></label>
+                <div id="pbTjSheetC" class="pb-tjgrid">
+                  <label class="pb-f">Lebar lembar (mm)<input id="pbTjSW" type="number" min="20" max="1000" step="0.5" inputmode="decimal"></label>
+                  <label class="pb-f">Tinggi lembar (mm)<input id="pbTjSH" type="number" min="20" max="1500" step="0.5" inputmode="decimal"></label>
+                </div>
+                <div class="pb-tjgrid">
+                  <label class="pb-f">Kolom<input id="pbTjCols" type="number" min="1" max="30" step="1" inputmode="numeric"></label>
+                  <label class="pb-f">Baris<input id="pbTjRows" type="number" min="1" max="60" step="1" inputmode="numeric"></label>
+                </div>
+                <div class="pb-tjgrid">
+                  <label class="pb-f">Jarak horizontal (mm)<input id="pbTjGX" type="number" min="0" max="50" step="0.1" inputmode="decimal"></label>
+                  <label class="pb-f">Jarak vertikal (mm)<input id="pbTjGY" type="number" min="0" max="50" step="0.1" inputmode="decimal"></label>
+                </div>
+                <label class="pb-chk"><input id="pbTjCtr" type="checkbox"> Pusatkan grid label di lembar</label>
+                <div id="pbTjMan" class="pb-tjgrid">
+                  <label class="pb-f">Margin kiri (mm)<input id="pbTjML" type="number" min="-50" max="300" step="0.1" inputmode="decimal"></label>
+                  <label class="pb-f">Margin atas (mm)<input id="pbTjMT" type="number" min="-50" max="300" step="0.1" inputmode="decimal"></label>
+                </div>
+                <div class="pb-tjgrid">
+                  <label class="pb-f">Geser cetak X (mm)<input id="pbTjOX" type="number" min="-30" max="30" step="0.1" inputmode="decimal"></label>
+                  <label class="pb-f">Geser cetak Y (mm)<input id="pbTjOY" type="number" min="-30" max="30" step="0.1" inputmode="decimal"></label>
+                </div>
+                <p class="text-[11px] text-slate-500">“Geser cetak” untuk kalibrasi bila hasil printer sedikit meleset dari stiker (positif = ke kanan / ke bawah).</p>
+              </div>
+
+              <div class="space-y-3">
+                <div class="pb-g">Tata letak per label</div>
+                <div class="pb-tjgrid">
+                  <label class="pb-f">Lebar label (mm)<input id="pbTjLW" type="number" min="5" max="500" step="0.1" inputmode="decimal"></label>
+                  <label class="pb-f">Tinggi label (mm)<input id="pbTjLH" type="number" min="5" max="500" step="0.1" inputmode="decimal"></label>
+                </div>
+                <div class="pb-tjgrid">
+                  <label class="pb-f">Ruang tepi dalam label (mm)<input id="pbTjPad" type="number" min="0" max="20" step="0.1" inputmode="decimal"></label>
+                  <label class="pb-f">Teks kode<select id="pbTjTp"><option value="b">Di bawah QR</option><option value="a">Di atas QR</option><option value="n">Tanpa teks</option></select></label>
+                </div>
+                <label class="pb-f">Ukuran teks (mm, 0 = otomatis)<input id="pbTjFs" type="number" min="0" max="20" step="0.1" inputmode="decimal"></label>
+                <p class="text-[11px] text-slate-500">Ukuran QR diatur dengan slider “Ukuran QR” di Page Setup.</p>
+              </div>
+
+              <div class="space-y-3">
+                <div class="pb-g">Sumber QR (berbeda tiap label)</div>
+                <div id="pbTjSrc" class="pb-seg" role="group" aria-label="Sumber QR">
+                  <button type="button" data-src="list">Dari daftar Barcode Label</button>
+                  <button type="button" data-src="new">Buat kode baru berurutan</button>
+                </div>
+                <p id="pbTjSrcHint" class="text-xs leading-relaxed text-slate-500"></p>
+                <div id="pbTjNew" class="space-y-3">
+                  <div class="pb-tjgrid">
+                    <label class="pb-f">Awalan kode<input id="pbTjPrefix" type="text" maxlength="30" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+                    <label class="pb-f">Jumlah digit nomor<input id="pbTjDigits" type="number" min="1" max="10" step="1" inputmode="numeric"></label>
+                  </div>
+                  <label class="pb-f">Mulai dari nomor (kosongkan = lanjut otomatis)<input id="pbTjNum" type="number" min="1" step="1" inputmode="numeric"></label>
                 </div>
               </div>
             </div>
 
             <!-- DATA -->
-            <div class="panel space-y-3 p-4 md:p-5">
+            <div id="pbDataPanel" class="panel space-y-3 p-4 md:p-5">
               <div class="flex items-center justify-between gap-2">
                 <h2 class="display text-lg">Data Kode</h2>
                 <button id="pbReload" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Muat ulang</button>
               </div>
               <p id="pbSrc" class="text-xs text-slate-500">Sumber: spreadsheet “Dashboard Plan Warehouse PG” · sheet “Barcode Label” · kolom B (Code)</p>
+              <p class="pb-tjonly text-[11px] leading-relaxed text-slate-500">Mode Tom &amp; Jerry: kode awal = kode pertama yang dicentang (tidak ada centang = mulai dari kode paling atas). Label berikutnya memakai kode urut di bawahnya, masing-masing berbeda.</p>
               <input id="pbSearch" type="search" placeholder="Cari kode, mis. PG-REC-001…" autocomplete="off" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
               <div class="flex flex-wrap gap-2">
                 <button id="pbAll" type="button" class="btn btn-ghost" style="padding:.35rem .8rem;font-size:.78rem;min-height:36px">Pilih semua (hasil pencarian)</button>
@@ -4142,9 +4230,34 @@ const PB_PAPERS = [
 ];
 const PB_GRP = { 'Thermal': 'Kertas Thermal (label / roll)', 'Tom & Jerry': 'Label Sticker Tom & Jerry', 'Kertas Biasa': 'Kertas biasa', 'Custom': 'Ukuran khusus' };
 const PB_DEF = { ptype: 'thermal', paper: 't5030', orient: 'l', cw: 50, ch: 30, cols: 1, rows: 1, auto: true, m: 1, g: 0, qr: 100, text: true, cut: false, ecl: 'M', copies: 1 };
+/* Tom & Jerry: lembar multi-label. Satuan mm. Ukuran bawaan = spesifikasi umum penjual (No. 103: 32 × 64 mm, 12 label per lembar ±160 × 210 mm); sesuaikan bila lembar Anda berbeda. */
+const PB_TJ_DEF = { sheet: 'tj', sw: 160, sh: 210, lw: 32, lh: 64, cols: 4, rows: 3, gx: 0, gy: 0, ctr: true, ml: 0, mt: 0, ox: 0, oy: 0, n: 12, start: 1, pad: 1.5, tpos: 'b', fs: 0, src: 'list', prefix: 'PG-REC-', digits: 3, num: '' };
+const PB_TJ_SHEETS = [
+  { id: 'tj', n: 'Lembar Tom & Jerry (± 160 × 210 mm)', w: 160, h: 210 },
+  { id: 'a4', n: 'A4 — 210 × 297 mm', w: 210, h: 297 },
+  { id: 'a5', n: 'A5 — 148 × 210 mm', w: 148, h: 210 },
+  { id: 'f4', n: 'F4 / Folio — 215 × 330 mm', w: 215, h: 330 },
+  { id: 'letter', n: 'Letter — 215,9 × 279,4 mm', w: 215.9, h: 279.4 },
+  { id: 'custom', n: 'Ukuran khusus (isi sendiri)', w: 0, h: 0 }
+];
+/* kolom × baris terbanyak yang muat di lembar (sisakan 8 mm tiap sisi untuk area tak-tercetak printer). Fungsi murni: aman dipanggil saat inisialisasi. */
+function pbTjFitC(c) {
+  const t = c.tj, f = (v, d) => { v = parseFloat(String(v).replace(',', '.')); return isFinite(v) && v >= 0 ? v : d; };
+  const sw = f(t.sw, 160), sh = f(t.sh, 210), a = Math.min(sw, sh), b = Math.max(sw, sh);
+  const W = c.orient === 'l' ? b : a, H = c.orient === 'l' ? a : b, M = 8;
+  const lw = f(t.lw, 32) || 1, lh = f(t.lh, 64) || 1, gx = f(t.gx, 0), gy = f(t.gy, 0);
+  return { cols: Math.max(1, Math.floor((W - 2 * M + gx) / (lw + gx))), rows: Math.max(1, Math.floor((H - 2 * M + gy) / (lh + gy))) };
+}
 function pbLoadCfg() {
-  try { const o = JSON.parse(localStorage.getItem(PB_LS) || 'null'); const c = Object.assign({}, PB_DEF, o && typeof o === 'object' ? o : {}); if (!PB_PAPERS.some(p => p.id === c.paper)) c.paper = PB_DEF.paper; return c; }
-  catch (e) { return Object.assign({}, PB_DEF); }
+  try {
+    const o = JSON.parse(localStorage.getItem(PB_LS) || 'null'); const c = Object.assign({}, PB_DEF, o && typeof o === 'object' ? o : {});
+    if (!PB_PAPERS.some(p => p.id === c.paper)) c.paper = PB_DEF.paper;
+    c.tj = Object.assign({}, PB_TJ_DEF, o && o.tj && typeof o.tj === 'object' ? o.tj : {});
+    const P = PB_PAPERS.find(p => p.id === c.paper);
+    if (P && P.grp === 'Tom & Jerry' && !(o && o.tj)) { c.tj.lw = P.w; c.tj.lh = P.h; const f = pbTjFitC(c); c.tj.cols = f.cols; c.tj.rows = f.rows; c.tj.n = f.cols * f.rows; }
+    return c;
+  }
+  catch (e) { const c = Object.assign({}, PB_DEF); c.tj = Object.assign({}, PB_TJ_DEF); return c; }
 }
 const PB = { cfg: pbLoadCfg(), codes: [], codeSet: new Set(), sel: new Set(), loaded: false, loading: false, err: '', dup: 0, q: '', limit: 150, last: -1, f: [], init: false, g: null };
 const pbSave = () => { try { localStorage.setItem(PB_LS, JSON.stringify(PB.cfg)); } catch (e) { /* penyimpanan penuh / diblokir */ } };
@@ -4156,6 +4269,7 @@ const mmTxt = n => String(Math.round(n * 10) / 10).replace('.', ',');
 function pbSetPaper(id) {
   PB.cfg.paper = id; const P = pbPaper();
   PB.cfg.orient = P.nat || 'l'; PB.cfg.cols = P.cols || 1; PB.cfg.rows = P.rows || 1;
+  if (P.grp === 'Tom & Jerry') { const t = PB.cfg.tj; PB.cfg.orient = 'p'; t.lw = P.w; t.lh = P.h; const f = pbTjFitC(PB.cfg); t.cols = f.cols; t.rows = f.rows; t.n = f.cols * f.rows; t.start = 1; }   // jenis label dipilih -> ukuran label & kisi menyesuaikan
 }
 
 /* ---- geometri: semua ukuran dihitung otomatis dari kertas ---- */
@@ -4213,6 +4327,7 @@ function pbItems() {
 /* ---- preview ---- */
 function pbRender() {
   const box = $('pbPrev'); if (!box) return;
+  if (pbIsTj()) return pbRenderTj();
   const items = pbItems(), sample = !items.length;
   const maxLen = (sample ? ['PG-REC-001'] : items).reduce((a, c) => Math.max(a, c.length), 0);
   const g = PB.g = pbGeo(maxLen), P = g.P;
@@ -4238,6 +4353,7 @@ function pbRender() {
 
 /* ---- cetak ---- */
 function pbPrint() {
+  if (pbIsTj()) return pbPrintTj();
   const items = pbItems(); if (!items.length) return toast('Pilih minimal satu kode untuk dicetak', 3500);
   const g = pbGeo(items.reduce((a, c) => Math.max(a, c.length), 0)); if (g.bad) return toast('Pengaturan kertas belum valid — lihat peringatan di preview', 4000);
   const pages = pbChunk(items, g.per);
@@ -4299,8 +4415,9 @@ function pbFillControls() {
   $('pbHint').textContent = (c.ptype === 'thermal'
     ? 'Printer thermal (USB / Bluetooth / jaringan) yang sudah terpasang di perangkat ini muncul di dialog cetak. Ukuran kertas & margin dikirim otomatis. '
     : 'Printer laser / inkjet yang sudah terpasang di perangkat ini muncul di dialog cetak. Ukuran kertas & margin dikirim otomatis. ')
-    + (P.grp === 'Tom & Jerry' ? 'Tom & Jerry: satu label per halaman — untuk banyak label per lembar pakai A4/A5 lalu atur Kolom × Baris. ' : '')
+    + (P.grp === 'Tom & Jerry' ? 'Tom & Jerry: pilih nomor label di sini, lalu atur lembar, kolom × baris, slot awal, dan sumber QR di panel “Tom & Jerry”. ' : '')
     + 'Di dialog cukup biarkan Margins: None/Default dan Scale: 100%.';
+  pbTjFill();
 }
 function pbSync() { pbFillControls(); pbSave(); pbRender(); }
 function pbInit() {
@@ -4313,6 +4430,7 @@ function pbInit() {
   $('pbOr').addEventListener('click', e => {
     const b = e.target.closest('[data-or]'); if (!b || b.dataset.or === PB.cfg.orient) return;
     PB.cfg.orient = b.dataset.or; if (PB.cfg.cols * PB.cfg.rows > 1) { const t = PB.cfg.cols; PB.cfg.cols = PB.cfg.rows; PB.cfg.rows = t; }   // kisi ikut berputar
+    if (pbIsTj()) { const q = PB.cfg.tj; [q.cols, q.rows] = [q.rows, q.cols]; [q.lw, q.lh] = [q.lh, q.lw]; [q.gx, q.gy] = [q.gy, q.gx]; }   // lembar diputar 90°: kisi & ukuran label ikut berputar
     pbSync();
   });
   const bind = (id, key, fn) => { const el = $(id); el.addEventListener('input', () => { PB.cfg[key] = el.type === 'checkbox' ? el.checked : fn ? fn(el.value) : el.value; if (id === 'pbQr') $('pbQrV').textContent = el.value + '%'; pbSave(); if (el.type === 'checkbox' || el.tagName === 'SELECT') pbFillControls(); pbRender(); }); };
@@ -4331,12 +4449,174 @@ function pbInit() {
     else { if (inp.checked) PB.sel.add(f[i]); else PB.sel.delete(f[i]); PB.last = i; }
     pbRender();
   });
+  pbTjInit();
   let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { if (state.menu === 'print') pbRender(); }, 150); });
 }
 function pbEnter() {
   if (!PB.init) pbInit();
   pbFillControls(); pbRenderList(); pbRender();
   if (!PB.loaded) pbLoad(false);
+}
+
+/* =====================================================================
+   TOM & JERRY  (lembar stiker multi-label)
+   - Jumlah label, ukuran lembar, kolom × baris, jarak, margin, geser cetak, ukuran label, teks, dan slot awal dapat diatur.
+   - Setiap label memakai QR BERBEDA: (a) berurutan dari sheet "Barcode Label", atau (b) kode baru berurutan yang dibuat & dicatat GAS
+     (action reserveBarcodeLabels, di bawah lock) saat tombol Cetak ditekan -> tidak pernah bentrok antar pengguna.
+   - Mulai dari slot N: slot 1..N-1 pada lembar pertama dikosongkan (untuk lembar stiker yang sudah terpakai sebagian).
+   ===================================================================== */
+const pbIsTj = () => pbPaper().grp === 'Tom & Jerry';
+const PB_TJ_IN = { pbTjN: 'n', pbTjStart: 'start', pbTjSW: 'sw', pbTjSH: 'sh', pbTjCols: 'cols', pbTjRows: 'rows', pbTjGX: 'gx', pbTjGY: 'gy', pbTjML: 'ml', pbTjMT: 'mt', pbTjOX: 'ox', pbTjOY: 'oy', pbTjLW: 'lw', pbTjLH: 'lh', pbTjPad: 'pad', pbTjFs: 'fs', pbTjPrefix: 'prefix', pbTjDigits: 'digits', pbTjNum: 'num' };
+
+function pbTjGeo(maxLen) {
+  const c = PB.cfg, t = c.tj, N = pbNum;
+  const sw = N(t.sw, 20, 1000, 160), sh = N(t.sh, 20, 1500, 210), a = Math.min(sw, sh), b = Math.max(sw, sh);
+  const W = c.orient === 'l' ? b : a, H = c.orient === 'l' ? a : b;
+  const lw = N(t.lw, 5, 500, 32), lh = N(t.lh, 5, 500, 64);
+  const cols = Math.round(N(t.cols, 1, 30, 1)), rows = Math.round(N(t.rows, 1, 60, 1));
+  const gx = N(t.gx, 0, 50, 0), gy = N(t.gy, 0, 50, 0);
+  const gridW = cols * lw + (cols - 1) * gx, gridH = rows * lh + (rows - 1) * gy;
+  const r2 = v => Math.round(v * 100) / 100;
+  const left = r2((t.ctr ? (W - gridW) / 2 : N(t.ml, -50, 300, 0)) + N(t.ox, -30, 30, 0));
+  const top = r2((t.ctr ? (H - gridH) / 2 : N(t.mt, -50, 300, 0)) + N(t.oy, -30, 30, 0));
+  const pad = N(t.pad, 0, 20, 1.5), per = cols * rows, tpos = ['b', 'a', 'n'].includes(t.tpos) ? t.tpos : 'b';
+  const len = Math.max(maxLen || 10, 6), scale = N(c.qr, 40, 100, 100) / 100;
+  let fs = 0;
+  if (tpos !== 'n') { const man = N(t.fs, 0, 20, 0); fs = man > 0 ? man : Math.min((lw - 2 * pad) / (len * 0.62), lh * 0.2, 5.5); fs = Math.floor(Math.max(0, fs) * 100) / 100; }
+  const th = fs ? fs * 1.25 + 0.6 : 0;
+  const q = Math.floor(Math.min(lw - 2 * pad, lh - 2 * pad - th) * scale * 100) / 100;
+  const start = Math.min(per, Math.max(1, Math.round(N(t.start, 1, 99999, 1))));
+  return { W, H, lw, lh, cols, rows, gx, gy, gridW, gridH, left, top, pad, per, tpos, fs, th, q, start,
+    over: left < -0.01 || top < -0.01 || left + gridW > W + 0.01 || top + gridH > H + 0.01, bad: !(lw > 0 && lh > 0 && q >= 3) };
+}
+
+/* proyeksi kode baru (sama dengan algoritma GAS: lanjut dari nomor terbesar, lewati yang terpakai). Nomor final ditetapkan server. */
+function pbTjProject(count, prefix, digits, startNum) {
+  const re = new RegExp('^' + prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\d+)$');
+  let max = 0; PB.codes.forEach(c => { const m = re.exec(c); if (m) max = Math.max(max, +m[1]); });
+  let n = Math.max(max + 1, startNum || 0, 1); const out = [], used = PB.codeSet;
+  while (out.length < count) { const s = String(n++), code = prefix + s.padStart(digits, '0'); if (!used.has(code)) out.push(code); }
+  return out;
+}
+function pbTjSrcInfo() {
+  const t = PB.cfg.tj, n = Math.round(pbNum(t.n, 1, 5000, 1));
+  if (t.src === 'new') {
+    const prefix = String(t.prefix || '').trim(), digits = Math.round(pbNum(t.digits, 1, 10, 3));
+    return { n, mode: 'new', codes: pbTjProject(n, prefix, digits, Math.floor(+t.num) || 0), short: 0, sample: false };
+  }
+  const all = PB.codes;
+  if (!all.length) return { n, mode: 'list', codes: Array.from({ length: Math.min(n, 60) }, (_, i) => 'PG-REC-' + String(i + 1).padStart(3, '0')), short: 0, sample: true };
+  const fi = all.findIndex(c => PB.sel.has(c)), s = fi > 0 ? fi : 0, codes = all.slice(s, s + n);
+  return { n, mode: 'list', codes, short: Math.max(0, n - codes.length), sample: false };
+}
+
+const pbTjCell = (code, g, slot) => {
+  const at = slot ? ` data-slot="${slot}"` : '';
+  const st = `width:${g.lw}mm;height:${g.lh}mm;padding:${g.pad}mm${g.tpos === 'a' ? ';flex-direction:column-reverse' : ''}`;
+  if (!code) return `<div class="pb-cell pb-skip"${at} style="${st}"></div>`;
+  return `<div class="pb-cell${PB.cfg.cut ? ' pb-cut' : ''}${slot && slot === g.start ? ' pb-start' : ''}"${at} style="${st}"><div class="pb-qr" style="width:${g.q}mm;height:${g.q}mm">${pbQr(code)}</div>${g.fs ? `<div class="pb-tx" style="font-size:${g.fs}mm">${esc(code)}</div>` : ''}</div>`;
+};
+const pbTjPageHtml = (items, g, first) => `<div class="pb-page pb-tj" style="width:${g.W}mm;--h:${g.H}mm"><div class="pb-grid" style="left:${g.left}mm;top:${g.top}mm;grid-template-columns:repeat(${g.cols},${g.lw}mm);grid-auto-rows:${g.lh}mm;gap:${g.gy}mm ${g.gx}mm">${items.map((c, i) => pbTjCell(c, g, first ? i + 1 : 0)).join('')}</div></div>`;
+const pbTjItems = (codes, g) => Array(g.start - 1).fill(null).concat(codes);
+
+function pbRenderTj() {
+  const box = $('pbPrev'); if (!box) return;
+  const info = pbTjSrcInfo(), codes = info.codes;
+  const g = PB.g = pbTjGeo(codes.reduce((a, c) => Math.max(a, c.length), 6));
+  const items = pbTjItems(codes, g), pages = Math.max(1, Math.ceil(items.length / g.per));
+  $('pbTjSlotHint').textContent = `Slot 1–${g.per} (kiri ke kanan, atas ke bawah). Klik kotak pada preview lembar 1 untuk memilih slot awal${g.start > 1 ? ` · slot 1–${g.start - 1} dikosongkan` : ''}.`;
+  $('pbSum').textContent = info.sample ? 'Tom & Jerry · belum ada kode' : `${fmt(codes.length)} label (QR berbeda tiap label) · ${fmt(pages)} lembar · mulai slot ${g.start}`;
+  $('pbPrintBtn').disabled = info.sample || !codes.length || g.bad;
+  const orient = g.W >= g.H ? 'Lanskap' : 'Potret';
+  $('pbInfo').innerHTML = `<b>Tom &amp; Jerry:</b> lembar ${mmTxt(g.W)} × ${mmTxt(g.H)} mm · ${orient} · ${g.cols} × ${g.rows} = ${g.per} label/lembar · label ${mmTxt(g.lw)} × ${mmTxt(g.lh)} mm${g.gx || g.gy ? ` · jarak ${mmTxt(g.gx)} / ${mmTxt(g.gy)} mm` : ''} · QR ${mmTxt(g.q)} mm${g.fs ? ' · teks ' + mmTxt(g.fs) + ' mm' : ''}.`
+    + (codes.length ? ` Kode: <b>${esc(codes[0])}</b>${codes.length > 1 ? ' → <b>' + esc(codes[codes.length - 1]) + '</b>' : ''}${info.mode === 'new' ? ' (nomor final ditetapkan server saat dicetak dan langsung dicatat di sheet “Barcode Label”)' : ''}.` : '')
+    + ' Margin halaman pada dialog cetak sudah dibuat 0.';
+  const warn = [];
+  if (g.bad) warn.push('Ukuran label terlalu kecil untuk QR. Perbesar label atau kurangi ruang tepi / teks.');
+  else {
+    if (g.q < 12) warn.push(`QR hanya ${mmTxt(g.q)} mm — bisa sulit dipindai. Pakai label lebih besar atau kurangi teks.`);
+    if (g.tpos !== 'n' && g.fs < 1.8) warn.push('Teks kode sangat kecil. Pilih “Tanpa teks”, atau kurangi jumlah karakter awalan.');
+  }
+  if (g.over) warn.push('Kisi label melebihi lembar. Kurangi kolom/baris atau jarak, atau sesuaikan ukuran lembar.');
+  if (info.sample) warn.push('Belum ada kode di sheet “Barcode Label”. Pilih sumber “Buat kode baru berurutan” atau isi kolom B pada sheet.');
+  if (info.short > 0) warn.push(`Sheet “Barcode Label” hanya punya ${fmt(codes.length)} kode dari titik awal — ${fmt(info.short)} label tidak terisi. Pilih kode awal lebih atas atau pakai “Buat kode baru berurutan”.`);
+  if (codes.some(c => /[^\x20-\x7e]/.test(c))) warn.push('Ada kode berisi karakter non-ASCII — QR-nya tidak bisa dibuat (hanya teks yang tampil).');
+  const wb = $('pbWarn'); wb.classList.toggle('hidden', !warn.length); wb.innerHTML = warn.map(esc).join('<br>');
+  if (g.bad) { box.innerHTML = '<div class="py-10 text-sm text-slate-500">Preview tidak tersedia untuk pengaturan ini.</div>'; $('pbMore2').textContent = ''; return; }
+  const show = Math.min(pages, 6), avail = Math.max(220, (box.clientWidth || 360) - 34);
+  const pxmm = Math.max(0.8, Math.min(7, avail / g.W, 430 / g.H)), s = pxmm / 3.7795;
+  box.innerHTML = pbChunk(items, g.per).slice(0, show).map((p, i) =>
+    `<div><div class="pb-pvw" style="width:${g.W * pxmm}px;height:${g.H * pxmm}px"><div class="pb-pv" style="width:${g.W}mm;transform:scale(${s})">${pbTjPageHtml(p, g, i === 0)}</div></div><div class="pb-cap">${info.sample ? 'Contoh tampilan · ' : ''}Lembar ${i + 1} dari ${fmt(pages)}</div></div>`).join('');
+  $('pbMore2').textContent = pages > show ? `Preview menampilkan ${show} lembar pertama; seluruh ${fmt(pages)} lembar ikut tercetak.` : '';
+}
+
+async function pbPrintTj() {
+  const info = pbTjSrcInfo(); if (info.sample || !info.codes.length) return toast('Belum ada kode untuk dicetak', 3500);
+  let codes = info.codes;
+  let g = pbTjGeo(codes.reduce((a, c) => Math.max(a, c.length), 6)); if (g.bad) return toast('Pengaturan label belum valid — lihat peringatan di preview', 4000);
+  const t = PB.cfg.tj;
+  if (info.mode === 'new') {
+    if (!gasReady()) return toast('URL GAS belum diatur', 3500);
+    if (!confirm(`Buat ${fmt(info.n)} kode baru (${codes[0]} … ${codes[codes.length - 1]}) dan catat di sheet “Barcode Label”, lalu cetak?`)) return;
+    const btn = $('pbPrintBtn'); btn.disabled = true;
+    try {
+      const r = await (await fetch(GAS_URL(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'reserveBarcodeLabels', prefix: String(t.prefix || '').trim(), digits: Math.round(pbNum(t.digits, 1, 10, 3)), count: info.n, startNumber: Math.floor(+t.num) || 0, note: `T&J ${g.cols}x${g.rows} slot ${g.start}` }) })).json();
+      if (!r || !r.ok || !Array.isArray(r.codes) || !r.codes.length) throw new Error((r && r.error) || 'Gagal membuat kode baru');
+      codes = r.codes.map(String);
+      codes.forEach(c => { if (!PB.codeSet.has(c)) { PB.codes.push(c); PB.codeSet.add(c); } });   // daftar lokal ikut diperbarui
+      t.num = ''; pbSave(); pbFillControls(); pbRenderList();
+      toast(`${fmt(codes.length)} kode baru tersimpan di “Barcode Label”: ${r.first} – ${r.last}`, 4500);
+      g = pbTjGeo(codes.reduce((a, c) => Math.max(a, c.length), 6));
+    } catch (e) {
+      btn.disabled = false;
+      return toast(/Action tidak dikenal/i.test(e.message) ? 'Server belum diperbarui. Deploy ulang Apps Script sebagai versi baru.' : (e.message || 'Gagal membuat kode baru'), 5500);
+    }
+    btn.disabled = false;
+  }
+  const pages = pbChunk(pbTjItems(codes, g), g.per);
+  if (pages.length > 500 && !confirm(`Akan mencetak ${fmt(pages.length)} lembar (${fmt(codes.length)} label). Lanjutkan?`)) return;
+  $('pbPrint').innerHTML = pages.map((p, i) => pbTjPageHtml(p, g, false)).join('');
+  const st = document.createElement('style'); st.id = 'pbPageStyle'; st.textContent = `@page { size: ${g.W}mm ${g.H}mm; margin: 0; }`; document.head.appendChild(st);
+  const old = document.title; document.title = 'TomJerry_Label_' + todayStr();
+  document.body.classList.add('pb-printing');
+  const done = () => { document.body.classList.remove('pb-printing'); document.title = old; $('pbPrint').innerHTML = ''; st.remove(); window.removeEventListener('afterprint', done); pbRender(); };
+  window.addEventListener('afterprint', done);
+  requestAnimationFrame(() => setTimeout(() => window.print(), 60));
+}
+
+function pbTjFill() {
+  const pp = $('printPanel'), t = PB.cfg.tj; if (!pp) return;
+  const tj = pbIsTj();
+  pp.classList.toggle('pb-tjmode', tj); pp.classList.toggle('pb-tjnew', tj && t.src === 'new');
+  if (!tj) return;
+  $('pbTjSheet').innerHTML = PB_TJ_SHEETS.map(s => `<option value="${s.id}">${esc(s.n)}</option>`).join(''); $('pbTjSheet').value = t.sheet;
+  Object.keys(PB_TJ_IN).forEach(id => { const el = $(id); if (el && document.activeElement !== el) el.value = t[PB_TJ_IN[id]]; });
+  $('pbTjCtr').checked = !!t.ctr; $('pbTjMan').classList.toggle('hidden', !!t.ctr);
+  $('pbTjSheetC').classList.toggle('hidden', t.sheet !== 'custom');
+  $('pbTjTp').value = t.tpos;
+  document.querySelectorAll('#pbTjSrc [data-src]').forEach(b => b.classList.toggle('on', b.dataset.src === t.src));
+  $('pbTjNew').classList.toggle('hidden', t.src !== 'new');
+  $('pbTjSrcHint').textContent = t.src === 'new'
+    ? 'Kode baru dibuat berurutan (awalan + nomor), menyambung dari nomor terbesar di sheet “Barcode Label”. Saat tombol Cetak ditekan, GAS mencatatnya ke sheet itu (tanpa menimpa data) sehingga tidak pernah bentrok dengan cetakan lain. Riwayat ada di sheet “Barcode Label Log”.'
+    : 'Label diambil berurutan dari sheet “Barcode Label” (kolom B) mulai dari kode yang dicentang — satu kode per label, tidak ada yang sama. Tidak ada yang ditulis ke sheet.';
+}
+function pbTjInit() {
+  const t = () => PB.cfg.tj;
+  Object.keys(PB_TJ_IN).forEach(id => $(id).addEventListener('input', () => { t()[PB_TJ_IN[id]] = $(id).value; pbSave(); pbRender(); }));
+  $('pbTjSheet').addEventListener('change', () => {
+    const v = $('pbTjSheet').value, s = PB_TJ_SHEETS.find(x => x.id === v), q = t(); q.sheet = v;
+    if (s && s.w) { q.sw = s.w; q.sh = s.h; const f = pbTjFitC(PB.cfg); q.cols = f.cols; q.rows = f.rows; q.n = f.cols * f.rows; q.start = 1; }
+    pbSync();
+  });
+  $('pbTjCtr').addEventListener('change', () => { t().ctr = $('pbTjCtr').checked; pbSync(); });
+  $('pbTjTp').addEventListener('change', () => { t().tpos = $('pbTjTp').value; pbSync(); });
+  $('pbTjSrc').addEventListener('click', e => { const b = e.target.closest('[data-src]'); if (!b || b.dataset.src === t().src) return; t().src = b.dataset.src; pbSync(); });
+  $('pbTjFit').addEventListener('click', () => { const q = t(), f = pbTjFitC(PB.cfg); q.cols = f.cols; q.rows = f.rows; q.start = Math.min(q.start, f.cols * f.rows); pbSync(); toast(`Muat ${f.cols} kolom × ${f.rows} baris = ${f.cols * f.rows} label per lembar`, 2800); });
+  $('pbPrev').addEventListener('click', e => {
+    if (!pbIsTj()) return; const c = e.target.closest('.pb-cell[data-slot]'); if (!c) return;
+    t().start = +c.dataset.slot; pbSave(); pbFillControls(); pbRender();
+  });
 }
 </script>
 <script id="m-ux-js">
