@@ -117,12 +117,14 @@
 </style>
 <style id="m-ux">
 /* ===== MOBILE UX LAYER (<768px) — additif, desktop tidak berubah ===== */
-#mDock,#mSheet,#mSheetBg,.m-pill{display:none}
+#mDock,#mSheet,#mSheetBg,.m-pill,.m-gear,#mCta{display:none}
 @media (max-width:767.98px){
-:root{--bar:56px;--dock:64px;--sai:env(safe-area-inset-bottom,0px);--sat:env(safe-area-inset-top,0px)}
+:root{--bar:56px;--dock:68px;--sai:env(safe-area-inset-bottom,0px);--sat:env(safe-area-inset-top,0px)}
 html{scroll-padding-top:calc(var(--bar) + var(--sat) + 12px)}
-body{padding-bottom:calc(var(--dock) + var(--sai) + 20px);-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
-body.kb #mDock{display:none}
+body{padding-bottom:calc(var(--dock) + var(--sai) + 84px);-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+body.kb #mDock,body.kb #mCta{display:none}
+body.dk-solo{--dock:0px}
+body.dk-solo #mDock{display:none}
 /* app bar */
 header.sticky{padding:calc(.5rem + var(--sat)) 1rem .5rem!important;min-height:calc(var(--bar) + var(--sat))}
 header h1{font-size:1.2rem!important;letter-spacing:-.02em}
@@ -131,6 +133,8 @@ header img[data-logo]{height:30px!important}
 .m-pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:5px 11px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#141414;color:#fff;min-height:30px}
 .m-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber)}
 .m-pill.pk{background:var(--amber);color:#141414}.m-pill.pk::before{background:#141414}
+.m-gear{display:inline-grid;place-items:center;flex:0 0 auto;width:36px;height:36px;border-radius:50%;border:0;background:#F0F0ED;color:#141414}
+.m-gear:active{background:#E3E2DC}.m-gear svg{width:20px;height:20px}
 main{padding:.9rem 1rem 1rem!important;gap:.9rem;display:flex;flex-direction:column}
 main>*{margin-top:0!important}
 main>nav.md\:hidden{display:none!important}
@@ -188,17 +192,21 @@ main .overflow-x-auto{-webkit-overflow-scrolling:touch}
 #fixDlg[open]{margin:auto 0 0!important;width:100vw!important;max-width:100vw!important;border-radius:1.25rem 1.25rem 0 0!important;padding-bottom:var(--sai)}
 #toast{bottom:calc(var(--dock) + var(--sai) + 14px)!important}
 /* ===== DOCK ===== */
-#mDock{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:40;grid-template-columns:1fr 1fr 84px 1fr 1fr;height:calc(var(--dock) + var(--sai));padding-bottom:var(--sai);background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line);box-shadow:0 -8px 24px -16px rgba(0,0,0,.35)}
-.dk{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:var(--dock);min-width:0;border:0;background:none;color:#686760;font-size:10.5px;font-weight:700;letter-spacing:.01em}
+#mDock{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:40;grid-template-columns:repeat(6,1fr);height:calc(var(--dock) + var(--sai));padding-bottom:var(--sai);background:#141414;border-top:1px solid #000;box-shadow:0 -10px 24px -14px rgba(0,0,0,.5)}
+.dk{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:var(--dock);min-width:0;border:0;background:none;color:#A9A8A0;font-size:11px;font-weight:600;letter-spacing:0;transition:color .15s,background .15s}
 .dk svg{width:22px;height:22px}
 .dk span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dk:active{background:#F8F8F6}
-.dk.on{color:#141414}
-.dk.on::before{content:'';position:absolute;top:0;left:28%;right:28%;height:3px;background:var(--amber);transform:skewX(-30deg)}
-.dk-fab .c{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;background:var(--amber);color:#141414;transform:translateY(-14px);box-shadow:0 0 0 5px #fff,0 8px 18px -4px rgba(201,130,0,.6);transition:transform .15s}
-.dk-fab:active .c{transform:translateY(-14px) scale(.94)}
-.dk-fab span{transform:translateY(-12px);color:#141414}
-.dk-fab.save .c{background:#141414;color:var(--amber);box-shadow:0 0 0 5px #fff,0 8px 18px -4px rgba(0,0,0,.5)}
+.dk:active{background:#232321}
+.dk.on{color:var(--amber)}
+.dk.on::before{content:'';position:absolute;top:0;left:24%;right:24%;height:3px;background:var(--amber);transform:skewX(-30deg)}
+/* tombol utama (kontekstual) + pintu Aksi, melayang di atas dock */
+#mCta{display:flex;position:fixed;right:12px;bottom:calc(var(--dock) + var(--sai) + 12px);z-index:41;height:50px;border-radius:25px;overflow:hidden;box-shadow:0 0 0 3px var(--paper,#F4F4F1),0 10px 22px -8px rgba(0,0,0,.5)}
+#mCta button{border:0;font-weight:700;transition:filter .12s,transform .12s}
+#mCta button:active{filter:brightness(.92)}
+.cta-main{display:flex;align-items:center;gap:7px;padding:0 18px 0 14px;background:var(--amber);color:#141414;font-size:14px;white-space:nowrap}
+.cta-main svg{width:22px;height:22px}
+.cta-act{display:grid;place-items:center;width:52px;background:#141414;color:var(--amber)}
+.cta-act svg{width:22px;height:22px}
 /* ===== SHEET ===== */
 #mSheetBg{display:block;position:fixed;inset:0;z-index:50;background:rgba(20,20,20,.5);opacity:0;pointer-events:none;transition:opacity .2s}
 #mSheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:51;max-height:84vh;overflow-y:auto;background:#fff;border-radius:22px 22px 0 0;padding:.9rem 1rem calc(1rem + var(--sai));transform:translateY(105%);transition:transform .26s cubic-bezier(.2,.8,.2,1);overscroll-behavior:contain}
@@ -223,10 +231,10 @@ body.sheet{overflow:hidden}
 .ms-st{display:flex;align-items:center;gap:.6rem;font-size:.85rem;padding:.7rem .8rem;border-radius:.8rem;background:#F8F8F6}
 .ms-st i{width:9px;height:9px;border-radius:50%;background:#98978D}
 }
-@media (max-width:767.98px) and (prefers-reduced-motion:reduce){#mSheet,.dk-fab .c,.btn{transition:none}}
+@media (max-width:767.98px) and (prefers-reduced-motion:reduce){#mSheet,.dk,#mCta button,.btn{transition:none}}
 /* ===== CETAK / PDF: sembunyikan semua elemen mobile (dock, sheet, pill, toast) ===== */
 @media print{
-  #mDock,#mSheet,#mSheetBg,.m-pill,.dk,.dk-fab,#toast,nav[aria-label="Navigasi utama"]{display:none!important;visibility:hidden!important;height:0!important;position:static!important}
+  #mDock,#mCta,#mSheet,#mSheetBg,.m-pill,.m-gear,.dk,#toast,nav[aria-label="Navigasi utama"]{display:none!important;visibility:hidden!important;height:0!important;position:static!important}
   html,body{padding:0!important;margin:0!important;overflow:visible!important;height:auto!important}
   body.sheet,body.kb{overflow:visible!important}
 }
@@ -271,8 +279,6 @@ body.ck-mode #driverTotals, body.ck-mode #result, body.ck-mode #empty { display:
 .sh-share { display: inline-flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .sh-stat { font-size: .72rem; font-weight: 600; color: #166534; }
 @media (max-width: 767.98px) {
-  #mDock { grid-template-columns: 1fr 1fr 1fr 1fr 1fr 84px 1fr 1fr; }   /* 5 menu (Planner, Request, Checker, Retur, Reject) + tombol tengah + Aksi + Setelan */
-  .dk { font-size: 9.5px; }
   #shViewDlg[open] { margin: auto 0 0 !important; width: 100vw !important; max-width: 100vw !important; border-radius: 1.25rem 1.25rem 0 0 !important; }
   #ckScanDlg[open] { margin: auto 0 0 !important; width: 100vw !important; max-width: 100vw !important; border-radius: 1.25rem 1.25rem 0 0 !important; }
 }
@@ -328,7 +334,7 @@ body.ri-mode #driverTotals, body.ri-mode #result, body.ri-mode #empty { display:
 </style>
 <style id="login-css">
 /* ===== HALAMAN LOGIN ===== */
-body.auth-locked #app, body.auth-locked #mDock, body.auth-locked #mSheet, body.auth-locked #mSheetBg { display: none !important; }
+body.auth-locked #app, body.auth-locked #mDock, body.auth-locked #mCta, body.auth-locked #mSheet, body.auth-locked #mSheetBg { display: none !important; }
 body:not(.auth-locked) #loginGate { display: none; }
 #loginGate { position: fixed; inset: 0; z-index: 100; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); background: #fff; color: var(--ink); overflow: auto; }
 .lg-form { display: flex; flex-direction: column; padding: 2.5rem 2rem 1.5rem; min-height: 100%; }
@@ -383,18 +389,45 @@ body:not(.auth-locked) #loginGate { display: none; }
 .uc .dv { display: block; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .68rem; color: #686760; }
 @media (min-width: 768px) { .uc { display: flex; } }
 
+.lg-slash2, .lg-hi { display: none; }
+@media (min-width: 768px) { #lgForm .lg-row + .lg-row label { margin-top: 1.1rem; } }
 @keyframes lgspin { to { transform: rotate(360deg); } }
 @keyframes lgbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
 @keyframes lgslash { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
 
 @media (max-width: 767.98px) {
-  #loginGate { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-  .lg-art { order: -1; height: 104px; padding: 0; }
-  .lg-slash { left: 82%; width: 34px; }
+  /* ===== LOGIN MOBILE · varian Q: pita gelap + sapaan, sheet putih, input berkelompok ===== */
+  #loginGate { display: flex; flex-direction: column; background: #141414; grid-template-columns: none; }
+  .lg-art { order: -1; flex: 0 0 auto; height: 196px; padding: 0; display: block; }
+  .lg-slash { left: 80%; top: -50%; width: 38px; height: 220%; }
+  .lg-slash2 { display: block; position: absolute; left: calc(80% - 62px); top: -50%; width: 10px; height: 220%; background: #3A3A38; transform: translateX(-50%) rotate(45deg); }
   .lg-word { display: none; }
-  .lg-form { padding: 1.75rem 1.25rem 1.25rem; }
-  .lg-main, .lg-check { margin: 0 auto; }
-  .lg-logo { width: 150px; margin-bottom: 1.5rem; }
+  .lg-hi { display: block; position: absolute; left: 22px; top: calc(34px + env(safe-area-inset-top, 0px)); z-index: 1; }
+  .lg-hi small { display: block; font-size: .75rem; line-height: 1.2; color: #A9A8A0; margin-bottom: .4rem; }
+  .lg-hi b { display: block; font-size: 1.75rem; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; color: #fff; }
+  .lg-form { position: relative; flex: 1 0 auto; margin-top: -46px; padding: 1.4rem 1.25rem calc(1rem + env(safe-area-inset-bottom, 0px)); background: #fff; border-radius: 26px 26px 0 0; min-height: 0; }
+  .lg-main, .lg-check { margin: 0 auto; max-width: 420px; }
+  .lg-logo { width: 132px; margin-bottom: .9rem; }
+  .lg-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .lg-sub { margin-top: 0; font-size: .85rem; }
+  .lg-msg { margin-top: .9rem; }
+  #lgForm { margin-top: 1rem; }
+  .lg-grp { border: 1.5px solid #CDCCC4; border-radius: 14px; overflow: hidden; background: #fff; transition: border-color .15s; }
+  .lg-grp:focus-within { border-color: var(--ink); }
+  .lg-row { position: relative; padding: .5rem .9rem .45rem; border-left: 3px solid transparent; transition: border-color .15s; }
+  .lg-row + .lg-row { border-top: 1px solid #E3E2DC; }
+  .lg-row:focus-within { border-left-color: var(--amber); }
+  .lg-row:has(.lg-in[aria-invalid="true"]) { border-left-color: #D92D20; }
+  #lgForm .lg-row label { margin: 0; font-size: .7rem; font-weight: 600; color: #686760; }
+  .lg-grp .lg-in { height: 28px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+  .lg-grp .lg-in:focus { box-shadow: none; }
+  .lg-grp .lg-in[readonly] { background: none; color: #686760; }
+  .lg-grp .lg-in[aria-invalid="true"] { color: #912018; }
+  .lg-grp .lg-pw { position: static; }
+  .lg-grp .lg-pw .lg-in { padding-right: 52px; }
+  .lg-grp .lg-eye { top: 0; bottom: 0; height: auto; width: 52px; border: 0; border-radius: 0; background: transparent; }
+  .lg-btn { height: 54px; margin-top: 1.1rem; border-radius: 14px; font-size: 1rem; }
+  .lg-foot { margin: auto auto 0; padding-top: 1.5rem; text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) {
   .lg-slash, .lg-btn .sp, .lg-bar i { animation: none; }
@@ -456,8 +489,6 @@ body:not(.pb-mode) #printPanel { display: none !important; }
 .pb-setbar { display: flex; flex-wrap: wrap; gap: .5rem; }
 .pb-setbar .btn:disabled { opacity: .45; cursor: not-allowed; }
 .nav-sub { padding-left: 1.5rem; }
-.dk6 .dk { font-size: 8.5px; letter-spacing: -.01em; }
-.dk6 .dk svg { width: 20px; height: 20px; }
 /* ===== PRINT BARCODE · UI v2 (hanya tampilan: ID, atribut data-*, dan logika JS tidak diubah) ===== */
 #printPanel { --pb-line: #E2E1DB; --pb-soft: #F7F7F4; --pb-mute: #5F5E57; --pb-ring: rgba(251,179,21,.5); }
 .pb-col, .pb-stack { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
@@ -589,8 +620,10 @@ body:not(.pb-mode) #printPanel { display: none !important; }
       <p class="lg-sub">Gunakan username dan password dari tim Warehouse.</p>
       <div id="lgMsg" class="lg-msg err" role="alert" aria-live="assertive" hidden></div>
       <form id="lgForm" novalidate autocomplete="on">
+        <div class="lg-grp"><div class="lg-row">
         <label for="lgUser">Username</label>
         <input id="lgUser" name="username" class="lg-in" type="text" inputmode="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="80" aria-describedby="lgMsg" required>
+        </div><div class="lg-row">
         <label for="lgPass">Password</label>
         <div class="lg-pw">
           <input id="lgPass" name="password" class="lg-in" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="80" aria-describedby="lgMsg" required>
@@ -599,6 +632,7 @@ body:not(.pb-mode) #printPanel { display: none !important; }
             <svg id="lgEyeOff" class="hidden" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17.94 17.94A10.9 10.9 0 0112 19c-7 0-11-7-11-7a19.8 19.8 0 015.06-5.94M9.9 4.24A10.9 10.9 0 0112 4c7 0 11 7 11 7a19.9 19.9 0 01-3.17 4.19M14.12 14.12a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
           </button>
         </div>
+        </div></div>
         <button id="lgBtn" class="btn btn-accent lg-btn" type="submit"><span class="sp" aria-hidden="true"></span><span id="lgBtnTxt">Masuk</span></button>
       </form>
     </div>
@@ -606,8 +640,11 @@ body:not(.pb-mode) #printPanel { display: none !important; }
   </section>
   <aside class="lg-art" aria-hidden="true">
     <div class="lg-slash"></div>
+    <div class="lg-slash2"></div>
     <div class="lg-word">Warehouse<br>Internal System</div>
+    <div class="lg-hi"><small>Warehouse Internal System</small><b id="lgHi">Selamat datang</b></div>
   </aside>
+  <script>(function(){var h=new Date().getHours(),t=h<4?"malam":h<11?"pagi":h<15?"siang":h<18?"sore":"malam",e=document.getElementById("lgHi");if(e)e.textContent="Selamat "+t;})();</script>
 </div>
 
 <dialog id="lgRemember" aria-labelledby="lgRemTitle">
@@ -5006,16 +5043,17 @@ function pbTjInit() {
     <button class="dk" data-d="checker">${ic('chk')}<span>Checker</span></button>
     <button class="dk" data-d="retur">${ic('ret')}<span>Retur</span></button>
     <button class="dk" data-d="reject">${ic('rej')}<span>Reject</span></button>
-    <button class="dk" data-d="print">${ic('print')}<span>Cetak</span></button>
-    <button class="dk dk-fab" data-d="fab"><i class="c"></i><span></span></button>
-    <button class="dk" data-d="act">${ic('act')}<span>Aksi</span></button>
-    <button class="dk" data-d="set">${ic('set')}<span>Setelan</span></button>`;
+    <button class="dk" data-d="print">${ic('print')}<span>Cetak</span></button>`;
   const bg = document.createElement('div'); bg.id = 'mSheetBg';
   const sh = document.createElement('div'); sh.id = 'mSheet'; sh.setAttribute('role', 'dialog'); sh.setAttribute('aria-modal', 'true');
-  document.body.append(bg, sh, dock);
+  const cta = document.createElement('div'); cta.id = 'mCta';
+  cta.innerHTML = `<button type="button" class="cta-main" data-d="fab"></button><button type="button" class="cta-act" data-d="act" aria-label="Aksi">${ic('act')}</button>`;
+  document.body.append(bg, sh, dock, cta);
   const pill = document.createElement('button');
   pill.className = 'm-pill'; pill.type = 'button'; pill.setAttribute('aria-label', 'Peran aktif, ketuk untuk mengganti');
-  const hdr = document.querySelector('header .flex.items-center.gap-3:last-child'); if (hdr) hdr.append(pill);
+  const hdr = document.querySelector('header .flex.items-center.gap-3:last-child'); const gear = document.createElement('button');
+  gear.className = 'm-gear'; gear.type = 'button'; gear.dataset.d = 'set'; gear.setAttribute('aria-label', 'Setelan'); gear.innerHTML = ic('set');
+  if (hdr) hdr.append(pill, gear);
 
   /* ---- tombol tengah: aksi berikutnya yang paling masuk akal ---- */
   function fab() {
@@ -5033,9 +5071,9 @@ function pbTjInit() {
   function sync() {
     if (!mq.matches) return;
     dock.querySelectorAll('[data-d=planner],[data-d=other],[data-d=checker],[data-d=retur],[data-d=reject],[data-d=print]').forEach(b => b.classList.toggle('on', b.dataset.d === state.menu));
-    cur = fab(); const f = dock.querySelector('.dk-fab');
+    cur = fab(); const f = cta.querySelector('.cta-main');
     f.classList.toggle('save', !!cur.s);
-    f.querySelector('.c').innerHTML = ic(cur.k).replace('<svg', '<svg width="26" height="26"'); f.querySelector('span').textContent = cur.l;
+    f.innerHTML = ic(cur.k) + '<span>' + cur.l + '</span>';
     const adm = state.role === 'admin'; pill.textContent = adm ? 'Admin' : 'Packer'; pill.classList.toggle('pk', !adm);
     pill.style.display = (window.ACCESS && ACCESS.full) ? '' : 'none';
   }
@@ -5092,12 +5130,13 @@ function pbTjInit() {
   }
 
   /* ---- event ---- */
-  dock.addEventListener('click', e => {
+  const onTap = e => {
     const b = e.target.closest('[data-d]'); if (!b) return; const d = b.dataset.d;
     if (d === 'planner' || d === 'other' || d === 'checker' || d === 'retur' || d === 'reject' || d === 'print') { if (state.menu === d) window.scrollTo({ top: 0, behavior: 'smooth' }); else switchMenu(d); sync(); }
     else if (d === 'fab') cur.go();
     else if (d === 'act') sheetAksi(); else sheetSet();
-  });
+  };
+  dock.addEventListener('click', onTap); cta.addEventListener('click', onTap); gear.addEventListener('click', onTap);
   bg.onclick = close; pill.onclick = sheetSet;
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
   sh.addEventListener('click', e => {
@@ -5199,8 +5238,8 @@ function pbTjInit() {
     const dock = $g('mDock');
     if (dock) {
       dock.querySelectorAll('[data-d]').forEach(el => { if (ALL_MENUS.includes(el.dataset.d) && !menus.includes(el.dataset.d)) el.remove(); });
-      dock.style.gridTemplateColumns = 'repeat(' + menus.length + ', 1fr) 84px 1fr 1fr';
-      dock.classList.toggle('dk6', menus.length >= 6);
+      dock.style.gridTemplateColumns = 'repeat(' + Math.max(menus.length, 1) + ', 1fr)';
+      document.body.classList.toggle('dk-solo', menus.length < 2);   // 1 menu saja (Checker / Packer): dock disembunyikan, tombol utama + Setelan tetap ada
     }
     if (!menus.includes(state.menu)) { state.menu = menus[0]; try { localStorage.setItem(LS.menu, state.menu); } catch (e) { /* abaikan */ } }
     if (!ACCESS.full) {
